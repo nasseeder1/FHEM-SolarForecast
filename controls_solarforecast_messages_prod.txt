@@ -14,5 +14,5 @@
 #################################################################################################################################
 
 1|SV|1
-1|DE|Ab dem Release 1.44.5 wird das Message-File vom GitHub Repository abgeholt. <br>Die Auslieferung ist mit dem Update vom 09.02.2025. 
-1|EN|As of version 1.45.3 (update on 08.02.), the reading special_todayConsumption can be created via the ctrlSpecialReadings attribute.
+1|DE|Ab dem Release 1.45.5 wird das Message-File vom GitHub Repository abgeholt. <br>Die Auslieferung ist mit dem Update vom 10.02.2025. 
+1|EN|From release 1.45.5, the message file is retrieved from the GitHub repository. <br>The delivery is with the update from 10.02.2025.
