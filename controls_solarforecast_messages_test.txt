@@ -14,5 +14,5 @@
 ####################################################
 
 1|SV|1
-1|DE|In dem kommenden Release 1.44.3 sind die Spezial-Readings todayBatInSum und todayBatOutSum mit dem Attribut ctrlSpecialReadings erstellbar. <br>Voraussichtliche Auslieferung ist mit dem Update vom 26.01.2025.   
+1|DE|Ab dem Release 1.44.5 wird das Message-File vom GitHub Repository abgeholt. <br>Die Auslieferung ist mit dem Update vom 09.02.2025.   
 1|EN|In the upcoming release 1.44.3, the special readings todayBatInSum and todayBatOutSum can be created with the ctrlSpecialReadings attribute. <br>Expected delivery is with the update from 26.01.2025.   
