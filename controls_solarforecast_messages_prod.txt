@@ -14,5 +14,5 @@
 #################################################################################################################################
 
 1|SV|1
-1|DE|Ab dem Release 1.45.5 wird das Message-File vom GitHub Repository abgeholt. <br>Die Auslieferung ist mit dem Update vom 10.02.2025. 
-1|EN|From release 1.45.5, the message file is retrieved from the GitHub repository. <br>The delivery is with the update from 10.02.2025.
+1|DE|Ab dem Release 1.45.5 werden Mitteilungen vom GitHub Repository abgeholt. <br>Bitte das Update am 10.02. ausführen. 
+1|EN|As of release 1.45.5, messages are fetched from the GitHub repository. <br>Please carry out the update on 10.02.
