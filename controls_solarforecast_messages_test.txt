@@ -1,5 +1,6 @@
+################################################################################################################################
 #  Filestruktur für Mitteilungen:
-#  ==============================
+#  ===============================
 #  0|SV|1                   (= Severity 0 - 3)
 #  0|DE|Mitteilung 1....
 #  0|EN|Message 1 ...
@@ -10,9 +11,10 @@
 #
 #  (Index kann bis max. 99999 laufen)
 #  Zeilenumbruch mit <br>
+#  Link einfügen: <html><a href='https://forum.fhem.de/index.php?topic=137058.0' target='_blank'>Forumsbeitrag</a></html>
 #
-####################################################
+################################################################################################################################
 
 1|SV|1
-1|DE|Ab dem 18.02. ist die Verion 1.46.0 im Update enthalten. Weitere Infos zu der Version findest du <html><a href='https://forum.fhem.de/index.php?topic=137058.0' target='_blank'>hier</a></html>   
+1|DE|Ab dem 18.02. ist die Verion 1.46.0 im Update enthalten. Weitere Infos zu der Version findest du in diesem <html><a href='https://forum.fhem.de/index.php?topic=137058.0' target='_blank'>Forumsbeitrag</a></html>.
 1|EN|  
