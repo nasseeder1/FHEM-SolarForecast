@@ -24,5 +24,5 @@
 2|EN|Version 1.46.1 will be released on 19.02. It contains minor fixes to version 1.46.0 and in the command “set ... setupStringDeclination” command, integers between 0 and 90 can now be freely specified.
 
 3|SV|1
-3|DE|Am 20.02. wird die Version 1.46.2 ausgeliefert. Enthalten ist: <br>- die max. mögliche Anzahl Inverter ist auf 4 gesetzt. <br>- eine verbesserte Logik der Verbrauchsprognose <br>kleinere Bug fixes
-3|EN|Version 1.46.2 will be delivered on 20.02. Included is: <br>- the maximum possible number of inverters is set to 4. <br>- improved logic for consumption forecasting <br>minor bug fixes in NOTIFYDEV
+3|DE|Am 20.02. wird die Version 1.46.2 ausgeliefert. Enthalten ist: <br>- die max. mögliche Anzahl Inverter ist auf 4 gesetzt. <br>- eine verbesserte Logik der Verbrauchsprognose <br>- kleinere Bug fixes
+3|EN|Version 1.46.2 will be delivered on 20.02. Included is: <br>- the maximum possible number of inverters is set to 4. <br>- improved logic for consumption forecasting <br>- minor bug fixes in NOTIFYDEV
