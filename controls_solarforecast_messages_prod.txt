@@ -26,3 +26,7 @@
 3|SV|1
 3|DE|Am 20.02. wird die Version 1.46.2 ausgeliefert. Enthalten ist: <br>- die max. mögliche Anzahl Inverter ist auf 4 gesetzt. <br>- eine verbesserte Logik der Verbrauchsprognose <br>- kleinere Bug fixes (NOTIFYDEV Registration)
 3|EN|Version 1.46.2 will be delivered on 20.02. Included is: <br>- the maximum possible number of inverters is set to 4. <br>- improved logic for consumption forecasting <br>- minor bug fixes (NOTIFYDEV Registration)
+
+4|SV|1
+4|DE|Am 23.02. wird die Version 1.46.3 ausgeliefert. Enthalten ist: <br>- der Consumerschlüssel 'mintime' kann durch eine Device:Reading-Kombination geliefert werden <br>- eine Verletzung der Kontinuitätsvorgabe des Zählers von Batterie In/Out-Energie wird im Log protokolliert 
+4|EN|Version 1.46.3 will be delivered on 23.02. Included is: <br>- the consumer key 'mintime' can be supplied by a device:reading combination <br>- A violation of the continuity specification of the battery in/out energy meter is logged in the log
