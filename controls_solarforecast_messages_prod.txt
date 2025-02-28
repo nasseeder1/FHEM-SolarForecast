@@ -16,9 +16,5 @@
 ################################################################################################################################
 
 1|SV|1
-1|DE|Ab dem 18.02. ist die Version 1.46.0 im Update enthalten. Weitere Infos zu der Version findest du in diesem <html><a href='https://forum.fhem.de/index.php?msg=1334203' target='_blank'>Forumsbeitrag</a></html>.
-1|EN|As of February 18, version 1.46.0 is included in the update. You can find more information about the version in this <html><a href='https://forum.fhem.de/index.php?msg=1334203' target='_blank'>Forum post</a></html>.
-
-2|SV|1
-2|DE|Am 26.02. erscheint die Version 1.46.4. Sie enthält: <br>- Fix des Darstellungsproblems gemeldet in diesem <html><a href='https://forum.fhem.de/index.php?msg=1334798' target='_blank'>Forumsbeitrag</a></html>. <br>- Erweiterung des Debug Loggings
-2|EN|Version 1.46.4 will be released on 26.02. It contains: <br>- Fix of the display problem reported in this <html><a href='https://forum.fhem.de/index.php?msg=1334798' target='_blank'>Forum post</a></html>. <br>- Extension of the debug logging
+1|DE|Am 01.03. ist die Version 1.46.5 im Update enthalten. Im Attribut ctrlSpecialReadings gibt es einen neuen Schlüssel "todayConsumptionForecastDay". Wenn ausgewählt, wird das Reading "special_todayConsumptionForecastDay" mit der Verbrauchsprognose für den aktuellen Tag angelegt.
+1|EN|Version 1.46.5 is included in the update on 01.03. There is a new key “todayConsumptionForecastDay” in the ctrlSpecialReadings attribute. If selected, the reading “special_todayConsumptionForecastDay” is created with the consumption forecast for the current day.
