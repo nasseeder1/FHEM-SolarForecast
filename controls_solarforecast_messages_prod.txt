@@ -15,6 +15,6 @@
 #
 ################################################################################################################################
 
-1|SV|1
-1|DE|Am 01.03. ist die Version 1.46.5 im Update enthalten. Im Attribut ctrlSpecialReadings gibt es einen neuen Schlüssel "todayConsumptionForecastDay". Wenn ausgewählt, wird das Reading "special_todayConsumptionForecastDay" mit der Verbrauchsprognose für den aktuellen Tag angelegt.
-1|EN|Version 1.46.5 is included in the update on 01.03. There is a new key “todayConsumptionForecastDay” in the ctrlSpecialReadings attribute. If selected, the reading “special_todayConsumptionForecastDay” is created with the consumption forecast for the current day.
+1|SV|2
+1|DE|Am 07.03. ist die Version 1.47.0 im Update enthalten. Es ist ein Major Update. Gespeicherte bzw. gesicherte Daten von Versionen < 1.47.0 sind nicht mit dieser Version kompatibel. <br>Weitere Informationen findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1335908' target='_blank'>Forum Beitrag</a></html>
+1|EN|Version 1.47.0 is included in the update on 07.03. It is a major update. Saved or backed up data from versions < 1.47.0 are not compatible with this version. <br>You can find more information in this <html><a href='https://forum.fhem.de/index.php?msg=1335908' target='_blank'>forum post</a></html>
