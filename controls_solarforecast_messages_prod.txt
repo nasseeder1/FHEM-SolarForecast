@@ -22,3 +22,7 @@
 2|SV|1
 2|DE|Am 10.03. erscheint die Version 1.47.2 mit kleineren Änderungen. Nutzer des Model DWD mit mehreren Strings in Ost/West-Lage sollten davon profitieren. 
 2|EN|Version 1.47.2 with minor changes will be released on March 10. Users of the DWD model with several strings in an east/west position should benefit from this.
+
+3|SV|1
+3|DE|Am 12.03. ist die Version 1.47.3 im Update enthalten. Im Attribut setupBatteryDevXX kann der Schlüssel 'show' mit 'top' oder 'bottom' ergänzt werden um die Position der Batterieanzeige über oder unterhalb der Grafikbalken festzulegen.
+3|EN|Version 1.47.3 is included in the update on 12.03. In the setupBatteryDevXX attribute, the 'show' key can be supplemented with 'top' or 'bottom' to define the position of the battery display above or below the graphic bars.
