@@ -11,6 +11,10 @@
 #
 #  (Index kann bis max. 99999 laufen)
 #  Zeilenumbruch mit <br>
-#  Link einfügen: <html><a href='https://forum.fhem.de/index.php?topic=137058.0' target='_blank'>Forumsbeitrag</a></html>
+#  Link einfügen: <html><a href='https://forum.fhem.de/index.php?topic=137058.0' target='_blank'>Beitrag</a></html>
 #
 ################################################################################################################################
+
+1|SV|1
+1|DE|Im contrib liegt die Vorabversion 1.49.0 zum Test durch interessierte Nutzer bereit. Weitere Infos zur Beachtung findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1337341' target='_blank'>Beitrag</a></html>
+1|EN|The pre-release version 1.49.0 is available for testing by interested users at contrib. You can find more information about the attention in this <html><a href='https://forum.fhem.de/index.php?msg=1337341' target='_blank'>Post</a></html>
