@@ -22,3 +22,7 @@
 2|SV|2
 2|DE|Ab dem 29.03. ist die Version 1.49.4 im Update verfügbar. Infos zum Inhalt dieser Version findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1338133' target='_blank'>Beitrag</a></html>
 2|EN|Version 1.49.4 will be available in the update from March 29. Information about the content of this version can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1338133' target='_blank'>Post</a></html>
+
+3|SV|2
+3|DE|Ab dem 01.04. ist die Version 1.49.5 im Update verfügbar. Infos zum Inhalt dieser Version findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1338199' target='_blank'>Beitrag</a></html>
+3|EN|Version 1.49.5 will be available in the update from April 01. Information about the content of this version can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1338199' target='_blank'>Post</a></html>
