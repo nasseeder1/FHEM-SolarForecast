@@ -20,9 +20,5 @@
 1|EN|The major release 1.49.0 will be available in the update from March 24. Manual activities may need to be carried out after the update. You can find more information about the attention in this <html><a href='https://forum.fhem.de/index.php?msg=1337341' target='_blank'>Post</a></html>
 
 2|SV|2
-2|DE|Ab dem 29.03. ist die Version 1.49.4 im Update verfügbar. Infos zum Inhalt dieser Version findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1338133' target='_blank'>Beitrag</a></html>
-2|EN|Version 1.49.4 will be available in the update from March 29. Information about the content of this version can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1338133' target='_blank'>Post</a></html>
-
-3|SV|2
-3|DE|Ab dem 01.04. ist die Version 1.49.5 im Update verfügbar. Infos zum Inhalt dieser Version findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1338199' target='_blank'>Beitrag</a></html>
-3|EN|Version 1.49.5 will be available in the update from April 01. Information about the content of this version can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1338199' target='_blank'>Post</a></html>
+2|DE|Am 06.04. ist das Major Release 1.50.0 im Update verfügbar. Bitte führe das Update zeitnah aus, da im folgenden Major Release obsolete Attribute entfernt werden. Infos zum Inhalt dieser Version findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1338697' target='_blank'>Beitrag</a></html>
+2|EN|The major release 1.50.0 will be available in the update from April 06. Please carry out the update promptly, as obsolete attributes will be removed in the following major release. Information about the content of this version can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1338697' target='_blank'>Post</a></html>
