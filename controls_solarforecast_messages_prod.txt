@@ -16,13 +16,5 @@
 ################################################################################################################################
 
 1|SV|2
-1|DE|Ab dem 24.03. ist das Major Release 1.49.0 im Update verfügbar. Unter Umständen sind manuelle Tätigkeiten nach dem Update auszuführen. Weitere Infos zur Beachtung findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1337341' target='_blank'>Beitrag</a></html>
-1|EN|The major release 1.49.0 will be available in the update from March 24. Manual activities may need to be carried out after the update. You can find more information about the attention in this <html><a href='https://forum.fhem.de/index.php?msg=1337341' target='_blank'>Post</a></html>
-
-2|SV|2
-2|DE|Am 06.04. ist das Major Release 1.50.0 im Update verfügbar. Bitte führe das Update zeitnah aus, da im folgenden Major Release obsolete Attribute entfernt werden. Infos zum Inhalt dieser Version findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1338697' target='_blank'>Beitrag</a></html>
-2|EN|The major release 1.50.0 will be available in the update from April 06. Please carry out the update promptly, as obsolete attributes will be removed in the following major release. Information about the content of this version can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1338697' target='_blank'>Post</a></html>
-
-3|SV|2
-3|DE|Am 13.04. ist die Version 1.50.3 im Update verfügbar. Wichtige Informationen zum Inhalt dieser Version findest du in diesem <html><a href='https://forum.fhem.de/index.php?msg=1339274' target='_blank'>Beitrag</a></html>
-3|EN|Version 1.50.3 will be available in the update on 13.04. Important information about the content of this version can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1339274' target='_blank'>Post</a></html>
+1|DE|Ab dem 17.04. ist das Major Release 1.51.0 im Update verfügbar. Weitere Infos zur Beachtung findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1339662' target='_blank'>Beitrag</a></html>
+1|EN|The major release 1.51.0 will be available in the update from April 17. You can find more information about the attention in this <html><a href='https://forum.fhem.de/index.php?msg=1339662' target='_blank'>Post</a></html>
