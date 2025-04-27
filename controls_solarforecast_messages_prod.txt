@@ -19,3 +19,7 @@
 1|DE|Am 24.04. wird die Version 1.51.3 ausgeliefert. Die Setter setupStringAzimuth und setupStringDeclination werden in gleichnamige Attribute umgesetzt. Weitere Informationen gibt es in diesem <html><a href='https://forum.fhem.de/index.php?msg=1340116' target='_blank'>Beitrag</a></html>.
 1|EN|Version 1.51.3 will be delivered on 24.04. The setters setupStringAzimuth and setupStringDeclination are converted into attributes of the same name.
 Further information can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1340116' target='_blank'>Post</a></html>.
+
+2|SV|1
+2|DE|Am 28.04. wird die Version 1.51.4 ausgeliefert. Weitere Informationen gibt es in diesem <html><a href='https://forum.fhem.de/index.php?msg=1340376' target='_blank'>Beitrag</a></html>.
+2|EN|Version 1.51.4 will be delivered on 28.04. Further information can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1340376' target='_blank'>Post</a></html>.
