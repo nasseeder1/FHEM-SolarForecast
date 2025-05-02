@@ -31,3 +31,7 @@ Further information can be found in this <html><a href='https://forum.fhem.de/in
 4|SV|1
 4|DE|Am 02.05. wird die Version 1.51.7 ausgeliefert. Weitere Informationen gibt es in diesem <html><a href='https://forum.fhem.de/index.php?msg=1340582' target='_blank'>Beitrag</a></html> und diesem <html><a href='https://forum.fhem.de/index.php?msg=1340624' target='_blank'>Beitrag</a></html>.
 4|EN|Version 1.51.7 will be delivered on 02.05. Further information can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1340582' target='_blank'>Post</a></html> and this <html><a href='https://forum.fhem.de/index.php?msg=1340624' target='_blank'>Post</a></html>.
+
+5|SV|1
+5|DE|Die Version 1.51.8 mit geringfügigen Bugfixes in Attribut 'ctrlSpecialReadings' ist am 03.05. im Update enthalten.
+5|EN|Version 1.51.8 with minor bugfixes in attribute 'ctrlSpecialReadings' is included in the update on May 3rd.
