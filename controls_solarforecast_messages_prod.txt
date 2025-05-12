@@ -15,3 +15,7 @@
 #
 ################################################################################################################################
 
+1|SV|2
+1|DE|Am 13.05. wird mit dem Update das Major Release 1.52.0 ausgeliefert. Informationen zum Inhalt findest du in diesem <html><a href='https://forum.fhem.de/index.php?msg=1341315' target='_blank'>Forum Beitrag</a></html>.
+1|EN|The major release 1.52.0 will be delivered with the update on May 13. You can find information on the content in this <html><a href='https://forum.fhem.de/index.php?msg=1341315' target='_blank'>Forum Post</a></html>.
+
