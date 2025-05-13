@@ -19,3 +19,7 @@
 1|DE|Am 13.05. wird mit dem Update das Major Release 1.52.0 ausgeliefert. Informationen zum Inhalt findest du in diesem <html><a href='https://forum.fhem.de/index.php?msg=1341315' target='_blank'>Forum Beitrag</a></html>.
 1|EN|The major release 1.52.0 will be delivered with the update on May 13. You can find information on the content in this <html><a href='https://forum.fhem.de/index.php?msg=1341315' target='_blank'>Forum Post</a></html>.
 
+2|SV|1
+2|DE|Die Gestaltung der Flußgrafik mit Batterie und nur einem Wechselrichter in der V1.52.0 wurde nach Meldungen aus der Community geändert. In diesem <html><a href='https://forum.fhem.de/index.php?msg=1341507' target='_blank'>Beitrag</a></html> ist Änderung zu sehen. Die V 1.52.1 wird am 14.05. im Update ausgeliefert.
+2|EN|The design of the flow graphic with battery and only one inverter in V1.52.0 has been changed following reports from the community. In this <html><a href='https://forum.fhem.de/index.php?msg=1341507' target='_blank'>post</a></html> you can see the change. V 1.52.1 will be delivered as an update on May 14.
+
