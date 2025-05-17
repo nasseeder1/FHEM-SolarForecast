@@ -23,7 +23,7 @@
 2|DE|Die Gestaltung der Flußgrafik mit Batterie und nur einem Wechselrichter in der V1.52.0 wurde nach Meldungen aus der Community geändert. In diesem <html><a href='https://forum.fhem.de/index.php?msg=1341507' target='_blank'>Beitrag</a></html> ist Änderung zu sehen. Die V 1.52.1 wird am 14.05. im Update ausgeliefert.
 2|EN|The design of the flow graphic with battery and only one inverter in V1.52.0 has been changed following reports from the community. In this <html><a href='https://forum.fhem.de/index.php?msg=1341507' target='_blank'>post</a></html> you can see the change. V 1.52.1 will be delivered as an update on May 14.
 
-2|SV|1
-2|DE|Die Version V1.52.3 ab dem 18.05. enthält die neuen Schlüssel graphicControl->beamPaddingTop und graphicControl->beamPaddingBottom um Freiplatz über und unter den Balkendiagrammen realisieren zu können.
-2|EN|Version V1.52.3 from 18.05. contains the new keys graphicControl->beamPaddingTop and graphicControl->beamPaddingBottom to realize free space above and below the bar charts.
+3|SV|1
+3|DE|Die Version V1.52.3 ab dem 18.05. enthält die neuen Schlüssel graphicControl->beamPaddingTop und graphicControl->beamPaddingBottom um Freiplatz über und unter den Balkendiagrammen realisieren zu können.
+3|EN|Version V1.52.3 from 18.05. contains the new keys graphicControl->beamPaddingTop and graphicControl->beamPaddingBottom to realize free space above and below the bar charts.
 
