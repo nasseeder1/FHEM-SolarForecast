@@ -27,3 +27,7 @@
 3|DE|Die Version V1.52.3 ab dem 18.05. enthält die neuen Schlüssel graphicControl->beamPaddingTop und graphicControl->beamPaddingBottom um Freiplatz über und unter den Balkendiagrammen realisieren zu können.
 3|EN|Version V1.52.3 from 18.05. contains the new keys graphicControl->beamPaddingTop and graphicControl->beamPaddingBottom to realize free space above and below the bar charts.
 
+4|SV|1
+4|DE|Die Version V1.52.4 ist ab dem 21.05. im Update enthalten. Infos zum Inhalt gibt es in diesem <html><a href='https://forum.fhem.de/index.php?msg=1342032' target='_blank'>Beitrag</a></html>.
+4|EN|Version V1.52.4 is included in the update from May 21. Information on the content can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1342032' target='_blank'>post</a></html>.
+
