@@ -31,3 +31,6 @@
 4|DE|Die Version V1.52.4 ist ab dem 21.05. im Update enthalten. Infos zum Inhalt gibt es in diesem <html><a href='https://forum.fhem.de/index.php?msg=1342032' target='_blank'>Beitrag</a></html>.
 4|EN|Version V1.52.4 is included in the update from May 21. Information on the content can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1342032' target='_blank'>post</a></html>.
 
+5|SV|1
+5|DE|Die Version V1.52.5 ist ab dem 26.05. im Update enthalten. Infos zum Inhalt gibt es in diesem <html><a href='https://forum.fhem.de/index.php?msg=1342152' target='_blank'>Beitrag</a></html>.
+5|EN|Version V1.52.5 is included in the update from May 26. Information on the content can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1342152' target='_blank'>post</a></html>.
