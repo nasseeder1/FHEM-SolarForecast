@@ -15,22 +15,3 @@
 #
 ################################################################################################################################
 
-1|SV|2
-1|DE|Am 13.05. wird mit dem Update das Major Release 1.52.0 ausgeliefert. Informationen zum Inhalt findest du in diesem <html><a href='https://forum.fhem.de/index.php?msg=1341315' target='_blank'>Forum Beitrag</a></html>.
-1|EN|The major release 1.52.0 will be delivered with the update on May 13. You can find information on the content in this <html><a href='https://forum.fhem.de/index.php?msg=1341315' target='_blank'>Forum Post</a></html>.
-
-2|SV|1
-2|DE|Die Gestaltung der Flußgrafik mit Batterie und nur einem Wechselrichter in der V1.52.0 wurde nach Meldungen aus der Community geändert. In diesem <html><a href='https://forum.fhem.de/index.php?msg=1341507' target='_blank'>Beitrag</a></html> ist Änderung zu sehen. Die V 1.52.1 wird am 14.05. im Update ausgeliefert.
-2|EN|The design of the flow graphic with battery and only one inverter in V1.52.0 has been changed following reports from the community. In this <html><a href='https://forum.fhem.de/index.php?msg=1341507' target='_blank'>post</a></html> you can see the change. V 1.52.1 will be delivered as an update on May 14.
-
-3|SV|1
-3|DE|Die Version V1.52.3 ab dem 18.05. enthält die neuen Schlüssel graphicControl->beamPaddingTop und graphicControl->beamPaddingBottom um Freiplatz über und unter den Balkendiagrammen realisieren zu können.
-3|EN|Version V1.52.3 from 18.05. contains the new keys graphicControl->beamPaddingTop and graphicControl->beamPaddingBottom to realize free space above and below the bar charts.
-
-4|SV|1
-4|DE|Die Version V1.52.4 ist ab dem 21.05. im Update enthalten. Infos zum Inhalt gibt es in diesem <html><a href='https://forum.fhem.de/index.php?msg=1342032' target='_blank'>Beitrag</a></html>.
-4|EN|Version V1.52.4 is included in the update from May 21. Information on the content can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1342032' target='_blank'>post</a></html>.
-
-5|SV|1
-5|DE|Die Version V1.52.5 ist ab dem 26.05. im Update enthalten. Infos zum Inhalt gibt es in diesem <html><a href='https://forum.fhem.de/index.php?msg=1342152' target='_blank'>Beitrag</a></html>.
-5|EN|Version V1.52.5 is included in the update from May 26. Information on the content can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1342152' target='_blank'>post</a></html>.
