@@ -16,3 +16,7 @@
 #  Link einfügen: <html><a href='xxx' target='_blank'>Beitrag</a></html>
 #
 ################################################################################################################################
+
+0|SV|1                   
+0|DE|Ab dem 22.06. wird die Version 1.52.16 im Update ausgeliefert. Details zu dieser Version entnehmt bitte diesem <html><a href='https://forum.fhem.de/index.php?msg=1343588' target='_blank'>Beitrag</a></html>.
+0|EN|From June 22nd, version 1.52.16 will be delivered as an update. Details about this version can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1343588' target='_blank'>post</a></html>.
