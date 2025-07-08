@@ -18,13 +18,9 @@
 ################################################################################################################################
 
 0|SV|1                   
-0|DE|Ab dem 29.06. wird das Minor Release 1.53.0 im Update ausgeliefert. Es enthält etliche Neuigkeiten und Änderungen. Details entnehmt bitte diesem html><a href='https://forum.fhem.de/index.php?msg=1343782' target='_blank'>Beitrag</a></html>.
-0|EN|The minor release 1.53.0 will be delivered as an update from June 29. It contains a number of new features and changes. Details can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1343782' target='_blank'>article</a></html>.
+0|DE|<b>Hinweis:</b> Mit der Version 1.53.0 wird das Reading Battery_ChargeUnrestricted_XX parallel zum Reading Battery_ChargeRecommended_XX erstellt. Das Reading Battery_ChargeRecommended_XX ist veraltet und wird in einer späteren Version mit Vorankündigung entfernt. Bitte stellt eure Skripte um!
+0|EN|<b>Note:</b> With version 1.53.0, the Battery_ChargeUnrestricted_XX reading is created in parallel with the Battery_ChargeRecommended_XX reading. The reading Battery_ChargeRecommended_XX is deprecated and will be removed in a later version with advance notice. Please change your scripts!
 
-1|SV|1                   
-1|DE|<b>Hinweis:</b> Mit der Version 1.53.0 wird das Reading Battery_ChargeUnrestricted_XX parallel zum Reading Battery_ChargeRecommended_XX erstellt. Das Reading Battery_ChargeRecommended_XX ist veraltet und wird in einer späteren Version mit Vorankündigung entfernt. Bitte stellt eure Skripte um!
-1|EN|<b>Note:</b> With version 1.53.0, the Battery_ChargeUnrestricted_XX reading is created in parallel with the Battery_ChargeRecommended_XX reading. The reading Battery_ChargeRecommended_XX is deprecated and will be removed in a later version with advance notice. Please change your scripts!
-
-2|SV|2
-2|DE|Für alle Nutzer des DWD_OpenData (Device) wird ab 06.07. ein wichtiges Update mit der Minor Version 1.54.0 ausgeliefert. Details in diesem <html><a href='https://forum.fhem.de/index.php?msg=1344210' target='_blank'>Beitrag</a></html>.
-2|EN|For all users of DWD_OpenData (Device) an important update with the minor version 1.54.0 will be delivered from July 6th. Details in this <html><a href='https://forum.fhem.de/index.php?msg=1344210' target='_blank'>article</a></html>.
+1|SV|2
+1|DE|Für alle Nutzer des DWD_OpenData (Device) wird ab 06.07. ein wichtiges Update mit der Minor Version 1.54.0 ausgeliefert. Details in diesem <html><a href='https://forum.fhem.de/index.php?msg=1344210' target='_blank'>Beitrag</a></html>.
+1|EN|For all users of DWD_OpenData (Device) an important update with the minor version 1.54.0 will be delivered from July 6th. Details in this <html><a href='https://forum.fhem.de/index.php?msg=1344210' target='_blank'>article</a></html>.
