@@ -24,3 +24,7 @@
 1|SV|2
 1|DE|Für alle Nutzer des DWD_OpenData (Device) wird ab 06.07. ein wichtiges Update mit der Minor Version 1.54.0 ausgeliefert. Details in diesem <html><a href='https://forum.fhem.de/index.php?msg=1344210' target='_blank'>Beitrag</a></html>.
 1|EN|For all users of DWD_OpenData (Device) an important update with the minor version 1.54.0 will be delivered from July 6th. Details in this <html><a href='https://forum.fhem.de/index.php?msg=1344210' target='_blank'>article</a></html>.
+
+2|SV|2
+2|DE|Ab dem 10.07. wird die Version 1.54.1 mit Bugfixes und Features ausgeliefert. Details in diesem <html><a href='https://forum.fhem.de/index.php?msg=1344575' target='_blank'>Beitrag</a></html>.
+2|EN|Version 1.54.1 with bug fixes and features will be delivered from July 10. Details in this <html><a href='https://forum.fhem.de/index.php?msg=1344575' target='_blank'>article</a></html>.
