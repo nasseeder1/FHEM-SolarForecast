@@ -21,7 +21,7 @@
 0|DE|<b>Hinweis:</b> Mit der Version 1.53.0 wird das Reading Battery_ChargeUnrestricted_XX parallel zum Reading Battery_ChargeRecommended_XX erstellt. Das Reading Battery_ChargeRecommended_XX ist veraltet und wird in einer späteren Version mit Vorankündigung entfernt. Bitte stellt eure Skripte um!
 0|EN|<b>Note:</b> With version 1.53.0, the Battery_ChargeUnrestricted_XX reading is created in parallel with the Battery_ChargeRecommended_XX reading. The reading Battery_ChargeRecommended_XX is deprecated and will be removed in a later version with advance notice. Please change your scripts!
 
-1|SV|1
-1|DE|Ab dem 04.08. wird die Version 1.54.7 im Update verteilt. Informationen zum Inhalt findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1345672' target='_blank'>Beitrag</a></html>.
-1|EN|Starting on August 4, version 1.54.7 will be distributed in the update. You can find information about the content in this <html><a href='https://forum.fhem.de/index.php?msg=1345672' target='_blank'>Post</a></html>.
+1|SV|2
+1|DE|Ab dem 07.08. wird die Version 1.55.0 im Update verteilt. Sie enthält ein wichtige Bufix zur V 1.54.7. Informationen zum Inhalt findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1345865' target='_blank'>Beitrag</a></html>.
+1|EN|Starting on August 4, version 1.54.7 will be distributed in the update. It contains an important fix for V 1.54.7. You can find information about the content in this <html><a href='https://forum.fhem.de/index.php?msg=1345865' target='_blank'>Post</a></html>.
 
