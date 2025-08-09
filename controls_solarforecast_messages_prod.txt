@@ -22,6 +22,10 @@
 0|EN|<b>Note:</b> With version 1.53.0, the Battery_ChargeUnrestricted_XX reading is created in parallel with the Battery_ChargeRecommended_XX reading. The reading Battery_ChargeRecommended_XX is deprecated and will be removed in a later version with advance notice. Please change your scripts!
 
 1|SV|2
-1|DE|Ab dem 07.08. wird die Version 1.55.0 im Update verteilt. Sie enthält ein wichtige Bufix zur V 1.54.7. Informationen zum Inhalt findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1345865' target='_blank'>Beitrag</a></html>.
+1|DE|Ab dem 07.08. wird die Version 1.55.0 im Update verteilt. Sie enthält einen wichtigen Bugfix zur V 1.54.7. Informationen zum Inhalt findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1345865' target='_blank'>Beitrag</a></html>.
 1|EN|Starting on August 4, version 1.54.7 will be distributed in the update. It contains an important fix for V 1.54.7. You can find information about the content in this <html><a href='https://forum.fhem.de/index.php?msg=1345865' target='_blank'>Post</a></html>.
+
+2|SV|1
+2|DE|Ab dem 10.08. erscheint die Version 1.57.0. Die Anzahl der möglichen Wechselrichter ist auf 5 erhöht. Weiterhin verfügt das Attribut 'graphicControl->scaleMode' über die neue Option 'staple'. Damit können die Balken im Diagramm 'gestapelt' dargestellt werden. Der primäre Balken wird unabhängig von seinem Wert immer unterhalb des sekundären Balkens platziert. Beide Balken erhalten die normierte Größe ihres jeweiligen Wertes.
+2|EN|Version 1.57.0 will be released on August 10. The number of possible inverters has been increased to 5. Furthermore, the attribute 'graphicControl->scaleMode' has a new option 'staple'. This allows the bars in the chart to be displayed 'stacked'. The primary bar is always placed below the secondary bar, regardless of its value. Both bars are given the normalized size of their respective values.
 
