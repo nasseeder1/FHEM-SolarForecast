@@ -21,5 +21,7 @@
 0|DE|<b>Hinweis:</b> Mit der Version 1.53.0 wird das Reading Battery_ChargeUnrestricted_XX parallel zum Reading Battery_ChargeRecommended_XX erstellt. Das Reading Battery_ChargeRecommended_XX ist veraltet und wird in einer späteren Version mit Vorankündigung entfernt. Bitte stellt eure Skripte um!
 0|EN|<b>Note:</b> With version 1.53.0, the Battery_ChargeUnrestricted_XX reading is created in parallel with the Battery_ChargeRecommended_XX reading. The reading Battery_ChargeRecommended_XX is deprecated and will be removed in a later version with advance notice. Please change your scripts!
 
-
+1|SV|1                   
+1|DE|Am 07.09. wird die Version 1.58.0 mit einem neuen Feature zur Batterieladung ausgeliefert. Weitere Infos in diesem <html><a href='https://forum.fhem.de/index.php?msg=1347500' target='_blank'>Beitrag</a></html>
+1|EN|On September 7, version 1.58.0 will be released with a new battery charging feature. Further information in this <html><a href='https://forum.fhem.de/index.php?msg=1347500' target='_blank'>Post</a></html>
 
