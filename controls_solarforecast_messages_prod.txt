@@ -25,3 +25,6 @@
 1|DE|Am 07.09. wird die Version 1.58.0 mit einem neuen Feature zur Batterieladung ausgeliefert. Weitere Infos in diesem <html><a href='https://forum.fhem.de/index.php?msg=1347500' target='_blank'>Beitrag</a></html>
 1|EN|On September 7, version 1.58.0 will be released with a new battery charging feature. Further information in this <html><a href='https://forum.fhem.de/index.php?msg=1347500' target='_blank'>Post</a></html>
 
+2|SV|1                   
+2|DE|Am 14.09. erscheint die Version 1.58.2. Sie enthält vor allem Fixes und Weiterentwicklungen des neuen Batterie Ladungsfeature in Version 1.58.0. 
+2|EN|Version 1.58.2 will be released on September 14. It mainly contains fixes and further developments of the new battery charging feature in version 1.58.0.
