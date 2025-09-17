@@ -28,3 +28,7 @@
 2|SV|1                   
 2|DE|Am 14.09. erscheint die Version 1.58.2. Sie enthält vor allem Fixes und Weiterentwicklungen des neuen Batterie Ladungsfeature in Version 1.58.0. 
 2|EN|Version 1.58.2 will be released on September 14. It mainly contains fixes and further developments of the new battery charging feature in version 1.58.0.
+
+3|SV|1                   
+3|DE|Am 18.09. erscheint die Version 1.58.3. Sie enthält weitere Verbesserungen des neuen Batterie Ladungsfeature in Version 1.58.0. 
+3|EN|Version 1.58.3 will be released on September 18. It includes further improvements to the new battery charging feature in version 1.58.0.
