@@ -22,5 +22,5 @@
 0|EN|<b>Note:</b> With version 1.53.0, the Battery_ChargeUnrestricted_XX reading is created in parallel with the Battery_ChargeRecommended_XX reading. The reading Battery_ChargeRecommended_XX is deprecated and will be removed in a later version with advance notice. Please change your scripts!
 
 1|SV|1                   
-1|DE|Am 24.09. erscheint die Version 1.58.4. Sie enthält weitere Verbesserungen des neuen Batterie Ladungsfeature in Version 1.58.0. 
-1|EN|Version 1.58.4 will be released on September 24. It includes further improvements to the new battery charging feature in version 1.58.0.
+1|DE|Am 25.09. erscheint die Version 1.58.5. Sie enthält weitere Verbesserungen des neuen Batterie Ladungsfeature in Version 1.58.0. 
+1|EN|Version 1.58.5 will be released on September 25. It includes further improvements to the new battery charging feature in version 1.58.0.
