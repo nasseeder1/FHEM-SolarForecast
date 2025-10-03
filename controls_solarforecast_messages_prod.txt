@@ -18,5 +18,9 @@
 ################################################################################################################################
 
 0|SV|2                   
-0|DE|<b>WICHTIG:</b> In der kommenden Version 1.58.6 wird das Reading Battery_ChargeRecommended_XX entfernt. Die Version erscheint voraussichtlich Anfang Oktober. Bitte ersetzt dieses Reading durch Battery_ChargeUnrestricted_XX in euren Skripten! 
-0|EN|<b>IMPORTANT:</b> In the upcoming version 1.58.6, the Reading Battery_ChargeRecommended_XX will be removed. The version is expected to be released in early October. Please replace this reading with Battery_ChargeUnrestricted_XX in your scripts!
+0|DE|<b>WICHTIG:</b> In der kommenden Version 1.58.6 wird das Reading Battery_ChargeRecommended_XX entfernt. Die Version erscheint am 04. Oktober. Bitte ersetzt dieses Reading durch Battery_ChargeUnrestricted_XX in euren Skripten! 
+0|EN|<b>IMPORTANT:</b> In the upcoming version 1.58.6, the Reading Battery_ChargeRecommended_XX will be removed. The version will be released on October 4. Please replace this reading with Battery_ChargeUnrestricted_XX in your scripts!
+
+1|SV|1
+1|DE|Informationen zur neuen Version 1.58.6 findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1348832' target='_blank'>Beitrag</a></html>.
+1|EN|Information about the new version 1.58.6 can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1348832' target='_blank'>Post</a></html>.
