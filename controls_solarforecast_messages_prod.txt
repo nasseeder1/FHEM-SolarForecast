@@ -18,7 +18,7 @@
 ################################################################################################################################
 
 0|SV|2                   
-0|DE|<b>WICHTIG:</b> In der kommenden Version 1.58.6 wird das Reading Battery_ChargeRecommended_XX entfernt. Die Version erscheint am 04. Oktober. Bitte ersetzt dieses Reading durch Battery_ChargeUnrestricted_XX in euren Skripten! 
+0|DE|<b>WICHTIG:</b> Ab der Version 1.58.6 wird das Reading Battery_ChargeRecommended_XX entfernt. Die Version erscheint am 04. Oktober. Bitte ersetzt dieses Reading durch Battery_ChargeUnrestricted_XX in euren Skripten! 
 0|EN|<b>IMPORTANT:</b> In the upcoming version 1.58.6, the Reading Battery_ChargeRecommended_XX will be removed. The version will be released on October 4. Please replace this reading with Battery_ChargeUnrestricted_XX in your scripts!
 
 1|SV|1
