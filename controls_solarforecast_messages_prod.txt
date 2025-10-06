@@ -24,3 +24,7 @@
 1|SV|1
 1|DE|Informationen zur neuen Version 1.58.6 findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1348832' target='_blank'>Beitrag</a></html>.
 1|EN|Information about the new version 1.58.6 can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1348832' target='_blank'>Post</a></html>.
+
+2|SV|3
+2|DE|Mit der Chrome Browser Engine 141 werden die Icons in der Flußgrafik nicht mehr dargestellt. Die Version 1.59.0 (ab 07.10.) ist mit Chromium >= 141 wieder kompatibel.
+2|EN|With Chrome Browser Engine 141, the icons are no longer displayed in the flow chart. Version 1.59.0 (as of October 7) is compatible with Chromium >= 141 again.
