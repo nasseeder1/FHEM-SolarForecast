@@ -17,14 +17,3 @@
 #
 ################################################################################################################################
 
-0|SV|2                   
-0|DE|<b>WICHTIG:</b> Ab der Version 1.58.6 wird das Reading Battery_ChargeRecommended_XX entfernt. Die Version erscheint am 04. Oktober. Bitte ersetzt dieses Reading durch Battery_ChargeUnrestricted_XX in euren Skripten! 
-0|EN|<b>IMPORTANT:</b> Starting with version 1.58.6 the Reading Battery_ChargeRecommended_XX will be removed. The version will be released on October 4. Please replace this reading with Battery_ChargeUnrestricted_XX in your scripts!
-
-1|SV|1
-1|DE|Informationen zur neuen Version 1.58.6 findet ihr in diesem <html><a href='https://forum.fhem.de/index.php?msg=1348832' target='_blank'>Beitrag</a></html>.
-1|EN|Information about the new version 1.58.6 can be found in this <html><a href='https://forum.fhem.de/index.php?msg=1348832' target='_blank'>Post</a></html>.
-
-2|SV|3
-2|DE|Mit der Chrome Browser Engine 141 werden die Icons in der Flußgrafik nicht mehr dargestellt. Die Version 1.59.0 (ab 07.10.) ist mit Chromium >= 141 wieder kompatibel.
-2|EN|With Chrome Browser Engine 141, the icons are no longer displayed in the flow chart. Version 1.59.0 (as of October 7) is compatible with Chromium >= 141 again.
