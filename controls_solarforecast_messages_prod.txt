@@ -17,3 +17,6 @@
 #
 ################################################################################################################################
 
+0|SV|1                   
+0|DE|Am 19.10. wird die Version 1.59.5 ausgeliefert und enthält vorrangig Weiterentwicklungen der Batteriesteuerung wie in diesem <html><a href='https://forum.fhem.de/index.php?msg=1349527' target='_blank'>Beitrag</a></html> zusammengefasst.
+0|EN|Version 1.59.5 will be released on October 19 and primarily contains further developments in battery control, as summarized in this <html><a href='https://forum.fhem.de/index.php?msg=1349527' target='_blank'>article</a></html>.
