@@ -18,5 +18,5 @@
 ################################################################################################################################
 
 0|SV|1                   
-0|DE|Am 02.11. wird das Minor Release 1.60.0 ausgeliefert. Information zu dieser Version enthält dieser diesem <html><a href='https://forum.fhem.de/index.php?topic=137058.msg1350224#msg1350224' target='_blank'>Beitrag</a></html>.
+0|DE|Am 02.11. wird das Minor Release 1.60.0 ausgeliefert. Information zu dieser Version enthält dieser <html><a href='https://forum.fhem.de/index.php?topic=137058.msg1350224#msg1350224' target='_blank'>Beitrag</a></html>.
 0|EN|Minor release 1.60.0 will be delivered on November 2. Information about this version can be found in this <html><a href='https://forum.fhem.de/index.php?topic=137058.msg1350224#msg1350224' target='_blank'>post</a></html>.
