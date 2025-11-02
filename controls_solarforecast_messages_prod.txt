@@ -20,3 +20,7 @@
 0|SV|1                   
 0|DE|Am 02.11. wird das Minor Release 1.60.0 ausgeliefert. Information zu dieser Version enthält dieser <html><a href='https://forum.fhem.de/index.php?topic=137058.msg1350224#msg1350224' target='_blank'>Beitrag</a></html>.
 0|EN|Minor release 1.60.0 will be delivered on November 2. Information about this version can be found in this <html><a href='https://forum.fhem.de/index.php?topic=137058.msg1350224#msg1350224' target='_blank'>post</a></html>.
+
+1|SV|1
+1|DE|Die Version 1.60.1 mit kleineren Code Änderungen zur V 1.60.0 wird am 03.11. im Update nach 08:00 Uhr vorliegen.
+1|EN|Version 1.60.1, which contains minor code changes to V 1.60.0, will be available on November 3 in the update after 8:00 a.m.
