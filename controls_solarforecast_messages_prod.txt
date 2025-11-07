@@ -24,3 +24,7 @@
 1|SV|1
 1|DE|Die Version 1.60.1 mit kleineren Code Änderungen zur V 1.60.0 wird am 03.11. im Update nach 08:00 Uhr vorliegen.
 1|EN|Version 1.60.1, which contains minor code changes to V 1.60.0, will be available on November 3 in the update after 8:00 a.m.
+
+2|SV|1
+2|DE|Ab der Version 1.60.3 gibt es einen neuen Parameter ctrlBatSocManagementXX->barrierSoC (ab 08.11.).
+2|EN|Starting with version 1.60.3, there is a new parameter ctrlBatSocManagementXX->barrierSoC (as of November 8).
