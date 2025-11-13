@@ -28,3 +28,8 @@
 2|SV|1
 2|DE|Ab der Version 1.60.3 gibt es einen neuen Parameter ctrlBatSocManagementXX->barrierSoC (ab 08.11.).
 2|EN|Starting with version 1.60.3, there is a new parameter ctrlBatSocManagementXX->barrierSoC (as of November 8).
+
+3|SV|1
+3|DE|Die Version 1.60.4 mit weiteren Fixes und Verbesserungen der Batteriesteuerung ist ab dem 13.11. in der Auslieferung.
+3|EN|Version 1.60.4 with further fixes and improvements to battery control will be available for delivery from November 13.
+
