@@ -25,4 +25,6 @@
 1|DE|Die Version 1.60.5 wird am 17.11. im Update nach 08:00 Uhr vorliegen. Es werden mehr Daten zur Vorbereitung einer Verbrauchsvorhersage-KI gesammelt.
 1|EN|Version 1.60.5 will be available on November 17 in the update after 8:00 a.m. More data will be collected to prepare a consumption prediction AI.
 
-
+2|SV|1
+2|DE|Die Version 1.60.6 mit kleineren Fixes bei Berechnung von special_todayConForecastTillSunset und Anrechnung des Verbrauchsprognose am kommenden Tag in der SOC-Steuerung erscheint am 19.11.
+2|EN|Version 1.60.6, featuring minor fixes for calculating special_todayConForecastTillSunset and crediting the consumption forecast for the following day in SOC control, will be released on November 19.
