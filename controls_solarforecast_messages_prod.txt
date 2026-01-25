@@ -16,3 +16,6 @@
 #  Link einfügen: <html><a href='xxx' target='_blank'>Beitrag</a></html>
 #
 ################################################################################################################################
+0|SV|1 
+0|DE|Ab 26.01. wird die Version 2.0.0 ausgeliefert. Sie enthält neben kleineren Fixes und Verbesserungen vor allem die Integration von AI::FANN für eine KI gestützte Verbrauchsprognose. Die Aktivierung und Nutzung dieser Möglichkeit ist optional. Weitere Informationen im <html><a href='https://wiki.fhem.de/wiki/SolarForecast_-_Solare_Prognose_(PV_Erzeugung)_und_Verbrauchersteuerung#Die_KI%E2%80%91Verbrauchsprognose_mit_AI::FANN_aktivieren_und_einstellen' target='_blank'>Wiki</a></html> 
+0|EN|Version 2.0.0 will be available from January 26. In addition to minor fixes and improvements, it primarily includes the integration of AI::FANN for AI-supported consumption forecasting. Activation and use of this option is optional. Further information can be found in the html><a href='https://wiki.fhem.de/wiki/SolarForecast_-_Solare_Prognose_(PV_Erzeugung)_und_Verbrauchersteuerung#Die_KI%E2%80%91Verbrauchsprognose_mit_AI::FANN_aktivieren_und_einstellen' target='_blank'>Wiki</a></html>
