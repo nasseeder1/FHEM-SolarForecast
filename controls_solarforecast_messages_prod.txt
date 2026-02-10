@@ -23,3 +23,7 @@
 1|SV|1 
 1|DE|Die Version 2.1.0 wird ab dem 09.02. ausgeliefert. Inhalt ist vor allem eine Neuberechnung der Abweichungen von PV und CO die sich vor allem in der Variante 'continuously' auswirkt.
 1|EN|Version 2.1.0 will be available from February 9. The main content is a recalculation of the deviations from PV and CO, which primarily affects the 'continuously' variant.
+
+2|SV|1 
+2|DE|Ab 11.02. wird die Version 2.1.1 mit der präzisieren Erstellung von diversen Summierungen veröffentlicht.
+2|EN|Starting February 11, version 2.1.1 will be released with more precise creation of various totals.
