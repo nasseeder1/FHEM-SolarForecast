@@ -16,3 +16,6 @@
 #  Link einfügen: <html><a href='xxx' target='_blank'>Beitrag</a></html>
 #
 ################################################################################################################################
+0|SV|1                   
+0|DE|Ab dem 21.03. erfolgt die Auslieferung der Version 2.4.0. Lese Informationen zu dem Release in diesem <html><a href='https://forum.fhem.de/index.php?msg=1359985' target='_blank'>Beitrag</a></html> 
+0|EN|Version 2.4.0 will be released starting March 21. Read more about the release in this <html><a href='https://forum.fhem.de/index.php?msg=1359985' target='_blank'>post</html>
