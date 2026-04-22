@@ -22,3 +22,6 @@
 1|SV|1                   
 1|DE|Ab dem 07.04. wird die Version 2.5.1 ab ca. 08:15 im Update ausgeliefert. Lese Informationen zu den Änderungen in diesem <html><a href='https://forum.fhem.de/index.php?msg=1361384' target='_blank'>Beitrag</a></html> 
 1|EN|Starting April 7, version 2.5.1 will be released via the update around 8:15 a.m. Read about the changes in this <html><a href='https://forum.fhem.de/index.php?msg=1361384' target='_blank'>post</a></html>
+1|SV|1                   
+1|DE|Ab dem 23.04. wird die Version 2.6.1 ab ca. 08:15 im Update ausgeliefert. Lese Informationen zu den Änderungen in diesem <html><a href='https://forum.fhem.de/index.php?msg=1362465' target='_blank'>Beitrag</a></html> 
+1|EN|Starting on April 23, version 2.6.1 will be available in the update section starting around 8:15 a.m. Read about the changes in this <html><a href='https://forum.fhem.de/index.php?msg=1362465' target='_blank'>post</a></html> 
