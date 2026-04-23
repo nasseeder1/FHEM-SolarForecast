@@ -22,6 +22,9 @@
 1|SV|1                   
 1|DE|Ab dem 07.04. wird die Version 2.5.1 ab ca. 08:15 im Update ausgeliefert. Lese Informationen zu den Änderungen in diesem <html><a href='https://forum.fhem.de/index.php?msg=1361384' target='_blank'>Beitrag</a></html> 
 1|EN|Starting April 7, version 2.5.1 will be released via the update around 8:15 a.m. Read about the changes in this <html><a href='https://forum.fhem.de/index.php?msg=1361384' target='_blank'>post</a></html>
-1|SV|1                   
-1|DE|Ab dem 23.04. wird die Version 2.6.1 ab ca. 08:15 im Update ausgeliefert. Lese Informationen zu den Änderungen in diesem <html><a href='https://forum.fhem.de/index.php?msg=1362465' target='_blank'>Beitrag</a></html> 
-1|EN|Starting on April 23, version 2.6.1 will be available in the update section starting around 8:15 a.m. Read about the changes in this <html><a href='https://forum.fhem.de/index.php?msg=1362465' target='_blank'>post</a></html> 
+2|SV|1                   
+2|DE|Ab dem 23.04. wird die Version 2.6.1 ab ca. 08:15 im Update ausgeliefert. Lese Informationen zu den Änderungen in diesem <html><a href='https://forum.fhem.de/index.php?msg=1362465' target='_blank'>Beitrag</a></html> 
+2|EN|Starting on April 23, version 2.6.1 will be available in the update section starting around 8:15 a.m. Read about the changes in this <html><a href='https://forum.fhem.de/index.php?msg=1362465' target='_blank'>post</a></html> 
+3|SV|1                   
+3|DE|Am 24.04. befindet sich die Version 2.6.2 im Update (ab ca. 08:15). Die Driftanalyse der KI FANN Verbrauchprognose ist verfeinert bzw. verbessert.   
+3|EN|Version 2.6.2 will be available in the update on April 24 (starting around 8:15 a.m.). The drift analysis for the AI FANN consumption forecast has been refined and improved.
