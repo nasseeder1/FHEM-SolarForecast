@@ -28,6 +28,9 @@
 3|SV|1                   
 3|DE|Am 24.04. befindet sich die Version 2.6.2 im Update (ab ca. 08:15). Die Driftanalyse der KI FANN Verbrauchprognose ist verfeinert bzw. verbessert.   
 3|EN|Version 2.6.2 will be available in the update on April 24 (starting around 8:15 a.m.). The drift analysis for the AI FANN consumption forecast has been refined and improved.
-4|SV|2                   
+4|SV|1                   
 4|DE|Mit dem Update auf Version 2.6.3 (ab 28.04. ca. 08:15) wird für MODEL=DWD die PV-Prognose im Grenzbereich des Sonnenuntergangs verbessert.   
 4|EN|With the update to version 2.6.3 (available from April 28 at approximately 8:15 a.m.), the PV forecast for MODEL=DWD will be improved around sunset.
+5|SV|1                   
+5|DE|Ab 02.05. ca. 08:15 wird mit V 2.6.4 die Berechnung der Abweichungen mit Konfidenz-Gewichtung, Time Gate und EWMA-Glättung mit dynamischem Alpha verbessert um störende Extreme am Tagesbeginn zu unterdrücken.  
+5|EN|Starting on May 2 at approximately 8:15 a.m., version 2.6.4 will improve the calculation of deviations using confidence weighting, time gates, and EWMA smoothing with dynamic alpha to suppress disruptive extremes at the start of the day.
