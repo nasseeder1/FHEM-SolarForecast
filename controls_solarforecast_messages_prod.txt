@@ -34,3 +34,6 @@
 5|SV|1                   
 5|DE|Ab 02.05. ca. 08:15 wird mit V 2.6.4 die Berechnung der Abweichungen mit Konfidenz-Gewichtung, Time Gate und EWMA-Glättung mit dynamischem Alpha verbessert um störende Extreme am Tagesbeginn zu unterdrücken.  
 5|EN|Starting on May 2 at approximately 8:15 a.m., version 2.6.4 will improve the calculation of deviations using confidence weighting, time gates, and EWMA smoothing with dynamic alpha to suppress disruptive extremes at the start of the day.
+6|SV|1                   
+6|DE|Update 04.05. ca. 08:15 - V 2.6.5: Fix 100%-Bug im Batteriemanagement, fix weekday Name-Bug in aiRawData    
+6|EN|Update May 4, approx. 8:15 a.m. - V 2.6.5: Fixed 100%-bug in battery management, fixed weekday name bug in aiRawData
