@@ -40,3 +40,7 @@
 7|SV|1                   
 7|DE|Update 12.05. ab ca. 08:15 - V 2.6.8: Fix in Flußgrafik, einige neue Features und Verbesserungen in der Verbrauchersteuerung (<html><a href='https://forum.fhem.de/index.php?msg=1363397' target='_blank'>Forum-Beitrag</a></html>)    
 7|EN|Update May 12, starting around 8:15 a.m. - V 2.6.8: Fix for flow graph, several new features, and improvements to load control (<html><a href='https://forum.fhem.de/index.php?msg=1363397' target='_blank'>Forum post</a></html>)
+8|SV|1 
+8|DE|Update 17.05. ab ca. 08:15 - V 2.6.9: erneuter Fix in Flußgrafik bzgl. Batteriefluß, ein dynamisches AI Drift Detect Fenster ist eingebaut, es gibt eine AI Retrain Empfehlung im Popup, AI Status Popup Inhalt ist aufklappbar und enthält mehr Erläuterungen für Kennwerte    
+8|EN|Update May 17, starting around 8:15 a.m. - V 2.6.9: Another fix has been applied to the current graph regarding battery current; a dynamic AI Drift Detect window has been added; a pop-up now displays an AI retrain recommendation; the AI status pop-up can be expanded and contains more detailed explanations of the parameters
+
