@@ -17,6 +17,6 @@
 #
 ################################################################################################################################
 1|SV|1 
-1|DE|Update 26.05. ab ca. 08:15 - V 2.6.10: einige Fixes und Ereiterungen bzgl. KI-Verbrauch und Nachrichtensystem. Lest weitere Informationen in diesem <html><a href='https://forum.fhem.de/index.php?msg=1363870' target='_blank'>Beitrag</a></html> 
+1|DE|Update 26.05. ab ca. 08:15 - V 2.6.10: einige Fixes und Erweiterungen bzgl. KI-Verbrauch und Nachrichtensystem. Lest weitere Informationen in diesem <html><a href='https://forum.fhem.de/index.php?msg=1363870' target='_blank'>Beitrag</a></html> 
 1|EN|Update May 26, starting around 8:15 a.m. - V 2.6.10: several fixes and improvements regarding AI consumption and the messaging system. Read more in this <html><a href='https://forum.fhem.de/index.php?msg=1363870' target='_blank'>post</a></html>
 
