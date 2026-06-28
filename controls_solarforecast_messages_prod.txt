@@ -17,8 +17,5 @@
 #
 ################################################################################################################################
 1|SV|1 
-1|DE|Update 26.05. ab ca. 08:15 - V 2.6.10: einige Fixes und Erweiterungen bzgl. KI-Verbrauch und Nachrichtensystem. Lest weitere Informationen in diesem <html><a href='https://forum.fhem.de/index.php?msg=1363870' target='_blank'>Beitrag</a></html> 
-1|EN|Update May 26, starting around 8:15 a.m. - V 2.6.10: several fixes and improvements regarding AI consumption and the messaging system. Read more in this <html><a href='https://forum.fhem.de/index.php?msg=1363870' target='_blank'>post</a></html>
-2|SV|1 
-2|DE|Update 28.05. ab ca. 08:15 - V 2.6.11: Verringerung der Logfrequenz bei Verbrauchslimitüberschreitung, siehe diesen <html><a href='https://forum.fhem.de/index.php?msg=1364193' target='_blank'>Beitrag</a></html> 
-2|EN|Update May 28, starting around 8:15 a.m. - V 2.6.11: Reduced logging frequency when usage limits are exceeded; see this <html><a href='https://forum.fhem.de/index.php?msg=1364193' target='_blank'>post</a></html>
+1|DE|In Kürze wird die Version 2.8.0 ausgeliefert. Es ist ein bedeutendes Update mit vielen Verbesserungen, Weiterentwicklungen und Anpassungen. In den meisten Fällen sollte das Update problemlos laufen. Dennoch ist es ratsam, sich vorab in diesem <html><a href='https://forum.fhem.de/index.php?msg=1365568' target='_blank'>Beitrag</a></html> über den Inhalt der Version 2.8.0 zu informieren.
+1|EN|Version 2.8.0 will be released shortly. It is a major update with many improvements, enhancements, and adjustments. In most cases, the update should go smoothly. However, it is advisable to read this <html><a href='https://forum.fhem.de/index.php?msg=1365568' target='_blank'>post</a></html> in advance to learn about the features of version 2.8.0.
