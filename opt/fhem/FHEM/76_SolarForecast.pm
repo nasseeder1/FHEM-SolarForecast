@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31184 2026-05-03 21:05:13Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31197 2026-05-09 06:54:06Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -162,7 +162,8 @@ BEGIN {
 }
 
 # Versions History intern
-my %vNotesIntern = ( 
+my %vNotesIntern = (
+  "2.6.7"  => "08.05.2026  __calcVectorConsumption: fix Doppelbatteriebug mit einem Batterieinverter Forum: https://forum.fhem.de/index.php?msg=1363211 ",
   "2.6.6"  => "07.05.2026  nicht mehr benötigten Code entfernt, writeToHistory, _saveHistP1 und _saveHistP2 refactored, ___doPlanning refactored ".
                            "Einbau consumerCacheDirty, ___setConsumerSwitchingState: lastOwnSwitchCmd eingebaut, ".
                            "BLINDTIME, REAPLANINTVL einegbaut, Anti-Toggling / Cycle-Budget: Verhindert dass mehrere starke Consumer im selben ".
@@ -15488,46 +15489,66 @@ return;
 sub __calcVectorConsumption {
   my $paref       = shift;
   my $name        = $paref->{name};
-  my $batout      = $paref->{batout};
-  my $batin       = $paref->{batin};
-  my $pv2bat      = $paref->{pv2bat};
-  my $pv2node     = $paref->{pv2node};
-  my $dc2inv2node = $paref->{dc2inv2node};
-  my $node2inv2dc = $paref->{node2inv2dc};
-  my $ppall       = $paref->{ppall};
-  my $gfeedin     = $paref->{gfeedin};
-  my $gcon        = $paref->{gcon};
+  my $batout      = $paref->{batout};                                                       # akt. Entladeleistung aller Batterien
+  my $batin       = $paref->{batin};                                                        # akt. Ladeleistung aller Batterien
+  my $pv2bat      = $paref->{pv2bat};                                                       # Direktladen PV nur in die Batterie (Solarlader)
+  my $pv2node     = $paref->{pv2node};                                                      # PV-Erzeugung Inverter an den Hausknoten
+  my $dc2inv2node = $paref->{dc2inv2node};                                                  # DC->AC: Speisung Inverter aus Batterie oder Solar-Ladegerät
+  my $node2inv2dc = $paref->{node2inv2dc};                                                  # AC->DC: Ladung Batterie aus Inverterknoten (PV- oder Hybrid-Wechselrichter)
+  my $ppall       = $paref->{ppall};                                                        # aktuelle Erzeuguung aller nicht PV-Producer
+  my $gfeedin     = $paref->{gfeedin};                                                      # vom Inverter-Knoten zum Grid
+  my $gcon        = $paref->{gcon};                                                         # GridConsumption
 
   my $vector;
   $vector->{batDischarge2HomeNode} = 0;
-  my $node2bat = 0;                                                                       # Verbindung Inv.Knoten <-> Batterie ((-) Bat -> Knoten, (+) Knoten -> Bat)
+  my $node2bat = 0;                                                                         # Verbindung Inv.Knoten <-> Batterie ((-) Bat -> Knoten, (+) Knoten -> Bat)
   my $bat2home = 0;
 
   ## Vectorverbrauch
   ####################
-  if ($batout || $batin) {                                                                # Batterie wird geladen oder entladen
-      $node2bat = ($batin - $batout) - $pv2bat + $dc2inv2node - $node2inv2dc;             # positiv: Richtung Inverter Knoten -> Bat, negativ: Richtung Bat -> Inverter Knoten
-      $node2bat = 0 if(($dc2inv2node || $node2inv2dc) && $node2bat != 0);
+  if ($batout || $batin) {                                                                  # Batterie wird geladen oder entladen
+      $node2bat = ($batin - $batout) - $pv2bat + $dc2inv2node - $node2inv2dc;               # positiv: Richtung Inverter-Knoten -> Bat, negativ: Richtung Bat -> Inverter-Knoten
 
-      if ($node2bat < 0 && !$dc2inv2node && !$pv2bat) {                                   # Batterieentladung direkt ins Hausnetz wenn kein Batterie- / Hybridwechselrichter und kein Batterieladegerät aktiv
+      if ($node2bat > 0) {
+          if ($dc2inv2node || $node2inv2dc || $pv2bat) {                                    # Messartefakt (Zeitversatz AC/DC) nur wenn Batterie-Pfad-Variablen aktiv.
+              $node2bat = 0;
+          }
+      }
+
+      if ($node2bat < 0 && !$batout) {
+          $node2bat = 0;                                                                    # neg. Messartefakt beim Laden
+      }
+      elsif ($node2bat < 0) {                                                               # echte Direktentladung ins Haus
           $bat2home = abs $node2bat;
           $node2bat = 0;
           $vector->{batDischarge2HomeNode} = 1;
       }
   }
   else {
-      $node2bat  = $dc2inv2node - $pv2bat;                                                # falls Batterie Idle und Smartloader arbeitet
-      $node2bat  = 0 if($dc2inv2node && $node2bat > 0);                                   # muß negativ (0) sein: Richtung Bat -> Inv.Knoten,  wichtig zur Festlegung Richtung und Inv. Knoten Summierung
+      $node2bat = $dc2inv2node - $pv2bat;                                                   # falls Batterie Idle und Smartloader arbeitet
+      $node2bat = 0 if($dc2inv2node && $node2bat > 0);                                      # muß negativ (0) sein: Richtung Bat -> Inv.Knoten,  wichtig zur Festlegung Richtung und Inv. Knoten Summierung
+  }
+  
+  if ($node2bat > 0) {
+      # Messversatz nur wenn mindestens eine Batterie-Pfad-Variable aktiv:
+      # - dc2inv2node: Hybrid-Wechselrichter entlädt (Zeitversatz AC/DC-Messung)
+      # - node2inv2dc: Wechselrichter lädt (Zeitversatz AC/DC-Messung)
+      # - pv2bat:      Solarladegerät (separater DC-Pfad, nicht über Knoten)
+      # Wenn alle null: direktes Bat-Setup (z.B. Enphase, Zendure) →
+      # node2bat ist echter Ladefluss aus dem Knoten → kein Clamp!
+      if ($dc2inv2node || $node2inv2dc || $pv2bat) {
+          $node2bat = 0;
+      }
   }
 
-  my $pnodesum  = $ppall + $pv2node + $dc2inv2node - $node2inv2dc;                        # Erzeugung Summe im Inverter-Knoten
-  $pnodesum    += $node2bat < 0 ? abs $node2bat : 0;                                      # z.B. Batterie ist voll und SolarLader liefert an Knoten
+  my $pnodesum  = $ppall + $pv2node + $dc2inv2node - $node2inv2dc;                          # Erzeugung Summe im Inverter-Knoten
+  $pnodesum    += $node2bat < 0 ? abs $node2bat : 0;                                        # z.B. Batterie ist voll und SolarLader liefert an Knoten
   $pnodesum     = __normDecPlaces ($pnodesum);
 
-  my $node2home = $pnodesum - $gfeedin - ($node2bat > 0 ? $node2bat : 0);                 # Energiefluß vom Knoten zum Haus
+  my $node2home = $pnodesum - $gfeedin - ($node2bat > 0 ? $node2bat : 0);                   # Energiefluß vom Knoten zum Haus
   $node2home    = __normDecPlaces ($node2home);
 
-  $vector->{vectorconsumption} = round0 ($gcon + $node2home + $bat2home);                 # V 1.52.0 Anpassung Consumption wegen Verlustleistungsdifferenzen
+  $vector->{vectorconsumption} = round0 ($gcon + $node2home + $bat2home);                   # V 1.52.0 Anpassung Consumption wegen Verlustleistungsdifferenzen
 
   ## Linearverbrauch
   ####################
@@ -15692,6 +15713,7 @@ sub __queryConsumerActiveState {
   my $c     = $paref->{consumer};
   my $cname = $paref->{cname};
   my $ctype = $paref->{ctype};
+  my $nolog = $paref->{nolog} // 0;                                                             # Logausgabe unterdrücken (z.B. bei Grafik)
   
   my $cactive = 0;
   
@@ -15708,11 +15730,10 @@ sub __queryConsumerActiveState {
       
       $data{$name}{consumers}{$c}{mode} = 'mustNot' if(!$cactive);                              # Planungen verbieten wenn Consumer deaktiviert
       
-      debugLog ($paref, 'collectData', "BEV - id=".(defined $evid ? $evid : 'undef')." -> consumer=$c activated=$cactive");   
+      debugLog ($paref, 'collectData', "BEV - id=".(defined $evid ? $evid : 'undef')." -> consumer=$c activated=$cactive") if(!$nolog);   
   }
   else {
-      $cactive = 1;                                                                             # default 1=active
-      debugLog ($paref, 'collectData', "consumer=$c activated=$cactive"); 
+      $cactive = 1;                                                                             # default 1=active  
   }
 
 return $cactive;
@@ -16167,7 +16188,6 @@ sub __planInitialSwitchTime {
   }
 
   if ($debug =~ /consumerPlanning/x) {
-      #Log3 ($name, 1, qq{$name DEBUG> ############### consumerPlanning consumer "$c" ############### });
       Log3 ($name, 1, qq{$name DEBUG> Planning consumer "$c" - name=$cname alias=$calias activated=$cactive});
   }
   
@@ -20976,6 +20996,7 @@ sub _graphicConsumerLegend {
                                                    cname    => ConsumerVal ($name, $c, 'name',       ''),
                                                    ctype    => ConsumerVal ($name, $c, 'type', DEFCTYPE),
                                                    debug    => $debug,
+                                                   nolog    => 1,
                                                  } 
                                                );                                                   # Consumer aktiviert?
 
@@ -22334,11 +22355,11 @@ sub _flowGraphic {
       $pdcr->{$lfn}{pgen}      = $pvout;                                                                        # aktuelleLeistung aus PV-Erzeugung
       $pdcr->{$lfn}{pdc2ac}    = $pdc2ac;                                                                       # aktuelle Leistung DC->AC
       $pdcr->{$lfn}{pac2dc}    = $pac2dc;                                                                       # aktuelle Leistung AC->DC
-      $pv2node                += $pvout  if($ifeed eq 'default' && $isource eq 'pv');                           # PV-Erzeugung Inverter für das Hausnetz
+      $pv2node                += $pvout  if($ifeed eq 'default' && $isource eq 'pv');                           # PV-Erzeugung Inverter an den Hausknoten
       $pv2grid                += $pvout  if($ifeed eq 'grid'    && $isource eq 'pv');                           # PV nur für das öffentliche Netz
       $pv2bat                 += $pvout  if($ifeed eq 'bat'     && $isource eq 'pv');                           # Direktladen PV nur in die Batterie
-      $dc2inv2node            += $pdc2ac if($ifeed eq 'hybrid' || ($ifeed eq 'default' && $isource eq 'bat'));  # DC->AC / Speisung Inverter aus Batterie / Solar-Ladegerät statt PV
-      $node2inv2dc            += $pac2dc if($ifeed eq 'hybrid' || ($ifeed eq 'default' && $isource eq 'bat'));  # AC->DC (Batterie- oder Hybrid-Wechselrichter)
+      $dc2inv2node            += $pdc2ac if($ifeed eq 'hybrid' || ($ifeed eq 'default' && $isource eq 'bat'));  # DC->AC: Speisung Inverter aus Batterie oder Solar-Ladegerät
+      $node2inv2dc            += $pac2dc if($ifeed eq 'hybrid' || ($ifeed eq 'default' && $isource eq 'bat'));  # AC->DC: Ladung Batterie aus Inverterknoten (PV- oder Hybrid-Wechselrichter)
 
       $lfn++;
   }
@@ -31643,6 +31664,7 @@ sub isConsumerNoshow {
                                                cname    => ConsumerVal ($name, $c, 'name',       ''),
                                                ctype    => ConsumerVal ($name, $c, 'type', DEFCTYPE),
                                                debug    => $debug,
+                                               nolog    => 1,
                                              } 
                                            );                                           # Consumer aktiviert?
                                            
@@ -39184,7 +39206,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                       </td><td>Der return Wert muß im Erfolgsfall 'wahr' sein.                                                                                                    </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>swprio</b>         </td><td>Legt die Einplanungs- und Schaltreihenfolgepriorität fest (optional). Mit dem Wert '0' folgt die Priorität der Verbraucher-Nummer.                 </td></tr>
-            <tr><td>                       </td><td>Der Wert '100' kennzeichnet die höchste Priorität. Die Reihenfolge von Verbrauchern mit gleicher Priorität erfolgt der Verbraucher-Nummerierung.   </td></tr>
+            <tr><td>                       </td><td>Der Wert '100' kennzeichnet die höchste Priorität. Die Reihenfolge von Verbrauchern mit gleicher Priorität folgt der Verbraucher-Nummerierung.     </td></tr>
             <tr><td>                       </td><td>Wert: <b>0..100</b>, default: 0                                                                                                                    </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>surpmeth</b>       </td><td>Die möglichen Werte legen das Verfahren zur Ermittlung des PV-Überschusses fest:                                                                   </td></tr>
