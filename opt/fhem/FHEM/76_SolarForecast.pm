@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31087 2026-04-06 22:11:12Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31171 2026-05-01 18:25:44Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -163,6 +163,15 @@ BEGIN {
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.6.5"  => "03.05.2026  _batChargeMgmt Refactored: Äußere Stundenschleife -> Innere Batterieschleife, Fix 100%-Bug ".
+                           "wichtiger Bugfix weekday in LOCALE_DAYNAMES, Debug consumerPlanning angepasst ".
+                           "Speicherung von bevcsmBatCapXX und bevcsmPwrXX in pvHistory und aiRawData ",
+  "2.6.4"  => "01.05.2026  _calcTodayDeviation: prozentuale Abweichung von Tageswerten mit Konfidenz-Gewichtung, Clipping & ".
+                           "exponentielles Glätten EWMA -> verhindert Sprünge durch einen gleitenden Mittelwert über die letzten ".
+                           "Berechnungen, Routine ___areaFactorTrack entfernt ",
+  "2.6.3"  => "27.04.2026  Debug apiProcess: Anzeige ob ein Cached Wert verwendet wird bei 'DWD API Tilted' ".
+                           "__calcSunPosition: Korrektur für Randstunden, __getDWDSolarData: Korrektur DWD rad1h-Reading ",
+  "2.6.2"  => "23.04.2026  aiFannDetectDrift: Änderung der Driftanalyse ",
   "2.6.1"  => "22.04.2026  neues Debug: miniCache, replace separate Mini Caches by one Multi_Cache, LRU Cache for timestringToTimestamp ".
                            "Mini Caches FmtWeatherCache / cloud2bin / sunalt2bin / temp2bin / isHoliday ", 
   "2.6.0"  => "16.04.2026  new ___computeTiltedIrradianceCached: implement new tilted irradiance calc for DWD ".
@@ -319,12 +328,14 @@ my %vNotesIntern = (
 
 
 
-# Locale‑abhängige Kurz‑Wochentage erzeugen (Mo, Tue, lun., …)
+# Locale-abhängige Kurz-Wochentage erzeugen (Mo, Tue, lun., …)
 my @LOCALE_DAYNAMES;
 
-for my $wday (0..6) {                                                               # 1970-01-04 war ein Sonntag -> wday=0
-    my $epoch = 345600 + $wday * 86400;                                             # 1970-01-04 + wday Tage
-    push @LOCALE_DAYNAMES, POSIX::strftime("%a", localtime($epoch));                # in Konstante speichern
+my $sunday_epoch = 3 * 86400;  # 259200                                             # 1970-01-04 00:00:00 UTC war ein Sonntag -> wday = 0
+
+for my $wday (0..6) {
+    my $epoch = $sunday_epoch + $wday * 86400;
+    push @LOCALE_DAYNAMES, POSIX::strftime("%a", localtime($epoch));
 }
 
 ## Konstanten
@@ -430,7 +441,7 @@ use constant {
   LAGTIME         => 1800,                                                          # Nachlaufzeit relativ zu Sunset bis Sperrung API Abruf
   LOGDELAY        => 600,                                                           # Verzögerungszeit (s) zwischen zwei Logausgaben mit identischen Inhalt
   LOCALE_TIME     => setlocale (POSIX::LC_TIME),                                    # installierte locale abfragen
-  LOCALE_DAYNAMES => \@LOCALE_DAYNAMES,                                             # Locale‑abhängige Kurz‑Wochentage erzeugen (Mo, Tue, lun., …)
+  LOCALE_DAYNAMES => \@LOCALE_DAYNAMES,                                             # Locale-abhängige Kurz-Wochentage erzeugen (Mo, Tue, lun., …)
   
   MAXWEATHERDEV   => 3,                                                             # max. Anzahl Wetter Devices (Attr setupWeatherDevX)
   MAXBATTERIES    => 3,                                                             # maximale Anzahl der möglichen Batterien
@@ -1093,6 +1104,10 @@ my %hqtxt = (                                                                # H
               DE => qq{von extern umgeschaltet}                                                                             },
   legimp => { EN => qq{Legend Importance: 1 - general Message, 2 - important Message, 3 - Error or Problem},
               DE => qq{Legende Wichtigkeit: 1 - allgemeine Mitteilung, 2 - wichtige Mitteilung, 3 - Fehler oder Problem}    },
+  rmpcon => { EN => qq{the deviation increases proportionally and is fully weighted after <RAMP> hours starting at midnight},
+              DE => qq{die Abweichung wird proportional steigend und nach <RAMP> Stunden ab Mitternacht voll gewichtet}     },  
+  ramppv => { EN => qq{The deviation is weighted proportionally as the daylight phase begins\nand becomes fully effective <RAMP> hours after sunrise},
+              DE => qq{die Abweichung wird mit Beginn der Tageslichtphase proportional hochgewichtet\nund ist nach <RAMP> Stunden ab Sonnenaufgang voll wirksam}                             },  
   strok  => { EN => qq{Congratulations &#128522;, the system configuration is error-free. Please note any information (<I>).},
               DE => qq{Herzlichen Glückwunsch &#128522;, die Anlagenkonfiguration ist fehlerfrei. Bitte eventuelle Hinweise (<I>) beachten.}                                                 },
   strwn  => { EN => qq{Looks quite good &#128528;, the system configuration is basically OK. Please note the warnings (<W>).},
@@ -1653,7 +1668,17 @@ my %hfspvh = (
       $hfspvh{'bevcsmTargSoC'.$cn}{fn}       = \&_saveHistP2;                   # BEV Ziel-SoC
       $hfspvh{'bevcsmTargSoC'.$cn}{storname} = 'bevcsmTargSoC'.$cn;
       $hfspvh{'bevcsmTargSoC'.$cn}{validkey} = undef;
-      $hfspvh{'bevcsmTargSoC'.$cn}{fpar}     = undef;       
+      $hfspvh{'bevcsmTargSoC'.$cn}{fpar}     = undef;
+      
+      $hfspvh{'bevcsmBatCap'.$cn}{fn}        = \&_saveHistP2;                   # BEV Batteriekapazität
+      $hfspvh{'bevcsmBatCap'.$cn}{storname}  = 'bevcsmBatCap'.$cn;
+      $hfspvh{'bevcsmBatCap'.$cn}{validkey}  = undef;
+      $hfspvh{'bevcsmBatCap'.$cn}{fpar}      = undef;  
+
+      $hfspvh{'bevcsmPwr'.$cn}{fn}       = \&_saveHistP2;                       # BEV aktuelle Ladeleistung
+      $hfspvh{'bevcsmPwr'.$cn}{storname} = 'bevcsmPwr'.$cn;
+      $hfspvh{'bevcsmPwr'.$cn}{validkey} = undef;
+      $hfspvh{'bevcsmPwr'.$cn}{fpar}     = undef;       
   }
 
   for my $pn (1..MAXPRODUCER) {
@@ -4647,8 +4672,8 @@ sub __getDWDSolarData {
       my $dtpart   = "$ddate $dt->{hour}";                                                          # Logging <date> <hour>
       my $hod      = sprintf "%02d", ($dt->{hour} + 1);                                             # abzurufende Hour of Day
 
-      my $runh = int $dt->{hour};                                                                   # Stunde für DWD Reading    
-      my $rad  = ReadingsVal ($raname, "fc${fd}_${runh}_Rad1h", '0.00');                            # Rad1h = Absolute Globalstrahlung letzte 1 Stunde, kJ/m2
+      my $runh = int ($dt->{hour} +1 );                                                             # V 2.6.3 - Korrektur Stunde für DWD Reading    
+      my $rad  = ReadingsVal ($raname, "fc${fd}_${runh}_Rad1h", '0.00');                            # Rad1h = Absolute Globalstrahlung letzte 1 Stunde (z.B. 7 für 6), kJ/m2
 
       if ($runh == 12 && !$rad) {
           $ret = "The reading 'fc${fd}_${runh}_Rad1h' does not appear to be present or has an unusual value.\nRun 'set $name plantConfiguration check' for further information.";
@@ -4659,11 +4684,8 @@ sub __getDWDSolarData {
       else {
           debugLog ($paref, "apiCall", "DWD API - got data -> starttime: $dtpart, reading: fc${fd}_${runh}_Rad1h, rad: $rad kJ/m2");
       }
-
-      #my $cafd = 'trackFlex';                                                                       # Art der Flächenfaktor Berechnung ()
-      my $cafd = 'tiltedCached'; 
       
-      my ($af, $G_tilt, $pv, $sdr);
+      my ($af, $G_tilt, $pv, $sdr, $cv);
       
       for my $string (@strings) {                                                                   # für jeden String der Config ..
           my $ti   = StringVal ($name, $string, 'tilt',   undef);                                   # Neigungswinkel Solarmodule
@@ -4681,52 +4703,25 @@ sub __getDWDSolarData {
           $peak *= 1000;                                                                            # kWp in Wp umrechnen
           $az    = azSolar2Astro ($az);                                                             # Konvertiert Azimut der Solar-Konvention in die astronomische Konvention
 
-          if ($cafd eq 'trackFlex') {                                                               # Flächenfaktor Sonnenstand geführt
-              ($af, $sdr) = ___areaFactorTrack ( { name    => $name,
-                                                   date    => $date,                                # aktuelles Datum "YYYY-MM-DD"
-                                                   dday    => $dday,
-                                                   ddate   => $ddate,                               # abzurufendes Datum
-                                                   chour   => $paref->{chour},
-                                                   hod     => $hod,
-                                                   debug   => $debug,
-                                                   tilt    => $ti,
-                                                   azimut  => $az,
-                                                   num     => $num,
-                                                 }
-                                               );
-
-              my $dirrad = $rad * $sdr;                                                             # Anteil Direktstrahlung an Globalstrahlung
-              my $difrad = $rad - $dirrad;                                                          # Anteil Diffusstrahlung an Globalstrahlung
-
-              $pv = (($dirrad * $af) + $difrad) * KJ2KWH * $peak * PRDEF;                           # Rad wird in kW/m2 erwartet
-              $pv = round1 ($pv);
-          
-              if ($debug =~ /apiProcess/x) {           
-                  Log3 ($name, 1, qq{$name DEBUG> DWD API - PV estimate String >$string< => $dtpart, rad=$rad, direct share=$dirrad, diffuse share=$difrad});
-                  Log3 ($name, 1, qq{$name DEBUG> DWD API - PV estimate String >$string< => $dtpart, pv=$pv Wh, AF=$af, dirfac=$sdr});
-              }
-          }
-          else {                                                                                    # es gilt 𝑃eff = peak*𝐺tilt/1000 * Faktor
-              $G_tilt = ___computeTiltedIrradianceCached ( { name    => $name,
-                                                             date    => $date,                      # aktuelles Datum "YYYY-MM-DD"
-                                                             num     => $num,
-                                                             dday    => $dday,
-                                                             ddate   => $ddate,                     # abzurufendes Datum
-                                                             dofyear => $dofyear,
-                                                             chour   => $paref->{chour},
-                                                             hod     => $hod,
-                                                             debug   => $debug,
-                                                             tilt    => $ti,
-                                                             azimut  => $az,
-                                                             rad     => $rad,
-                                                           }
-                                                         ); 
+          ($G_tilt, $cv) = ___computeTiltedIrradianceCached ( { name    => $name,
+                                                                date    => $date,                   # aktuelles Datum "YYYY-MM-DD"
+                                                                num     => $num,
+                                                                dday    => $dday,
+                                                                ddate   => $ddate,                  # abzurufendes Datum
+                                                                dofyear => $dofyear,
+                                                                chour   => $paref->{chour},
+                                                                hod     => $hod,
+                                                                debug   => $debug,
+                                                                tilt    => $ti,
+                                                                azimut  => $az,
+                                                                rad     => $rad,
+                                                              }
+                                                            ); 
                                                                                                     # --- Peakleistung bedeutet: Bei 1000 W/m² Einstrahlung liefert der String seine Peakleistung                                                                 
-              $pv = ($G_tilt / 1000) * $peak * PRDEF;                                               # es gilt 𝑃eff = peak * 𝐺tilt/1000 * Faktor -> peak in W, G_tilt in W/m²
-              $pv = round1 ($pv);
-              
-              debugLog ($paref, 'apiProcess', "DWD API Tilted - PV estimate String >$string< => $dtpart, rad=$rad, P_tilt=$G_tilt W/m2, pv=$pv Wh");
-          }
+          $pv = ($G_tilt / 1000) * $peak * PRDEF;                                                   # es gilt 𝑃eff = peak * 𝐺tilt/1000 * Faktor -> peak in W, G_tilt in W/m²
+          $pv = round1 ($pv);
+          
+          debugLog ($paref, 'apiProcess', "DWD API Tilted - PV estimate String >$string< => $dtpart, rad=$rad, Cache=$cv, P_tilt=$G_tilt W/m2, pv=$pv Wh");
           
           # --- Daten speichern
           $data{$name}{solcastapi}{'?All'}{$dateTime}{Rad1h}          = round0 ($rad);
@@ -4791,13 +4786,17 @@ sub ___computeTiltedIrradianceCached {
   
   #debugLog ($paref, 'apiProcess', "DWD API Tilted - num=$num, dday=$dday, chour=$chour, hod=$hod, nhtstr=$nhtstr, rel=$rel");
 
-  if (!defined $sunalt || !defined $sunaz || $sunalt <= 0) {
+  if (!defined $sunalt || !defined $sunaz) {
       if (!defined $sunalt || !defined $sunaz) {
-          debugLog ($paref, 'apiProcess', "DWD API - day=$dday hod=$hod -> 
-                                           Value of sunaz/sunalt not stored in Nexthours or pvHistory, workaround using G_tilt=0");
+          debugLog ($paref, 'apiProcess', "DWD API Tilted - day=$dday hod=$hod -> "
+                                         ."Value of sunaz/sunalt not stored in Nexthours or pvHistory, workaround using G_tilt=0");
+      }
+      elsif ($sunalt <= 0) {
+          debugLog ($paref, 'apiProcess', "DWD API Tilted - day=$dday hod=$hod -> "
+                                         ."sunalt=$sunalt (sun below horizon for full hour), G_tilt=0");
       }
                                        
-      return 0;
+      return (0, 0);
   }
   
   my $cache_key = join '::', 'TILTIRR',                                         # Cache Key ID
@@ -4825,7 +4824,7 @@ sub ___computeTiltedIrradianceCached {
   my $cached = LRU_get ($name, $cache, $cache_key);
 
   if (defined $cached) {
-      return $cached;
+      return ($cached, 1);
   }
 
   # --- Neuberechnung
@@ -4834,7 +4833,7 @@ sub ___computeTiltedIrradianceCached {
   my $pi  = 4 * atan2 (1,1);                                                    # klassischer Perl-Trick, um π (Pi) mathematisch exakt zu berechnen – ohne es als feste Zahl einzutragen
   my $deg = $pi / 180.0;
 
-  return 0 if(!defined ($sg) || $sg <= 0);
+  return (0, 0) if(!defined ($sg) || $sg <= 0);
 
   my $sunaz_r  = $sunaz    * $deg;
   my $sunalt_r = $sunalt   * $deg;
@@ -4843,12 +4842,12 @@ sub ___computeTiltedIrradianceCached {
   my $sin_ele  = sin ($sunalt_r);
   my $cos_ele  = cos ($sunalt_r);
 
-  return 0 if($sin_ele <= 0.0);
+  return (0, 0) if($sin_ele < 0.01);                                            # entspricht ca. 0.57° Sonnenstand
 
   my $I0n = SOLARCONSTANT * (1.0 + 0.033 * cos (2.0 * $pi * $dofyear / 365.0));
   my $I0h = $I0n * $sin_ele;
   
-  return 0 if($I0h <= 0.0);
+  return (0, 0) if($I0h <= 0.0);
 
   my $Kt = $sg / $I0h;
   $Kt    = max (0.0, min (1.0, $Kt));                                           # Kt (Clear-Sky-Index), Clamping wichtig
@@ -4920,92 +4919,10 @@ sub ___computeTiltedIrradianceCached {
   $G_tilt = round2 ($G_tilt);
   
   if ($G_tilt > 0) {
-      LRU_insert ($name, $cache, $cache_key, $G_tilt);                          # neuen Eintrag einfügenund LRU aktualisieren
+      LRU_insert ($name, $cache, $cache_key, $G_tilt);                          # neuen Eintrag einfügen und LRU aktualisieren
   }                                     
 
-return $G_tilt;                                                                 # effektive Einstrahlung $G_tilt auf die PV-Anlage in W/m² 
-}
-
-##########################################################################################################
-#  Flächenfaktor Photovoltaik und Direktstrahlungsanteilsfaktor in Abhängigkeit des Sonnenstandes
-#
-#  Die Globalstrahlung  (Summe aus diffuser und direkter Sonnenstrahlung)
-#  ----------------------------------------------------------------------
-#  Die Globalstrahlung ist die am Boden von einer horizontalen Ebene empfangene Sonnenstrahlung
-#  und setzt sich aus der direkten Strahlung (der Schatten werfenden Strahlung) und der
-#  gestreuten Sonnenstrahlung (diffuse Himmelsstrahlung) aus der Himmelshalbkugel zusammen.
-#  Bei Sonnenhöhen von mehr als 50° und wolkenlosem Himmel besteht die Globalstrahlung zu ca. 3/4
-#  aus direkter Sonnenstrahlung, bei tiefen Sonnenständen (bis etwa 10°) nur noch zu ca. 1/3.
-#
-#  Direktstrahlung = Globalstrahlung * 0.75   (bei >  50° sunalt)
-#  Direktstrahlung = Globalstrahlung * 0.33   (bei <= 10° sunalt)
-#
-#  Quelle: https://www.dwd.de/DE/leistungen/solarenergie/globalstrahlung.html?nn=16102&lsbId=416798
-#
-#  Return:
-#  $daf - direct Area Faktor für den Anteil Direktstrahlung der Globalstrahlung
-#  $sdr - Share of direct radiation = Faktor Anteil Direktstrahlung an Globalstrahlung (0.33 .. 0.75)
-#
-##########################################################################################################
-sub ___areaFactorTrack {
-  my $paref    = shift;
-  my $name     = $paref->{name};
-  my $date     = $paref->{date};                                                # aktuelles Datum "YYYY-MM-DD"
-  my $dday     = $paref->{dday};                                                # abzufragender Tag: 01 .. 31
-  my $ddate    = $paref->{ddate};                                               # abzurufendes Datum
-  my $chour    = $paref->{chour};                                               # aktuelle Stunde (00 .. 23)
-  my $hod      = $paref->{hod};                                                 # abzufragende Stunde des Tages 01, 02 ... 24
-  my $str_tilt = $paref->{tilt};                                                # String Anstellwinkel / Neigung
-  my $str_azi  = $paref->{azimut};                                              # String Ausrichtung / Azimut
-  my $num      = $paref->{num};
-
-  my ($sunalt, $sunaz, $nhtstr);
-
-  my $is_today = ($ddate eq $date);
-  my $rel      = $num - $chour;
-  
-  if ($is_today) {
-      $sunalt = HistoryVal ($name, $dday, $hod, 'sunalt', undef);               # Sonne Höhe (Altitude)
-      $sunaz  = HistoryVal ($name, $dday, $hod, 'sunaz',  undef);               # Sonne Azimuth     
-  }
-  else {
-      $nhtstr = sprintf 'NextHour%02d', $rel;
-      $sunalt = NexthoursVal ($name, $nhtstr, 'sunalt', undef);
-      $sunaz  = NexthoursVal ($name, $nhtstr, 'sunaz',  undef);
-  }
-
-  if (!defined $sunalt || !defined $sunaz) {
-      debugLog ($paref, "apiProcess", "DWD API - hod: $hod -> Value of sunaz/sunalt not stored in pvHistory, workaround using 1.00/0.75");
-      return (1.00, 0.75);
-  }
-
-  my $pi180 = 0.0174532918889;                                                  # PI/180
-
-  #-- Normale der Anlage (Nordrichtung = y-Achse, Ostrichtung = x-Achse)
-  my $nz = cos ($str_tilt * $pi180);
-  my $ny = sin ($str_tilt * $pi180) * cos ($str_azi * $pi180);
-  my $nx = sin ($str_tilt * $pi180) * sin ($str_azi * $pi180);
-
-  #-- Vektor zur Sonne
-  my $sz = sin ($sunalt * $pi180);
-  my $sy = cos ($sunalt * $pi180) * cos ($sunaz * $pi180);
-  my $sx = cos ($sunalt * $pi180) * sin ($sunaz * $pi180);
-
-  #-- Normale N = ($nx,$ny,$nz) Richtung Sonne S = ($sx,$sy,$sz)
-  my $daf = $nx * $sx + $ny * $sy + $nz * $sz;
-  $daf    = max ($daf, 0);
-
-  ## Schätzung Anteil Direktstrahlung an Globalstrahlung
-  ########################################################
-  my $drif = 0.0105;                                                                        # Faktor Zunahme Direktstrahlung pro Grad sunalt von 10° bis 50°
-  my $sdr  = $sunalt <= 10                  ? 0.33                             :            # Share of direct radiation = Faktor Anteil Direktstrahlung an Globalstrahlung (0.33 .. 0.75)
-             $sunalt >  10 && $sunalt <= 50 ? (($sunalt - 10) * 0.0105) + 0.33 :
-             0.75;
-             
-  $daf = round2 ($daf);
-  $sdr = round2 ($sdr);
-
-return ($daf, $sdr);
+return ($G_tilt, 0);                                                            # effektive Einstrahlung $G_tilt auf die PV-Anlage in W/m² 
 }
 
 ####################################################################################################
@@ -6946,8 +6863,11 @@ sub __getaiFannState {            ## no critic "not used"
 
   my ($rs, $prepared, $rdy, $cause);
   
+  my $aiAlpha = 1;
+  
   if ($fanntyp eq 'con') {
       ($prepared, $rdy, $cause) = _aiFannConModelReady ($name);
+      $aiAlpha                  = CurrentVal ($name, 'aiConAlpha', 1);                      # eingestellte Gewichtung AI
   }
   
   if (!$prepared || (!$rdy && $cause !~ /Training\sonly/xs)) {
@@ -7054,6 +6974,7 @@ sub __getaiFannState {            ## no critic "not used"
   $ars     = '<b>'.$hqtxt{airest}{$lang}.'</b> '.$ars;
   $atf     = '<b>'.$hqtxt{ailatr}{$lang}.'</b> '.($atf ? (timestampToTimestring ($name, $atf, $lang))[0] : '-');
   $agt     = '<b>'.$hqtxt{ailgrt}{$lang}.'</b> '.($agt ? ($agt * 1000).' ms' : '-');
+  $aiAlpha = '<b>Alpha:</b> '.$aiAlpha;
   $hpinst  = '<b>'.$hqtxt{vbnrhp}{$lang}.': </b> '.$hpinst;
 
   # Modellparameter
@@ -7123,6 +7044,7 @@ sub __getaiFannState {            ## no critic "not used"
   $rs .= $atf.' / '.$art."\n";
   $rs .= $ars."\n";
   $rs .= $agt."\n";
+  $rs .= $aiAlpha."\n";
   $rs .= $hpinst;
   $rs .= "\n\n";
   $rs .= $model."\n";
@@ -10976,7 +10898,7 @@ sub centralTask {
   _transferBatteryValues      ($centpars);                                            # Batteriewerte einsammeln
   _transferEnvironmentValues  ($centpars);                                            # Umweltsensorik einsammeln
   _transferHolidayValues      ($centpars);                                            # Wochentage, Feiertage und Urlaubstage einsammeln
-  
+    
   $data{$name}{circular}{99}{last_transfer} = $t;                                     # Zeit des letzten Transfers
   
   _batSocTarget               ($centpars);                                            # Batterie Optimum Ziel SOC berechnen
@@ -11002,7 +10924,7 @@ sub centralTask {
     
   setTimeTracking             ($name, $cst, 'runTimeCentralTask');                    # Zyklus-Laufzeit ermitteln
   _readSystemMessages         ($centpars);                                            # Notification System - System Messages zusammenstellen
-
+  
   if ($debug =~ /miniCache/xs) {                                                      # Mini Cache Inhalt ausgeben 
       MC_debug ($name) if(askLogtime ($name, 'Dummy_Entry', 300));
   }
@@ -11885,8 +11807,8 @@ sub __calcSunPosition {
   my ($az, $alt);
   
   eval {                                                                                                    # statt Astro_Get geht auch FHEM::Astro::Get
-      $az  = round0 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAz',  $tstr));
-      $alt = round0 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $tstr));
+      $az  = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAz',  $tstr));
+      $alt = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $tstr));
       1;
   } or do {
       my $err = "process error while reading sun position: $@";
@@ -11894,6 +11816,40 @@ sub __calcSunPosition {
       Log3 ($name, 1, "$name - ERROR - $err");
       return;                                                                                               # Abbruch weil WICHTIGE Daten fehlen
   };
+  
+  #--------------------------------------------------------------------
+  # Korrektur für Randstunden (Sonnenauf-/-untergang):
+  # Liegt Sonne bei :30 unter dem Horizont, das tatsächlich beleuchtete
+  # Teilfenster innerhalb der Stunde suchen und dessen Mittelpunkt nutzen.
+  #--------------------------------------------------------------------
+  if ($alt <= 0) {
+      my @lit_mins;
+
+      for my $min (5, 15, 25, 35, 45, 55) {
+          my $t_probe   = sprintf '%s %02d:%02d:00', $dstr, $hh, $min;
+          my $alt_probe = eval { FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $t_probe) } // -90;
+          
+          push @lit_mins, $min if($alt_probe > 0);
+      }
+
+      if (@lit_mins) {                                                                                      # Mittelpunkt des beleuchteten Fensters [erstes .. letztes Treffer-Sample]
+          my $mid_min = int (($lit_mins[0] + $lit_mins[-1]) / 2 + 0.5);
+          $tstr       = sprintf '%s %02d:%02d:00', $dstr, $hh, $mid_min;
+
+          debugLog ($paref, 'collectData_long',
+              "Sun position corrected for twilight hour: hod=$hod, "
+             ."lit_mins=[@lit_mins], effective_mid=$mid_min");
+
+          eval {
+              $az  = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAz',  $tstr));
+              $alt = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $tstr));
+              1;
+          } or do {
+              Log3 ($name, 2, "$name - WARNING - Could not get corrected sun position for $tstr");          # $az/$alt behalten die ursprünglichen :30-Werte (alt <= 0)
+          };                                                                                                # -> ___computeTiltedIrradianceCached gibt (0,0) zurück
+      }
+  }
+
 
   $data{$name}{nexthours}{$nhtstr}{sunaz}  = $az;
   $data{$name}{nexthours}{$nhtstr}{sunalt} = $alt;
@@ -14065,314 +14021,427 @@ return round2 ($sf);
 
 ################################################################
 #       Erstellung Batterie Ladefreigabe + SoC Prognose
+#  Refactored: Äußere Stundenschleife → Innere Batterieschleife
+#  Die wesentlichen strukturellen Änderungen:
+#  - Alle batteriespezifischen Zustandsvariablen in %batstate ausgelagert
+#  - $sf per Stunden-Snapshot über alle Batterien gleichzeitig und fair berechnet
+#  - Debug-Initialisierung vor die Stundenschleife gezogen
 ################################################################
 sub _batChargeMgmt {
   my $paref  = shift;
   my $name   = $paref->{name};
   my $day    = $paref->{day};
   my $chour  = $paref->{chour};
-  my $minute = $paref->{minute};                                                                 # aktuelle Minute (00-59)
+  my $minute = $paref->{minute};                                                                    # aktuelle Minute (00-59)
   my $t      = $paref->{t};
 
   return if(!isBatteryUsed ($name));
 
-  my $hash      = $defs{$name};
-  my $pvCu      = ReadingsNum ($name, 'Current_PV',               0);                            # aktuelle PV Erzeugung
-  my $curcon    = ReadingsNum ($name, 'Current_Consumption',      0);                            # aktueller Verbrauch
-  my $feedinlim = CurrentVal  ($name, 'feedinPowerLimit',  INFINITE);                            # Einspeiselimit in W
-  my $bpin      = CurrentVal  ($name, 'batpowerinsum',            0);                            # aktuelle Batterie Ladeleistung (Summe über alle Batterien)
-  my $gfeedin   = CurrentVal  ($name, 'gridfeedin',               0);                            # aktuelle Netzeinspeisung
-  my $inplim    = 0;
+  my $hash       = $defs{$name};
+  my $hsurp      = {};                                                                              # Hashreferenz Überschuß
+  my $hsoc       = {};                                                                              # Hashreferenz Prognose-SOC über alle Batterien
+  my $trans      = {};                                                                              # Referenz Übertrags-Hash
+  my $values     = {};                                                                              # Hashreferenz
+  my $batinitval = {};                                                                              # Hashref der initialen batterieabhängigen Werte
 
-  my $tdaysset  = CurrentVal ($name, 'sunsetTodayTs', $t);                                       # Timestamp Sonneuntergang am aktuellen Tag
-  my $hs2sunset = round2 (($tdaysset - $t) / 3600);                                              # Rest-Stunden bis Sonnenuntergang
-
-  my $hsurp  = {};                                                                               # Hashreferenz Überschuß
-  my $hsoc   = {};                                                                               # Hashreferenz Prognose-SOC über alle Batterien
-  my $trans  = {};                                                                               # Referenz Übertrags-Hash
-  my $values = {};                                                                               # Hashreferenz
   my ($progsoc, $strategy);
 
-  ## Inverter Limits ermitteln
-  ##############################
-  for my $in (1..MAXINVERTER) {
-      $in       = sprintf "%02d", $in;
-      my $iname = InverterVal ($name, $in, 'iname', '');
-      next if(!$iname);
+  ## Werte initial einlesen
+  ###########################
+  my $pvCu      = ReadingsNum ($name, 'Current_PV',               0);                               # aktuelle PV Erzeugung
+  my $curcon    = ReadingsNum ($name, 'Current_Consumption',      0);                               # aktueller Verbrauch
+  my $feedinlim = CurrentVal  ($name, 'feedinPowerLimit',  INFINITE);                               # Einspeiselimit in W
+  my $bpin      = CurrentVal  ($name, 'batpowerinsum',            0);                               # aktuelle Batterie Ladeleistung (Summe über alle Batterien)
+  my $gfeedin   = CurrentVal  ($name, 'gridfeedin',               0);                               # aktuelle Netzeinspeisung
+  my $bcapsum   = CurrentVal  ($name, 'batcapsum',                0);                               # gesamte installierte Bat-Kapazität
 
-      my $feed = InverterVal ($name, $in, 'ifeed', 'default');
-      next if($feed eq 'grid');                                                                    # Inverter 'Grid' ausschließen
-
-      my $icap  = InverterVal ($name, $in, 'invertercap', 0);
-      my $limit = InverterVal ($name, $in, 'ilimit',    100);                                      # Wirkleistungsbegrenzung  (default keine Begrenzung)
-      my $aplim = $icap * $limit / 100;
-      $inplim  += $aplim;                                                                          # max. Leistung aller WR mit Berücksichtigung Wirkleistungsbegrenzung
-
-      debugLog ($paref, 'batteryManagement', "ChargeMgmt - Inverter '$iname' cap: $icap W, Power limit: $limit % -> Pmax eff: $aplim W");
-  }
+  my $tdaysset  = CurrentVal ($name, 'sunsetTodayTs', $t);                                          # Timestamp Sonneuntergang am aktuellen Tag
+  my $hs2sunset = round2 (($tdaysset - $t) / 3600);                                                 # Rest-Stunden bis Sonnenuntergang
+  my $inplim    = __inverterLimits4Bats ($paref);
 
   debugLog ($paref, 'batteryManagement', "ChargeMgmt - Summary Power limit of all Inverter (except feed 'grid'): $inplim W");
   debugLog ($paref, 'batteryManagement', "ChargeMgmt - The limit for grid feed-in is: $feedinlim W");
 
-  ## Schleife über alle Batterien
-  #################################
-  for my $bn (1..MAXBATTERIES) {                                                                   # für jede Batterie
+
+  # --- Hilfshash mit initialen batterieabhängigen Werten erstellen
+  for my $bn (1..MAXBATTERIES) {
       $bn = sprintf "%02d", $bn;
 
       my ($err, $badev, $h) = isDeviceValid ( { name => $name, obj => 'setupBatteryDev'.$bn, method => 'attr' } );
       next if($err);
 
-      my $batinstcap = BatteryVal ($name, $bn, 'binstcap', 0);                                     # installierte Batteriekapazität Wh
+      my $batinstcap = BatteryVal ($name, $bn, 'binstcap', 0);
 
       if (!$inplim || !$batinstcap) {
           debugLog ($paref, 'batteryManagement', "WARNING - The requirements for dynamic battery charge recommendation for Bat '$bn' are not met. Check key 'cap'. Go to Next.");
           next;
       }
 
-      my $rodpvfc     = ReadingsNum ($name, 'RestOfDayPVforecast',           0);                   # PV Prognose Rest des Tages
-      my $tompvfc     = ReadingsNum ($name, 'Tomorrow_PVforecast',           0);                   # PV Prognose nächster Tag
-      my $tomconfc    = ReadingsNum ($name, 'Tomorrow_CONforecast',          0);                   # Verbrauchsprognose nächster Tag
-      my $batoptsoc   = ReadingsNum ($name, 'Battery_OptimumTargetSoC_'.$bn, 0);                   # aktueller optimierter SoC in %
-      my $confcss     = CurrentVal  ($name, 'tdConFcTillSunset',             0);                   # Verbrauchsprognose bis Sonnenuntergang
-      my $csoc        = BatteryVal  ($name, $bn, 'bcharge',                  0);                   # aktuelle Ladung in %
-      my $csocwh      = BatteryVal  ($name, $bn, 'bchargewh',                0);                   # aktuelle Ladung in Wh
-      my $bpinmax     = BatteryVal  ($name, $bn, 'bpinmax',           INFINITE);                   # max. mögliche Ladeleistung W
-      my $bpoutmax    = BatteryVal  ($name, $bn, 'bpoutmax',          INFINITE);                   # max. mögliche Entladeleistung W
-      my $bpowerin    = BatteryVal  ($name, $bn, 'bpowerin',          INFINITE);                   # aktuelle Ladeleistung W
-      my $bpinreduced = BatteryVal  ($name, $bn, 'bpinreduced',              0);                   # Standardwert bei <=lowSoC -> Anforderungsladung vom Grid
-      my $befficiency = BatteryVal  ($name, $bn, 'befficiency', STOREFFDEF) / 100;                 # Speicherwirkungsgrad
-      my $cgbt        = AttrVal     ($name, 'ctrlBatSocManagement'.$bn,  undef);
-      my $sf          = __batDeficitShareFactor ($name, $bn);                                      # V 1.59.5 Anteilsfaktor Ladungsdefizit
-      $strategy       = 'loadRelease';                                                             # 'loadRelease', 'optPower', 'smartPower'
-      my $wou         = 0;                                                                         # Gewichtung Prognose-Verbrauch als Anteil "Eigennutzung" (https://forum.fhem.de/index.php?msg=1348429)
-      my $lowSoc      = 0;
-      my $barrierSoc  = 0;
-      my $loadAbort   = '';
-      my $goalwh      = $batinstcap;                                                               # initiales Ladeziel (Wh)
-      my $lrMargin    = SFTYMARGIN_50;
-      my $otpMargin   = SFTYMARGIN_20;
+      my $sf = __batDeficitShareFactor ($name, $bn);                                                        # V 1.59.5 Anteilsfaktor Ladungsdefizit
+
+      $batinitval->{$bn}{sf}             = $sf;
+      $batinitval->{$bn}{batinstcap}     = $batinstcap;
+      $batinitval->{$bn}{batoptsoc}      = ReadingsNum ($name, 'Battery_OptimumTargetSoC_'.$bn, 0);         # aktueller optimierter SoC in %
+      $batinitval->{$bn}{bcharge}        = BatteryVal  ($name, $bn, 'bcharge',                  0);         # aktuelle Ladung in %
+      $batinitval->{$bn}{bchargewh}      = BatteryVal  ($name, $bn, 'bchargewh',                0);         # aktuelle Ladung in Wh
+      $batinitval->{$bn}{bpinmax}        = BatteryVal  ($name, $bn, 'bpinmax',           INFINITE);         # max. mögliche Ladeleistung W
+      $batinitval->{$bn}{bpoutmax}       = BatteryVal  ($name, $bn, 'bpoutmax',          INFINITE);         # max. mögliche Entladeleistung W
+      $batinitval->{$bn}{bpowerin}       = BatteryVal  ($name, $bn, 'bpowerin',          INFINITE);         # aktuelle Ladeleistung W
+      $batinitval->{$bn}{bpinreduced}    = BatteryVal  ($name, $bn, 'bpinreduced',              0);         # Standardwert bei <=lowSoC -> Anforderungsladung vom Grid
+      $batinitval->{$bn}{befficiency}    = BatteryVal  ($name, $bn, 'befficiency', STOREFFDEF) / 100;       # Speicherwirkungsgrad
+      $batinitval->{$bn}{goalwh}         = $batinstcap;
+      $batinitval->{$bn}{lrMargin}       = SFTYMARGIN_50;
+      $batinitval->{$bn}{otpMargin}      = SFTYMARGIN_20;
+
+      # --- RAW (unskaliert) speichern
+      $batinitval->{$bn}{confcss_raw}    = CurrentVal  ($name, 'tdConFcTillSunset',     0);                 # Verbrauchsprognose bis Sonnenuntergang
+      $batinitval->{$bn}{rodpvfc_raw}    = ReadingsNum ($name, 'RestOfDayPVforecast',   0);                 # PV Prognose Rest des Tages
+      $batinitval->{$bn}{tompvfc_raw}    = ReadingsNum ($name, 'Tomorrow_PVforecast',   0);                 # PV Prognose nächster Tag
+      $batinitval->{$bn}{tomconfc_raw}   = ReadingsNum ($name, 'Tomorrow_CONforecast',  0);                 # Verbrauchsprognose nächster Tag
+      $batinitval->{$bn}{datompvfc_raw}  = CurrentVal  ($name, 'dayAfterTomorrowPVfc',  0);                 # PV Prognose übernächster Tag
+      $batinitval->{$bn}{datomconfc_raw} = CurrentVal  ($name, 'dayAfterTomorrowConfc', 0);                 # Verbrauchsprognose übernächster Tag
+  }
+
+  ## Per-Batterie Zustandsvariablen initialisieren
+  ##################################################
+  my %batstate;
+
+  for my $bn (1..MAXBATTERIES) {
+      $bn = sprintf "%02d", $bn;
+      next if(!exists $batinitval->{$bn});
+
+      my $sf         = $batinitval->{$bn}{sf};
+      my $batinstcap = $batinitval->{$bn}{batinstcap};
+      my $batoptsoc  = $batinitval->{$bn}{batoptsoc};
+      my $csoc       = $batinitval->{$bn}{bcharge};
+      my $csocwh     = $batinitval->{$bn}{bchargewh};
+      my $lrMargin   = $batinitval->{$bn}{lrMargin};
+      my $otpMargin  = $batinitval->{$bn}{otpMargin};
+      my $goalwh     = $batinitval->{$bn}{goalwh};
+      my $cgbt       = AttrVal ($name, 'ctrlBatSocManagement'.$bn, undef);
+
+      my $strat      = 'loadRelease';
+      my $wou        = 0;
+      my $lowSoc     = 0;
+      my $barrierSoc = 0;
+      my $loadAbort  = '';
+
       my ($lcslot, $barrierPar, $timeTarget);
 
       if ($cgbt) {
           my $parsed  = __parseAttrBatSoc ($name, $cgbt);
-          $lowSoc     = $parsed->{lowSoc}       // 0;
-          $barrierSoc = $parsed->{barrierSoc}   // $barrierSoc;                                    # SoC-Barriere, ab der die Ladesteuerung akitv sein soll
-          $barrierPar = $parsed->{barrierPar};                                                     # Aktionsparameter innerhalb der SoC Barriere
+          $lowSoc     = $parsed->{lowSoc}       // $lowSoc;
+          $barrierSoc = $parsed->{barrierSoc}   // $barrierSoc;                                 # SoC-Barriere, ab der die Ladesteuerung akitv sein soll
+          $barrierPar = $parsed->{barrierPar};                                                  # Aktionsparameter innerhalb der SoC Barriere
           $lcslot     = $parsed->{lcslot};
           $loadAbort  = $parsed->{loadAbort};
-          $lrMargin   = $parsed->{lrMargin}     // $lrMargin;                                      # Sicherheitszuschlag LR (%)
-          $otpMargin  = $parsed->{otpMargin}    // $otpMargin;                                     # Sicherheitszuschlag OTP (%)
-          $strategy   = $parsed->{loadStrategy} // $strategy;
-          $wou        = $parsed->{weightOwnUse} // $wou;
-          $timeTarget = $parsed->{timeTarget};                                                     # Uhrzeit (volle Stunde) wann Ladeziel erreicht sein soll
-          my $tgt     = $parsed->{loadTarget}   // 100;                                            # Ladeziel-SoC in %
-          $tgt        = max ($tgt, $batoptsoc);                                                    # höheren Wert aus Ziel und optimalen SoC verwenden
-          $goalwh     = round0 (___batSocPercentToWh ($batinstcap, $tgt));                         # Ladeziel-SoC in Wh
+          $lrMargin   = $parsed->{lrMargin}     // $lrMargin;                                   # Sicherheitszuschlag LR (%)
+          $otpMargin  = $parsed->{otpMargin}    // $otpMargin;                                  # Sicherheitszuschlag OTP (%)
+          $strat      = $parsed->{loadStrategy} // $strat;                                      # 'loadRelease', 'optPower', 'smartPower'
+          $wou        = $parsed->{weightOwnUse} // $wou;                                        # Gewichtung Prognose-Verbrauch als Anteil "Eigennutzung" (https://forum.fhem.de/index.php?msg=1348429)
+          $timeTarget = $parsed->{timeTarget};                                                  # Uhrzeit (volle Stunde) wann Ladeziel erreicht sein soll
+          my $tgt     = $parsed->{loadTarget}   // 100;                                         # Ladeziel-SoC in %
+          $tgt        = max ($tgt, $batoptsoc);                                                 # höheren Wert aus Ziel und optimalen SoC verwenden
+          $goalwh     = round0 (___batSocPercentToWh ($batinstcap, $tgt));                      # Ladeziel-SoC in Wh
       }
 
+      my $batoptsocwh  = ___batSocPercentToWh ($batinstcap, $batoptsoc);                        # optimaler SoC in Wh
       my $barrierSocWh = round0 (___batSocPercentToWh ($batinstcap, $barrierSoc));
-      my $goalpercent  = round0 (___batSocWhToPercent ($batinstcap, $goalwh));                     # Ladeziel in %
+      my $goalpercent  = round0 (___batSocWhToPercent ($batinstcap, $goalwh));                  # Ladeziel in %
+      my $lowSocwh     = ___batSocPercentToWh ($batinstcap, $lowSoc);                           # lowSoC in Wh
+      my $socwh        = round0 (___batSocPercentToWh ($batinstcap, $csoc));                    # aktueller SoC in Wh
 
-      if (defined $timeTarget && $timeTarget < 0) {                                                # Ladezielzeit relativ zum Sonnenuntergang
+      if (defined $timeTarget && $timeTarget < 0) {                                             # Ladezielzeit relativ zum Sonnenuntergang
           my $dt      = timestringsFromOffset ($name, $tdaysset, $timeTarget * 3600);
-          $timeTarget = int ($dt->{hour});                                                         # Uhrzeit ohne führende 0
+          $timeTarget = int ($dt->{hour});                                                      # Uhrzeit ohne führende 0
       }
 
-      ## generelle Ladeabbruchbedingung evaluieren
-      ##############################################
-      if ($loadAbort) {
-          my ($abortSoc, $abortpin, $releaseSoC) = split ':', $loadAbort;                          # Ladeabbruch Forum: https://forum.fhem.de/index.php?msg=1342556
-
+      # --- Ladeabbruchbedingung evaluieren
+      if ($loadAbort) {                                                                         # Ladeabbruch Forum: https://forum.fhem.de/index.php?msg=1342556
+          my ($abortSoc, $abortpin, $releaseSoC) = split ':', $loadAbort;
           $releaseSoC //= $abortSoc;
-
-          if    ($csoc >= $abortSoc && $bpowerin <= $abortpin) { $data{$name}{batteries}{$bn}{bloadAbortCond} = 1; }
-          elsif ($csoc < $releaseSoC)                          { $data{$name}{batteries}{$bn}{bloadAbortCond} = 0; }
+          if    ($csoc >= $abortSoc && $batinitval->{$bn}{bpowerin} <= $abortpin) { $data{$name}{batteries}{$bn}{bloadAbortCond} = 1; }
+          elsif ($csoc < $releaseSoC)                                             { $data{$name}{batteries}{$bn}{bloadAbortCond} = 0; }
       }
       else {
           delete $data{$name}{batteries}{$bn}{bloadAbortCond};
           readingsDelete ($hash, 'Battery_ChargeAbort_'.$bn);
       }
 
-      my $labortCond  = BatteryVal ($name, $bn, 'bloadAbortCond', 0);                             # Ladeabbruchbedingung gesetzt 1 oder nicht 0
-      my $batoptsocwh = ___batSocPercentToWh ($batinstcap, $batoptsoc);                           # optimaler SoC in Wh
-      my $lowSocwh    = ___batSocPercentToWh ($batinstcap, $lowSoc);                              # lowSoC in Wh
-      my $socwh       = round0 (___batSocPercentToWh ($batinstcap, $csoc));                       # aktueller SoC in Wh
+      my $labortCond = BatteryVal ($name, $bn, 'bloadAbortCond', 0);                            # Ladeabbruchbedingung gesetzt 1 oder nicht 0
 
-      my $whneed      = max (0, ($goalwh - $socwh));
-
-      ## Zeitfenster für aktives Lademanagement ermitteln
-      #####################################################
-      $lcslot             //= '00:00-23:59';
+      $lcslot //= '00:00-23:59';
       my ($lcstart, $lcend) = split "-", $lcslot;
 
-      # Debuglog allgemein
-      ######################
+      my $confcss_raw  = $batinitval->{$bn}{confcss_raw};
+      my $rodpvfc_raw  = $batinitval->{$bn}{rodpvfc_raw};
+      my $tompvfc_raw  = $batinitval->{$bn}{tompvfc_raw};
+      my $tomconfc_raw = $batinitval->{$bn}{tomconfc_raw};
+
+      # Zustandshash befüllen
+      $batstate{$bn} = {
+          # --- konstante Parameter
+          batinstcap   => $batinstcap,
+          batoptsoc    => $batoptsoc,
+          batoptsocwh  => $batoptsocwh,
+          bpinmax      => $batinitval->{$bn}{bpinmax},
+          bpoutmax     => $batinitval->{$bn}{bpoutmax},
+          bpinreduced  => $batinitval->{$bn}{bpinreduced},
+          befficiency  => $batinitval->{$bn}{befficiency},
+          csoc         => $csoc,
+          csocwh       => $csocwh,
+          lowSocwh     => $lowSocwh,
+          barrierSocWh => $barrierSocWh,
+          barrierPar   => $barrierPar,
+          goalpercent  => $goalpercent,
+          goalwh       => $goalwh,                                                          # initiales Ladeziel (Wh)
+          lrMargin     => $lrMargin,
+          otpMargin    => $otpMargin,
+          strategy     => $strat,                                                           # 'loadRelease', 'optPower', 'smartPower'
+          wou          => $wou,                                                             # Gewichtung Prognose-Verbrauch als Anteil "Eigennutzung" (https://forum.fhem.de/index.php?msg=1348429)
+          cgbt         => $cgbt,
+          lcstart      => $lcstart,
+          lcend        => $lcend,
+          timeTarget   => $timeTarget,
+          loadAbort    => $loadAbort,
+          labortCond   => $labortCond,
+          
+          # --- laufende Zustandsvariablen
+          sf           => $sf,
+          sf_con_init  => __batLoadShareFactor ($name, $bn),                                # sf_con Fallback
+          socwh        => $socwh,
+          whneed       => max (0, $goalwh - $socwh),
+                    
+          # --- Akkumulatoren initial mit sf_con skalieren
+          confcss      => round0 (__batLoadShareFactor ($name, $bn) * $confcss_raw),
+          tomconfc     => round0 (__batLoadShareFactor ($name, $bn) * $tomconfc_raw),
+          
+          # --- PV-Akkumulatoren mit sf_charge
+          rodpvfc      => round0 ($sf * $rodpvfc_raw),
+          tompvfc      => round0 ($sf * $tompvfc_raw),
+          
+          # --- Rohwerte (für Resync)
+          confcss_raw  => $confcss_raw,
+          rodpvfc_raw  => $rodpvfc_raw,
+          tompvfc_raw  => $tompvfc_raw,
+          tomconfc_raw => $tomconfc_raw,
+          
+          # --- verbrauchte Rohwerte
+          confcss_spent  => 0,
+          rodpvfc_spent  => 0,
+          tompvfc_spent  => 0,
+          tomconfc_spent => 0,
+      };
+
+      # --- Debuglog allgemein (einmalig vor Stundenschleife)
       if ($paref->{debug} =~ /batteryManagement/) {
-          Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - selected charging strategy: $strategy");
+          Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - selected charging strategy: $strat");
           Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - general load termination condition: $labortCond");
           Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - control time Slot - Slot start: $lcstart, Slot end: $lcend");
           Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - control barrier SoC: $barrierSoc % / $barrierSocWh Wh");
           Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - control barrier Parameter: ".(defined $barrierPar ? $barrierPar : '-'));
-          Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - Battery efficiency used: ".($befficiency * 100)." %");
+          Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - Battery efficiency used: ".($batinitval->{$bn}{befficiency} * 100)." %");
           Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - weighted self-consumption: $wou %");
           Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - Target load and target time: $goalpercent % / $goalwh Wh / ".(defined $timeTarget ? $timeTarget.' oclock' : '-'));
           Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - Percentage of the total amount of charging energy required: ".round1($sf*100)." %");
           Log3 ($name, 1, "$name DEBUG> ChargeMgmt Bat $bn - The PV generation, consumption and surplus listed below are based on the battery's share of the total amount of charging energy required!");
       }
 
-      ## Debuglog LR
-      ################
-      if ($paref->{debug} =~ /batteryManagement/ && $strategy eq 'loadRelease') {
+      if ($paref->{debug} =~ /batteryManagement/ && $strat eq 'loadRelease') {
           Log3 ($name, 1, "$name DEBUG> ChargeLR Bat $bn - used safety margin: $lrMargin %");
       }
+  }
 
-      ## Auswertung für jede kommende Stunde
-      ########################################
-      for my $num (0..MAXNEXTHOURS) {
-          my ($fd, $fh) = calcDayHourMove ($chour, $num);
-          last if($fd > MAXNEXTDAYS);
+  ## Äußere STUNDENSCHLEIFE
+  ##########################
+  for my $num (0..MAXNEXTHOURS) {
+      my ($fd, $fh) = calcDayHourMove ($chour, $num);
+      last if($fd > MAXNEXTDAYS);
 
-          my $nhr   = sprintf "%02d", $num;
-          my $hod   = NexthoursVal ($name, 'NextHour'.$nhr, 'hourofday', undef);
-          my $nhstt = NexthoursVal ($name, 'NextHour'.$nhr, 'starttime', undef);
-          my $stt   = (split /[-:]/, $nhstt)[2];
-          $stt      =~ s/\s/\//;
+      my $nhr   = sprintf "%02d", $num;
+      my $hod   = NexthoursVal ($name, 'NextHour'.$nhr, 'hourofday', undef);
+      my $nhstt = NexthoursVal ($name, 'NextHour'.$nhr, 'starttime', undef);
 
-          next if(!defined ($hod) || !defined ($nhstt));
+      next if(!defined ($hod) || !defined ($nhstt));
 
-          my $today = NexthoursVal ($name, 'NextHour'.$nhr, 'today', 0);
-          my $confc = NexthoursVal ($name, 'NextHour'.$nhr, 'confc', 0);
-          my $pvfc  = NexthoursVal ($name, 'NextHour'.$nhr, 'pvfc',  0);
+      my $today = NexthoursVal ($name, 'NextHour'.$nhr, 'today', 0);
 
+      # --- Stunden-Rohwerte (systemweit, vor Skalierung)
+      my $confc_raw = NexthoursVal ($name, 'NextHour'.$nhr, 'confc', 0);
+      my $pvfc_raw  = NexthoursVal ($name, 'NextHour'.$nhr, 'pvfc',  0);
+
+      # --- Snapshot aller socwh zu Stundenbeginn -> faire sf-Berechnung für alle Batterien
+      my %socwh_snap    = map { $_ => $batstate{$_}{socwh} } keys %batstate;
+      my $socwhsum_snap = sum map { $socwh_snap{$_} // 0 } keys %socwh_snap;
+
+      ## Innere BATTERIESCHLEIFE
+      ###########################
+      for my $bn (sort keys %batstate) {
+          my $bs  = $batstate{$bn};                                                              # Referenz auf Batterie-Zustandshash
+          my $stt = (split /[-:]/, $nhstt)[2];
+          $stt    =~ s/\s/\//;
+
+          # --- sf für Ladeallokation (defizitbasiert, wie bisher)
+          my $bdeficit        = $bs->{batinstcap} - $socwh_snap{$bn};
+          my $batwhdeficitsum = $bcapsum - $socwhsum_snap;
+          my $sf_charge       = $batwhdeficitsum ? round2 ($bdeficit / $batwhdeficitsum) : $bs->{sf};
+          $bs->{sf}           = $sf_charge;
+
+          # --- sf_con: Anteil an der Gesamtladung für Verbrauchsallokation (kapazitätsbasiert, konstant)
+          # --- entspricht __batLoadShareFactor, aber dynamisch auf Snapshot-Basis
+          my $sf_con = $socwhsum_snap ? round2 ($socwh_snap{$bn} / $socwhsum_snap) : $bs->{sf_con_init};    # Anteil dieser Batterie an Gesamtkapazität – unabhängig vom Ladestand
+
+          # --- Tagwechsel auf übernächsten Tag: Akkumulatoren umschalten
           if ($fd == 2 && $fh == 0) {
-              $tompvfc  = CurrentVal ($name, 'dayAfterTomorrowPVfc',  0);                        # PV Prognose übernächster Tag
-              $tomconfc = CurrentVal ($name, 'dayAfterTomorrowConfc', 0);                        # Verbrauchsprognose übernächster Tag
+              $bs->{tompvfc_raw}     = $batinitval->{$bn}{datompvfc_raw};
+              $bs->{tomconfc_raw}    = $batinitval->{$bn}{datomconfc_raw};
+              $bs->{tompvfc_spent}   = 0;
+              $bs->{tomconfc_spent}  = 0;
+              $bs->{tompvfc}         = round0 ($sf_charge * $bs->{tompvfc_raw});                # PV → Ladedefizit
+              $bs->{tomconfc}        = round0 ($sf_con    * $bs->{tomconfc_raw});               # Verbrauch → Ladestand
           }
+          
+          # --- Stundenwerte skaliert: pvfc mit sf_charge, confc mit sf_con
+          my $confc = round0 ($sf_con    * $confc_raw);                                         # Entladung proportional zur Kapazität
+          my $pvfc  = round0 ($sf_charge * $pvfc_raw);                                          # Ladung proportional zum Defizit
 
-          ## Zeitfenster für aktives Lademanagement anwenden
-          #####################################################
-          my $lcintime = 1;
-
+          # --- Zeitfenster prüfen
           my ($date)    = (split " ", $nhstt)[0];
           my $sttts     = timestringToTimestamp ($hash, $nhstt);
-          my $lcstartts = timestringToTimestamp ($hash, "$date ${lcstart}:00");
-          my $lcendts   = timestringToTimestamp ($hash, "$date ${lcend}:59");
-          $lcintime     = $sttts >= $lcstartts && $sttts <= $lcendts ? 1 : 0;                    # 1 wenn innerhalb Time Slot -> Lademanagement freigegeben, sonst Batterie Ladung immer freigeben
+          my $lcstartts = timestringToTimestamp ($hash, "$date $bs->{lcstart}:00");
+          my $lcendts   = timestringToTimestamp ($hash, "$date $bs->{lcend}:59");
+          my $lcintime  = $sttts >= $lcstartts && $sttts <= $lcendts ? 1 : 0;                   # 1 wenn innerhalb Time Slot -> Lademanagement freigegeben, sonst Batterie Ladung immer freigeben
 
-          my $crel  = 0;                                                                         # Ladefreigabe 0 Ausgangswert
+          my $crel  = 0;                                                                        # Ladefreigabe 0 Ausgangswert
           my $spday = 0;
 
-          ## Aufteilung Energie auf Batterie XX im Verhältnis aller Bat
-          ###############################################################
-          $pvfc     = round0 ($sf * $pvfc);
-          $confcss  = round0 ($sf * $confcss);
-          $confc    = round0 ($sf * $confc);
-          $rodpvfc  = round0 ($sf * $rodpvfc);
-          $tomconfc = round0 ($sf * $tomconfc);
-          $tompvfc  = round0 ($sf * $tompvfc);
+          ## PV-Überschuß und (Rest)Tagesüberschuß
+          ###########################################
+          if ($today) {                                                                         # heutiger Tag
+              $bs->{confcss} -= $confc;                                                         # Verbrauch bis Sonnenuntergang - Verbrauch Fc aktuelle Stunde
+              $bs->{confcss}  = 0 if $bs->{confcss} < 0;
+              $bs->{rodpvfc} -= $pvfc;
+              $bs->{rodpvfc}  = 0 if $bs->{rodpvfc} < 0;                                        # Clamp
+              $spday          = $bs->{rodpvfc} - $bs->{confcss};                                # spday aus post-Abzug Werten (vor Resync)
 
-          ## PV-Überschuß und (Rest)Tagesüberschuß heute/morgen
-          #######################################################
-          if ($today) {                                                                          # heutiger Tag
-              $confcss  -= $confc;                                                               # Verbrauch bis Sonnenuntergang - Verbrauch Fc aktuelle Stunde
-              $confcss   = 0 if($confcss < 0);
-              $rodpvfc  -= $pvfc;
-              $rodpvfc   = 0 if($rodpvfc < 0);
-              $spday     = $rodpvfc - $confcss;                                                  # PV-Überschußprognose (Rest) heutiger Tag
+              # Rohwerte als verbraucht merken, dann für nächste Iteration resyncen
+              $bs->{confcss_spent} += $confc_raw;
+              $bs->{rodpvfc_spent} += $pvfc_raw;
+              $bs->{confcss}        = max (0, round0 ($sf_con    * ($bs->{confcss_raw} - $bs->{confcss_spent})));
+              $bs->{rodpvfc}        = max (0, round0 ($sf_charge * ($bs->{rodpvfc_raw} - $bs->{rodpvfc_spent})));
           }
-          else {                                                                                 # nächster Tag
-              $tomconfc -= $confc;
-              $tomconfc  = 0 if($tomconfc < 0);
-              $tompvfc  -= $pvfc;
-              $spday     = $tompvfc - $tomconfc;
+          else {                                                                                # nächster Tag
+              $bs->{tomconfc} -= $confc;
+              $bs->{tomconfc}  = 0 if $bs->{tomconfc} < 0;
+              $bs->{tompvfc}  -= $pvfc;
+              $bs->{tompvfc}   = 0 if $bs->{tompvfc} < 0; 
+              $spday           = $bs->{tompvfc} - $bs->{tomconfc};
+
+              $bs->{tomconfc_spent} += $confc_raw;
+              $bs->{tompvfc_spent}  += $pvfc_raw;
+              $bs->{tomconfc}        = max (0, round0 ($sf_con    * ($bs->{tomconfc_raw} - $bs->{tomconfc_spent})));
+              $bs->{tompvfc}         = max (0, round0 ($sf_charge * ($bs->{tompvfc_raw}  - $bs->{tompvfc_spent})));
           }
 
-          $spday     = 0 if($spday < 0);                                                         # PV Überschuß Prognose bis Sonnenuntergang
-          $confc    *= (100 - $wou) / 100 if($pvfc > 0);                                         # Gewichtung Prognose-Verbrauch als Anteil "Eigennutzung" (https://forum.fhem.de/index.php?msg=1348429)
-          my $surpls = $pvfc - $confc;
+          $spday = 0 if($spday < 0);                                                            # PV Überschuß Prognose bis Sonnenuntergang
+
+          # --- wou-Gewichtung nur für surpls, nicht für Akkumulator-Abzug
+          my $confc_adj = $pvfc > 0 ? $confc * (100 - $bs->{wou}) / 100 : $confc;               # Gewichtung Prognose-Verbrauch als Anteil "Eigennutzung" (https://forum.fhem.de/index.php?msg=1348429)
+          my $surpls    = $pvfc - $confc_adj;
 
           ## Steuerung nach Ladefreigabe
           ################################
-          if ( $whneed * (1 + ($lrMargin / 100)) >= $spday ) {$crel = 1}                         # Ladefreigabe wenn benötigte Ladeenergie zzgl. Sicherheitsaufschlag >= Restüberschuß des Tages
-          if ( !$num && ($pvCu - $curcon) >= $inplim )       {$crel = 1}                         # Ladefreigabe wenn akt. PV Leistung - Abschläge >= WR-Leistungsbegrenzung
-          if ( !$bpin && $gfeedin > $feedinlim )             {$crel = 1}                         # V 1.49.6 Ladefreigabe wenn akt. keine Bat-Ladung UND akt. Einspeisung > Einspeiselimit der Anlage
-          if ( $bpin && ($gfeedin - $bpin) > $feedinlim )    {$crel = 1}                         # V 1.49.6 Ladefreigabe wenn akt. Bat-Ladung UND Eispeisung - Bat-Ladung > Einspeiselimit der Anlage
-          if ( !$cgbt )                                      {$crel = 1}                         # generelle Ladefreigabe wenn kein BatSoc/Lade-Management
-          if ( !$lcintime )                                  {$crel = 1}                         # generelle Ladefreigabe wenn nicht innerhalb Zeitslot für Ladesteuerung
-          if ( $csocwh <= $barrierSocWh)                     {$crel = 1}                         # generelle Ladefreigabe wenn aktueller SoC <= Barriere-SoC
-          if ( $whneed <= 0 )                                {$crel = 0}                         # keine Ladefreigabe wenn kein Bedarf, z.B. eingestellter Ziel-SoC erreicht
-          if ( $labortCond )                                 {$crel = 0}                         # keine Ladefreigabe bei genereller Abbruchbedingung
+          my $hyst   = $bs->{batinstcap} * 0.005;
+          my $whneed = $bs->{whneed};
 
-          # Steuerhash für optimimierte Ladeleistung erstellen
-          ######################################################
-          my $surplswh = max (0, (round0 ($surpls)));                                            # wichtig keine Nachkommastellen!
+          if ( $whneed * (1 + ($bs->{lrMargin} / 100)) >= $spday )   {$crel = 1}                # Ladefreigabe wenn benötigte Ladeenergie zzgl. Sicherheitsaufschlag >= Restüberschuß des Tages
+          if ( !$num && ($pvCu - $curcon) >= $inplim )               {$crel = 1}                # Ladefreigabe wenn akt. PV Leistung - Abschläge >= WR-Leistungsbegrenzung
+          if ( !$bpin && $gfeedin > $feedinlim )                     {$crel = 1}                # V 1.49.6 Ladefreigabe wenn akt. keine Bat-Ladung UND akt. Einspeisung > Einspeiselimit der Anlage
+          if ( $bpin && ($gfeedin - $bpin) > $feedinlim )            {$crel = 1}                # V 1.49.6 Ladefreigabe wenn akt. Bat-Ladung UND Eispeisung - Bat-Ladung > Einspeiselimit der Anlage
+          if ( !$bs->{cgbt} )                                        {$crel = 1}                # generelle Ladefreigabe wenn kein BatSoc/Lade-Management
+          if ( !$lcintime )                                          {$crel = 1}                # generelle Ladefreigabe wenn nicht innerhalb Zeitslot für Ladesteuerung
+          if ( $bs->{csocwh} <= $bs->{barrierSocWh} + $hyst )        {$crel = 1}                # generelle Ladefreigabe wenn aktueller SoC <= Barriere-SoC
+          if ( $whneed <= 0 && $num == 0 )                           {$crel = 0}                # keine Ladefreigabe wenn kein Bedarf, z.B. eingestellter Ziel-SoC erreicht
+          if ( $bs->{labortCond} )                                   {$crel = 0}                # keine Ladefreigabe bei genereller Abbruchbedingung
 
-          if ($strategy =~ /(?:opt|smart)Power/xs || $strategy eq 'loadRelease' && $today) {     # bei loadRelease' nur den aktuellen Tag betrachten
+          # --- Steuerhash für optimierte Ladeleistung erstellen
+          my $surplswh = max (0, round0($surpls));                                              # wichtig keine Nachkommastellen!
+          my $strat    = $bs->{strategy};
+
+          if ($strat =~ /(?:opt|smart)Power/xs || $strat eq 'loadRelease' && $today) {          # bei loadRelease' nur den aktuellen Tag betrachten
               $hsurp->{$fd}{$hod}{nhr}               = $nhr;
-              $hsurp->{$fd}{$hod}{speff}             = $surpls;                                  # effektiver PV Überschuß bzw. effektiver Verbrauch wenn < 0
-              $hsurp->{$fd}{$hod}{surplswh}          = $surplswh.'.'.$hod;                       # absoluter Überschuß in Wh der Stunde mit Sortierhilfe
-              $hsurp->{$fd}{$hod}{$bn}{initsocwh}    = $socwh;                                   # durch LR fortgeschriebener SoC
-              $hsurp->{$fd}{$hod}{$bn}{batinstcap}   = $batinstcap;                              # installierte Batteriekapazität (Wh)
-              $hsurp->{$fd}{$hod}{$bn}{goalwh}       = $goalwh;                                  # Ladeziel
-              $hsurp->{$fd}{$hod}{$bn}{timeTarget}   = $timeTarget;                              # gewünschte Zeit (volle Stunde) für Zielerreichung
-              $hsurp->{$fd}{$hod}{$bn}{bpinmax}      = $bpinmax;                                 # max. mögliche Ladeleistung
-              $hsurp->{$fd}{$hod}{$bn}{bpinreduced}  = $bpinreduced;                             # Standardwert bei <=lowSoC -> Anforderungsladung vom Grid
-              $hsurp->{$fd}{$hod}{$bn}{bpoutmax}     = $bpoutmax;                                # max. mögliche Entladeleistung
-              $hsurp->{$fd}{$hod}{$bn}{lowSocwh}     = $lowSocwh;                                # eingestellter lowSoC in Wh
-              $hsurp->{$fd}{$hod}{$bn}{barrierSocWh} = $barrierSocWh;                            # eingestellter Barriere SoC in Wh
-              $hsurp->{$fd}{$hod}{$bn}{barrierPar}   = $barrierPar;                              # Aktionsparameter im Barriere SoC Bereich
-              $hsurp->{$fd}{$hod}{$bn}{batoptsocwh}  = $batoptsocwh;                             # optimaler SoC in Wh
-              $hsurp->{$fd}{$hod}{$bn}{csocwh}       = $csocwh;                                  # aktueller SoC in Wh
-              $hsurp->{$fd}{$hod}{$bn}{otpMargin}    = $otpMargin;                               # Sicherheitszuschlag für Berechnungen
-              $hsurp->{$fd}{$hod}{$bn}{lcintime}     = $lcintime;                                # Ladesteuerung "In Time" oder "nicht In Time"
-              $hsurp->{$fd}{$hod}{$bn}{stt}          = $stt;                                     # Day/Time für Debuglog
-              $hsurp->{$fd}{$hod}{$bn}{strategy}     = $strategy;                                # Ladestrategie
-              $hsurp->{$fd}{$hod}{$bn}{befficiency}  = $befficiency;                             # Speicherwirkungsgrad
+              $hsurp->{$fd}{$hod}{speff}             = $surpls;                                 # effektiver PV Überschuß bzw. effektiver Verbrauch wenn < 0
+              $hsurp->{$fd}{$hod}{surplswh}          = $surplswh.'.'.$hod;                      # absoluter Überschuß in Wh der Stunde mit Sortierhilfe
+              $hsurp->{$fd}{$hod}{$bn}{initsocwh}    = $bs->{socwh};                            # durch LR fortgeschriebener SoC
+              $hsurp->{$fd}{$hod}{$bn}{batinstcap}   = $bs->{batinstcap};                       # installierte Batteriekapazität (Wh)
+              $hsurp->{$fd}{$hod}{$bn}{goalwh}       = $bs->{goalwh};                           # Ladeziel
+              $hsurp->{$fd}{$hod}{$bn}{timeTarget}   = $bs->{timeTarget};                       # gewünschte Zeit (volle Stunde) für Zielerreichung
+              $hsurp->{$fd}{$hod}{$bn}{bpinmax}      = $bs->{bpinmax};                          # max. mögliche Ladeleistung
+              $hsurp->{$fd}{$hod}{$bn}{bpinreduced}  = $bs->{bpinreduced};                      # Standardwert bei <=lowSoC -> Anforderungsladung vom Grid
+              $hsurp->{$fd}{$hod}{$bn}{bpoutmax}     = $bs->{bpoutmax};                         # max. mögliche Entladeleistung
+              $hsurp->{$fd}{$hod}{$bn}{lowSocwh}     = $bs->{lowSocwh};                         # eingestellter lowSoC in Wh
+              $hsurp->{$fd}{$hod}{$bn}{barrierSocWh} = $bs->{barrierSocWh};                     # eingestellter Barriere SoC in Wh
+              $hsurp->{$fd}{$hod}{$bn}{barrierPar}   = $bs->{barrierPar};                       # Aktionsparameter im Barriere SoC Bereich
+              $hsurp->{$fd}{$hod}{$bn}{batoptsocwh}  = $bs->{batoptsocwh};                      # optimaler SoC in Wh
+              $hsurp->{$fd}{$hod}{$bn}{csocwh}       = $bs->{csocwh};                           
+              $hsurp->{$fd}{$hod}{$bn}{otpMargin}    = $bs->{otpMargin};
+              $hsurp->{$fd}{$hod}{$bn}{lcintime}     = $lcintime;
+              $hsurp->{$fd}{$hod}{$bn}{stt}          = $stt;
+              $hsurp->{$fd}{$hod}{$bn}{strategy}     = $strat;
+              $hsurp->{$fd}{$hod}{$bn}{befficiency}  = $bs->{befficiency};
           }
 
-          $surpls = $surpls / 60 * (60 - int $minute) if(!$num);                                 # aktuelle (Rest)-Stunde -> zeitgewichteter PV-Überschuß
-          $surpls = round0 ($surpls);                                                            # wichtig keine Nachkommastellen!
+          # --- Zeitgewichtung aktuelle (Rest-)Stunde
+          my $surpls_tw = $surpls;
+          $surpls_tw    = $surpls_tw / 60 * (60 - int $minute) if(!$num);
+          $surpls_tw    = round0($surpls_tw);
 
           ## SOC-Prognose LR
           ####################
-          my $speff = $surpls;                                                                   # effektiver PV Überschuß bzw. effektiver Verbrauch wenn < 0
-
-          $speff    = $speff > 0 ? ($speff >= $bpinmax   ? $bpinmax   : $speff) :
-                      $speff < 0 ? ($speff <= -$bpoutmax ? -$bpoutmax : $speff) :
+          my $speff = $surpls_tw;
+          $speff    = $speff > 0 ? ($speff >= $bs->{bpinmax}   ? $bs->{bpinmax}   : $speff) :
+                      $speff < 0 ? ($speff <= -$bs->{bpoutmax} ? -$bs->{bpoutmax} : $speff) :
                       $speff;
 
-          my $delta = $speff > 0 ? ($crel ? $speff * $befficiency : 0) :                         # PV Überschuß (d.h. Aufladung) nur einbeziehen wenn Ladefreigabe
-                      $speff < 0 ? $speff / $befficiency               :                         # Verbrauch einbeziehen
-                      0;
+          my $delta = 0;
+          if ($speff > 0) {
+              $delta = $crel ? $speff * $bs->{befficiency} : 0;
+          }
+          elsif ($speff < 0) {
+              $delta = $num == 0 ? $speff / $bs->{befficiency} : $speff;
+          }
 
-          $socwh += $delta;
-          $socwh  = ___batClampValue ($socwh, $lowSocwh, $batoptsocwh, $batinstcap);             # SoC begrenzen
-
-          $socwh   = round0 ($socwh);                                                            # SoC Prognose in Wh
-          $progsoc = round1 (___batSocWhToPercent ($batinstcap, $socwh));                        # Prognose SoC in %
+          my $socwh = $bs->{socwh} + $delta;
+          $socwh    = ___batClampValue ($socwh, $bs->{lowSocwh}, $bs->{batoptsocwh}, $bs->{batinstcap});
+          $socwh    = round0($socwh);
+          $progsoc  = round1(___batSocWhToPercent($bs->{batinstcap}, $socwh));
 
           ## Debuglog LR
           ################
-          if ($paref->{debug} =~ /batteryManagement/ && $strategy eq 'loadRelease') {
-              my $msg = "CurrSoc: $csoc %, SoCfc: $socwh Wh, whneed: $whneed, pvfc: $pvfc, rodpvfc: $rodpvfc, confcss: $confcss, SurpDay: $spday Wh, CurrPV: $pvCu W, CurrCons: $curcon W, Limit: $inplim W, inTime: ".($cgbt ? $lcintime : '-');
-
-              if ($num) {
-                  $msg = "SoCfc: $progsoc % / $socwh Wh, whneed: $whneed, pvfc: $pvfc, rodpvfc: $rodpvfc, confcss: $confcss, SurpDay: $spday Wh, inTime: ".($cgbt ? $lcintime : '-');
-
-                  if (!$today) {
-                      $msg = "SoCfc: $progsoc % / $socwh Wh, whneed: $whneed, pvfc: $pvfc, roTomPV: $tompvfc, roTomCON: $tomconfc, SurpDay: $spday Wh, inTime: ".($cgbt ? $lcintime : '-');
-                  }
+          if ($paref->{debug} =~ /batteryManagement/ && $strat eq 'loadRelease') {
+              my $msg;
+              if (!$num) {
+                  $msg = "CurrSoc: $bs->{csoc} %, SoCfc: $socwh Wh, whneed: $whneed, pvfc: $pvfc, rodpvfc: $bs->{rodpvfc}, confcss: $bs->{confcss}, SurpDay: $spday Wh, CurrPV: $pvCu W, CurrCons: $curcon W, Limit: $inplim W, inTime: ".($bs->{cgbt} ? $lcintime : '-');
               }
-
+              elsif ($today) {
+                  $msg = "SoCfc: $progsoc % / $socwh Wh, whneed: $whneed, pvfc: $pvfc, rodpvfc: $bs->{rodpvfc}, confcss: $bs->{confcss}, SurpDay: $spday Wh, inTime: ".($bs->{cgbt} ? $lcintime : '-');
+              }
+              else {
+                  $msg = "SoCfc: $progsoc % / $socwh Wh, whneed: $whneed, pvfc: $pvfc, roTomPV: $bs->{tompvfc}, roTomCON: $bs->{tomconfc}, SurpDay: $spday Wh, inTime: ".($bs->{cgbt} ? $lcintime : '-');
+              }
               Log3 ($name, 1, "$name DEBUG> ChargeLR Bat $bn $stt - lr: $crel, $msg");
           }
 
           ## Fortschreibung
           ###################
-          $whneed = max (0, ($goalwh - $socwh));
+          $bs->{whneed} = max(0, $bs->{goalwh} - $socwh);
+          $bs->{socwh}  = $socwh;
 
-          ## Speicherung und Readings erstellen LR
-          ##########################################
+          # batinitval synchron halten (für OTP-Abschnitt und externe Nutzung)
+          $batinitval->{$bn}{bchargewh} = $socwh;
+
+          $strategy = $strat;
+
           $values = { hsoc       => $hsoc,
                       bn         => $bn,
                       nhr        => $nhr,
@@ -14381,16 +14450,15 @@ sub _batChargeMgmt {
                       today      => $today,
                       hod        => $hod,
                       loopid     => 'LR',
-                      strategy   => $strategy,
+                      strategy   => $strat,
                       crel       => $crel,
-                      labortCond => $labortCond,
-                      loadAbort  => $loadAbort,
-                      cgbt       => $cgbt,
+                      labortCond => $bs->{labortCond},
+                      loadAbort  => $bs->{loadAbort},
+                      cgbt       => $bs->{cgbt},
                       lcintime   => $lcintime,
                    };
 
           ___batChargeSaveResults ($paref, $values);
-
           $values = {};
       }
   }
@@ -14404,8 +14472,6 @@ sub _batChargeMgmt {
 
       delete $paref->{hsurp};
 
-      ## Speicherung und Readings erstellen OTP
-      ###########################################
       for my $shod (sort { $a <=> $b } keys %{$hopt}) {
           my $nhr       = $hopt->{$shod}{nhr};
           my @batteries = grep { !/^(?:fd|speff|surplswh|spday|nhr)$/xs } keys %{$hopt->{24}};
@@ -14416,13 +14482,9 @@ sub _batChargeMgmt {
               $strategy  = $hopt->{$shod}{$bat}{strategy};
               my $ssocwh = $hopt->{$shod}{$bat}{runwh} // '-';
 
-              ## SOC-Prognose OTP
-              #####################
               my $fcendwh = $hopt->{$shod}{$bat}{fcendwh} // 0;
-              $progsoc    = round1 (___batSocWhToPercent ($hopt->{$shod}{$bat}{batinstcap}, $fcendwh));        # Prognose SoC in %
+              $progsoc    = round1 (___batSocWhToPercent ($hopt->{$shod}{$bat}{batinstcap}, $fcendwh));
 
-              ## Speicherung und Readings erstellen OTP
-              ##########################################
               $values = { hsoc     => $hsoc,
                           otp      => $otp,
                           bn       => $bat,
@@ -14437,8 +14499,6 @@ sub _batChargeMgmt {
 
               ___batChargeSaveResults ($paref, $values);
 
-              ## Debuglog OTP
-              #################
               if ($paref->{debug} =~ /batteryManagement/ && $strategy ne 'loadRelease') {
                   my $spday    = $hopt->{$shod}{spday};
                   my $lcintime = $hopt->{$shod}{$bat}{lcintime};
@@ -14463,6 +14523,8 @@ sub _batChargeMgmt {
 
                   Log3 ($name, 1, "$name DEBUG> ChargeOTP Bat $bat $ttt - hod:$shod/$nhr, lr/lc:$crel/$lcintime, SocS/E:$ssocwh/$fcendwh Wh, SurpH/D:$spls/$spday Wh, OTP:$pneedmin/$frefph W");
               }
+
+              $values = {};
           }
       }
   }
@@ -14476,7 +14538,7 @@ sub _batChargeMgmt {
           my $today = NexthoursVal ($name, 'NextHour'.$nhr, 'today',      0);
           my $hod   = NexthoursVal ($name, 'NextHour'.$nhr, 'hourofday', '');
 
-          if ($today && $hod) {                                                                                  # heutiger Tag
+          if ($today && $hod) {
               writeToHistory ( { paref => $paref, key => 'socprogwhsum', val => $hsoc->{$nhr}{socprogwhsum}, day => $day, hour => $hod } );
           }
       }
@@ -15519,6 +15581,7 @@ sub _manageConsumerData {
   my $name    = $paref->{name};
   my $chour   = $paref->{chour};
   my $day     = $paref->{day};
+  my $debug   = $paref->{debug};
 
   my $hash    = $defs{$name};
   my $hod     = sprintf "%02d", ($chour + 1);
@@ -15546,8 +15609,14 @@ sub _manageConsumerData {
   
       my $pcurr  = __savePowerAndEnergy ($paref);                                   # aktuelle Leistung und Energieverbrauch auslesen + speichern
       
+      $paref->{nhour} = $hod;                                                       # !! writeToHistory löscht diese Einträge !!
+      $paref->{nday}  = $day;
       $pcurrsum      += $pcurr;
       $paref->{pcurr} = $pcurr;
+      
+      if ($debug =~ /consumerPlanning/x) {
+          Log3 ($name, 1, qq{$name DEBUG> ############### consumerPlanning consumer "$c" ############### });
+      }
 
       __getAutomaticState     ($paref);                                             # Automatic Status des Consumers abfragen
       __calcEnergyPieces      ($paref);                                             # Energieverbrauch auf einzelne Stunden für Planungsgrundlage aufteilen
@@ -15704,6 +15773,8 @@ sub __saveBEVvalues {
   if (defined $batCapVal) {
       $batCapVal                            = $batCapVal * ($unit =~ /^kWh$/xi ? 1000 : 1);             # BEV batCap in Wh
       $data{$name}{current}{'batCapBev'.$c} = round0 ($batCapVal);
+  
+      writeToHistory ( { paref => $paref, key => 'bevcsmBatCap'.$c, val => round0 ($batCapVal), day => $day, hour => $hod } );      # BEV batCap Snapshot
   }
 
   # --- aktueller SoC
@@ -15721,10 +15792,10 @@ sub __saveBEVvalues {
   
   if (defined $tgtsocval) {                                                                             # BEV Ziel-SoC      
       writeToHistory ( { paref => $paref, key => 'bevcsmTargSoC'.$c, val => round0 ($tgtsocval), day => $day, hour => $hod } );          
-  } 
-  
+  }  
+                                    
   debugLog ($paref, 'collectData', "BEV - $calias -> bevcsmSoC${c}=$csocval bevcsmTargSoC${c}=$tgtsocval ".
-                                    (defined $batCapVal ? "batCapBev${c}=$batCapVal" : "batCapBev${c}=undef") ); 
+                                   (defined $batCapVal ? "batCapBev${c}=$batCapVal bevcsmBatCap${c}=$batCapVal" : "batCapBev${c}=undef") );
 
 return;
 }
@@ -15738,6 +15809,7 @@ sub __savePowerAndEnergy {
   my $t       = $paref->{t};                                                                    # aktueller Timestamp
   my $c       = $paref->{consumer};
   my $cname   = $paref->{cname};
+  my $ctype   = $paref->{ctype};
   my $cactive = $paref->{cactive};
   my $chour   = $paref->{chour};
   my $day     = $paref->{day};
@@ -15786,7 +15858,6 @@ sub __savePowerAndEnergy {
       if (defined $ehist) {                                                             # Stundenwechsel von vorn beginnen
           if ($etot >= $ehist && ($etot - $ehist) >= $ethreshold) {
               my $consumerco  = $etot - $ehist;
-              #$consumerco    += HistoryVal ($name, $day, $hod, "csme${c}", 0);
 
               if ($consumerco < 0) {                                                              
                   $consumerco = 0;
@@ -15825,6 +15896,10 @@ sub __savePowerAndEnergy {
   else {
       $data{$name}{consumers}{$c}{currpower} = $pcurr;
       storeReading ("consumer${c}_currentPower", $pcurr.' W');
+      
+      if ($ctype eq 'bev') {
+          writeToHistory ( { paref => $paref, key => 'bevcsmPwr'.$c, val => round0 ($pcurr), day => $day, hour => $hod } );           
+      }
   }
 
 return $pcurr;
@@ -16114,14 +16189,14 @@ sub __planInitialSwitchTime {
       }
       
       if ($debug =~ /consumerPlanning/x) {          
-          Log3 ($name, 4, qq{$name DEBUG> Planning consumer "$c" not permitted - $dnp (name=$calias)});
+          Log3 ($name, 1, qq{$name DEBUG> Planning consumer "$c" not permitted - name=$calias, cause=$dnp});
       }
 
       return;
   }
 
   if ($debug =~ /consumerPlanning/x) {
-      Log3 ($name, 1, qq{$name DEBUG> ############### consumerPlanning consumer "$c" ############### });
+      #Log3 ($name, 1, qq{$name DEBUG> ############### consumerPlanning consumer "$c" ############### });
       Log3 ($name, 1, qq{$name DEBUG> Planning consumer "$c" - name=$cname alias=$calias activated=$cactive});
   }
   
@@ -17939,62 +18014,161 @@ sub _calcReadingsTomorrowPVFc {
 return;
 }
 
-################################################################
-#  berechnet die prozentuale Abweichung von Tageswerten
-################################################################
+###########################################################################################
+# Berechnet die prozentuale Abweichung zwischen Prognose und Ist-Wert
+# für PV-Erzeugung und Verbrauch (Consumption).
+# Verbesserungen gegenüber der ursprünglichen Implementierung:
+#   - Dynamische Mindestschwelle (min_wh) verhindert Division durch sehr kleine Werte
+#   - Konfidenz-Gewichtung (progress) dämpft Abweichungen am Tagesanfang
+#   - Time Gate (min_recalc_s) verhindert zu häufige Neuberechnung bei Event-Triggern
+#   - EWMA-Glättung mit dynamischem Alpha dämpft kurzzeitige Sprünge
+#   - Totband (dead_band) verhindert Vorzeichenwechsel bei stabilem Signal
+#   - Perspektiv-Flip vor EWMA sichert Konsistenz zwischen circular und Reading
+###########################################################################################
 sub _calcTodayDeviation {
   my $paref = shift;
   my $name  = $paref->{name};
   my $t     = $paref->{t};
   my $date  = $paref->{date};
-  my $day   = $paref->{day};                                            
+  my $day   = $paref->{day};
+  
+  # --- Time Gate: Mindestabstand zwischen zwei Berechnungen
+  # Verhindert unkontrollierte Alpha-Akkumulation bei event-getriggerten
+  # Schnellzyklen (z.B. alle 5 Sekunden). Erst nach min_recalc_s Sekunden
+  # wird neu berechnet, dazwischen wird der letzte Wert beibehalten.
+  # Eigener Zeitstempel unabhängig von last_transfer (anderer Prozess/Semantik).
+  my $min_recalc_s = 60;
+  my $last_t       = $data{$name}{current}{lastDeviationCalc} // 0;
+  my $elapsed_s    = $t - $last_t;
 
+  if ($elapsed_s < $min_recalc_s) {                                                         # Zu kurz seit letzter Berechnung → überspringen
+      return;
+  }
+
+  $data{$name}{current}{lastDeviationCalc} = $t;                                            # Schutz gegen 0 bei Doppel-Events
+  
   my ($dpv, $dcon);
+  
   my ($manner, $perspective) = split ':', CurrentVal ($name, 'genPVdeviation', 'daily');
+  
   $perspective //= 'default';
   my $dosave_dpv = 0;
+
+  my $hash       = $defs{$name};
+  my $max_dev    = 200;                                                                     # prozentuales Clipping
+  my $dead_band  = 0.5;                                                                     # Totband in Prozentpunkten
   
-  my $hash = $defs{$name};
+  my $sunrise_ts = timestringToTimestamp ($hash, $date.' '.ReadingsVal ($name, 'Today_SunRise', '06:00').':00');
+  my $sunset_ts  = timestringToTimestamp ($hash, $date.' '.ReadingsVal ($name, 'Today_SunSet',  '22:00').':00');
+  my $day_len    = ($sunset_ts - $sunrise_ts) || 1;
+
+  # --- Dynamische Mindestschwelle basierend auf Anlagen-Peak
+  # Verhindert prozentuale Extremwerte wenn Prognose oder Ist-Wert noch sehr klein sind.
+  # Faktor 0.02 = ~2 % des Anlagen-Peaks als Schwellwert.
+  # Beispiele: 3 kWp → 60 Wh, 10 kWp → 200 Wh, 50 kWp → 1.000 Wh
+  my $peak_wp = _pvMaxLimit ($name);
+  my $min_wh  = int ($peak_wp * 0.02);
+  $min_wh     = 50   if $min_wh <   50;                                                     # floor:   kleinste sinnvolle Schwelle
+  $min_wh     = 2000 if $min_wh > 2000;                                                     # ceiling: Großanlagen deckeln
+    
+  # --- Tagesfortschritt PV: volle Gewichtung nach 1/3 der Tageslänge ab Sonnenaufgang
+  # Passt sich automatisch der Jahreszeit an:
+  # Sommer (~15h Tag) → volle Gewichtung nach ~5h
+  # Winter (~8h Tag)  → volle Gewichtung nach ~2,7h
+  my $ramp_pv_s = $day_len / 3;   
+  my $progress  = ($t - $sunrise_ts) / $ramp_pv_s;
+  $progress     = 0 if $progress < 0;
+  $progress     = 1 if $progress > 1;
   
+  $data{$name}{current}{ramphourspvdev} = round1 ($ramp_pv_s / 3600);                       # Verzögerungszeit bis volle Gewichtung PV-Abweichung speichern
+  
+  # --- EWMA-Glättungsfaktor Alpha dynamisch aus tatsächlichem Intervall ableiten
+  # Formel: α = 1 - e^(-Δt / τ)  (diskretisierter Tiefpassfilter)
+  # τ (tau_s) ist die Zeitkonstante: nach τ Sekunden sind 63 % eines Sprungs übernommen.
+  # Bei τ = 1800 s (30 min) reagiert der Filter träge auf kurzfristige Schwankungen,
+  # folgt aber echten Trends zuverlässig.
+  # Vorteil gegenüber festem Alpha: bei kurzen Intervallen (Events) wird Alpha
+  # automatisch klein → Ausreißer werden kaum übernommen.
+  # Bei langen Intervallen (z.B. nach Pause) wird Alpha größer → Wert holt auf.
+  my $tau_s = 1800;                                                                         # Zeitkonstante 30 min – nach Bedarf anpassbar
+  my $alpha = 1 - exp(-$elapsed_s / $tau_s);
+  $alpha    = 0.05 if $alpha < 0.05;                                                        # floor:   verhindert zu starke Trägheit bei sehr kurzen Intervallen
+  $alpha    = 0.80 if $alpha > 0.80;                                                        # ceiling: verhindert unkontrollierte Sprünge nach langen Pausen
+    
   # PV Prognose/Ist Abweichung
   ##############################
-  my $pvfc = CurrentVal  ($name, 'tdPvFcUp2Now', 0);
-  my $pvre = ReadingsNum ($name, 'Today_PVreal', 0);
-  
-  if ($pvre && $pvfc) {                                                                     # Schutz Illegal division by zero
-      if ($manner eq 'daily') {
-          my $sstime = timestringToTimestamp ($hash, $date.' '.ReadingsVal ($name, "Today_SunSet", '22:00').':00');
+  my $pvfc = CurrentVal  ($name, 'tdPvFcUp2Now', 0);                                        # PV-Prognose akkumuliert bis jetzt
+  my $pvre = ReadingsNum ($name, 'Today_PVreal', 0);                                        # PV-Erzeugung real akkumuliert
 
-          if ($t >= $sstime) {
-              $dpv        = round2 (($pvfc - $pvre) / $pvfc * 100);                         # V 2.0.0
+  if ($pvre > $min_wh && $pvfc > $min_wh) {                                                 # Mindestschwelle: beide Werte müssen ausreichend groß sein
+      if ($manner eq 'daily') {
+          if ($t >= $sunset_ts) {
+              my $raw  = ($pvfc - $pvre) / $pvfc * 100;
+              $raw     = $raw >  $max_dev ?  $max_dev
+                       : $raw < -$max_dev ? -$max_dev : $raw;                               # Clipping
+              $raw    *= -1 if ($perspective eq 'reverse');                                 # Flip vor EWMA: sichert Konsistenz zwischen circular und Reading
+
+              my $prev = $data{$name}{circular}{99}{tdayDvtn} // $raw;
+              $dpv     = abs($raw - $prev) < $dead_band
+                       ? $prev
+                       : round2 ($alpha * $raw + (1 - $alpha) * $prev);
+              
               $dosave_dpv = 1;
           }
       }
       else {
-          $dpv        = round2 (($pvfc - $pvre) / $pvfc * 100);                             # V 2.0.0
+          my $raw  = ($pvfc - $pvre) / $pvfc * 100 * $progress;
+          $raw     = $raw >  $max_dev ?  $max_dev
+                   : $raw < -$max_dev ? -$max_dev : $raw;
+          $raw    *= -1 if ($perspective eq 'reverse');                                     # früh flippen → alles danach konsistent
+
+          my $prev = $data{$name}{circular}{99}{tdayDvtn} // $raw;
+          $dpv     = abs($raw - $prev) < $dead_band
+                   ? $prev
+                   : round2 ($alpha * $raw + (1 - $alpha) * $prev);
+          
           $dosave_dpv = 1;
       }
 
       if ($dosave_dpv) {
-          $dpv *= -1 if($perspective eq 'reverse');                                         # Perspektivänderung: Abweichung = Real - Vorhersage statt Abweichung = Vorhersage - Real
-          $data{$name}{circular}{99}{tdayDvtn} = $dpv;
-
-          storeReading ('Today_PVdeviation', $dpv.' %');
+          $data{$name}{circular}{99}{tdayDvtn} = $dpv;                                     # und $dpv ident
+          
+          storeReading ('Today_PVdeviation', $dpv.' %');                                   
       }
   }
-  
+
   # Consumption Prognose/Ist Abweichung
   #######################################
-  my $confc = CurrentVal  ($name, 'tdConFcUp2Now', 0);
-  my $conre = ReadingsNum ($name, 'Today_CONreal', 0);
+  # Eigener Mindestschwellwert für Consumption (unabhängig von PV-Peak)
+  # Basis: typischer Haushalt ~3.000–5.000 kWh/Jahr → ~350–580 Wh/h
+  # 50 Wh als konservativer floor, damit auch Niedrigverbraucher abgedeckt sind
+  my $min_wh_con = 50;
+  my $confc      = CurrentVal  ($name, 'tdConFcUp2Now', 0);
+  my $conre      = ReadingsNum ($name, 'Today_CONreal', 0);
   
-  if ($conre && $confc) {
-      $dcon  = round2 (($confc - $conre) / $confc * 100);                                   # V 2.0.0
-      $dcon *= -1 if($perspective eq 'reverse');                                            # Perspektivänderung
+  # --- Tagesfortschritt Consumption: volle Gewichtung nach X Stunden ab Mitternacht
+  my $midnight_ts  = timestringToTimestamp ($hash, $date.' 00:00:00');
+  my $ramp_con_s   = 6 * 3600;                                                              # Ramp-up Stunden in Sekunden – anpassbar
+  my $progress_con = ($t - $midnight_ts) / $ramp_con_s;
+  $progress_con    = 0 if $progress_con < 0;
+  $progress_con    = 1 if $progress_con > 1;
+  
+  $data{$name}{current}{ramphourscondev} = round1 ($ramp_con_s / 3600);                     # Verzögerungszeit bis volle Gewichtung CON-Abweichung speichern
+
+  if ($conre > $min_wh_con && $confc > $min_wh_con) {
+      my $raw  = ($confc - $conre) / $confc * 100 * $progress_con;
+      $raw     = $raw >  $max_dev ?  $max_dev
+               : $raw < -$max_dev ? -$max_dev : $raw;
+      $raw    *= -1 if ($perspective eq 'reverse');                                         # früh flippen → alles danach konsistent
+
+      my $prev = $data{$name}{circular}{99}{tdayConDvtn} // $raw;
+      $dcon    = abs($raw - $prev) < $dead_band
+               ? $prev
+               : round2 ($alpha * $raw + (1 - $alpha) * $prev);
+
+      $data{$name}{circular}{99}{tdayConDvtn} = $dcon;                                      # und $dcon ident
       
-      $data{$name}{circular}{99}{tdayConDvtn} = $dcon;
-      
-      storeReading ('Today_CONdeviation', $dcon.' %');
+      storeReading ('Today_CONdeviation', $dcon.' %');                                      
   }
 
 return;
@@ -19840,8 +20014,10 @@ sub _graphicHeader {
 
       ## Abweichung PV Prognose/Erzeugung
       #####################################
-      my $tdayDvtn = CircularVal ($name, 99, 'tdayDvtn', '-');
-      my $ydayDvtn = CircularVal ($name, 99, 'ydayDvtn', '-');
+      my $tdayDvtn  = CircularVal ($name, 99, 'tdayDvtn', '-');
+      my $ydayDvtn  = CircularVal ($name, 99, 'ydayDvtn', '-');
+      my $ramp_pv_h = CurrentVal  ($name, 'ramphourspvdev', '-');                                   # Verzögerungszeit bis volle Gewichtung PV-Abweichung
+            
       $tdayDvtn    = sprintf "%.1f %%", $tdayDvtn if(isNumeric($tdayDvtn));
       $ydayDvtn    = sprintf "%.1f %%", $ydayDvtn if(isNumeric($ydayDvtn));
       $tdayDvtn    =~ s/\./,/;
@@ -19852,6 +20028,9 @@ sub _graphicHeader {
       my $genpvdva = $paref->{genpvdva};
       my ($manner, $perspective) = split ':', $genpvdva;
       $perspective //= 'default';
+      
+      my $ramppvtxt = $manner ne 'daily' ? $hqtxt{ramppv}{$lang} : '';
+      $ramppvtxt    =~ s/<RAMP>/$ramp_pv_h/;
 
       my $dvtntxt  = 'PV '.$hqtxt{dvtn}{$lang}.'&nbsp;';
       my $tdaytxt  = ($manner eq 'daily' ? $hqtxt{tday}{$lang} : $hqtxt{ctnsly}{$lang}).':&nbsp;'."<b>".$tdayDvtn."</b>";
@@ -19874,6 +20053,11 @@ sub _graphicHeader {
       ######################################
       my $tdayConDvtn = CircularVal ($name, 99, 'tdayConDvtn', '-');
       my $ydayConDvtn = CircularVal ($name, 99, 'ydayConDvtn', '-');
+      my $ramp_con_h  = CurrentVal  ($name, 'ramphourscondev', '-');                                # Verzögerungszeit bis volle Gewichtung CON-Abweichung
+      
+      my $rampcontxt  = $hqtxt{rmpcon}{$lang};
+      $rampcontxt     =~ s/<RAMP>/$ramp_con_h/;
+        
       $tdayConDvtn    = sprintf "%.1f %%", $tdayConDvtn if(isNumeric($tdayConDvtn));
       $ydayConDvtn    = sprintf "%.1f %%", $ydayConDvtn if(isNumeric($ydayConDvtn));
       $tdayConDvtn    =~ s/\./,/;
@@ -19935,7 +20119,7 @@ sub _graphicHeader {
       my $cont2 = join '', map { $_->[0] . ('&nbsp;' x $_->[1]) } @parts2;
       
       my $version = $hash->{HELPER}{VERSION} // '-';
-
+      
       # --- erste Headerzeile
       $header  .= qq{<tr>};
       $header  .= qq{<td colspan="1" align="left"   $dstyle> <b>$dlink</b>              </td>};
@@ -19949,7 +20133,7 @@ sub _graphicHeader {
       $header  .= qq{<tr>};
       $header  .= qq{<td colspan="3" align="left"  $dstyle> $cont1 </td>};
       $header  .= qq{<td colspan="3" align="left"  $dstyle> $cont2 </td>};
-      $header  .= qq{<td colspan="3" align="right" $dstyle> $dvtntxt};
+      $header  .= qq{<td colspan="3" align="right" title="$ramppvtxt" $dstyle> $dvtntxt};
       $header  .= qq{<span title="$text_tdayDvtn">};
       $header  .= qq{$tdaytxt};
       $header  .= qq{</span>};
@@ -19964,7 +20148,7 @@ sub _graphicHeader {
       $header  .= qq{<tr>};
       $header  .= qq{<td colspan="3" align="left"  $dstyle>     </td>};
       $header  .= qq{<td colspan="3" align="left"  $dstyle>     </td>};
-      $header  .= qq{<td colspan="3" align="right" $dstyle> $dcontxt};
+      $header  .= qq{<td colspan="3" align="right" title="$rampcontxt" $dstyle> $dcontxt};
       $header  .= qq{<span title="$text_tdayConDvtn">};
       $header  .= qq{$tdaycontxt};
       $header  .= qq{</span>};
@@ -23891,13 +24075,17 @@ sub __aiAddRawData {
 
           for my $c (1..MAXCONSUMER) {
               $c           = sprintf "%02d", $c;
-              my $csme     = HistoryVal ($name, $pvd, $hod, 'csme'.$c,          undef);
-              my $evsoc    = HistoryVal ($name, $pvd, $hod, 'bevcsmSoC'.$c,     undef);   
-              my $evtgtsoc = HistoryVal ($name, $pvd, $hod, 'bevcsmTargSoC'.$c, undef);
+              my $csme     = HistoryVal ($name, $pvd, $hod, 'csme'.$c,          undef);                         # Energieverbrauch (Wh) von ConsumerXX in der Stunde des Tages
+              my $evsoc    = HistoryVal ($name, $pvd, $hod, 'bevcsmSoC'.$c,     undef);                         # aktueller SOC (%) des BEV-Verbrauchers XX   
+              my $evtgtsoc = HistoryVal ($name, $pvd, $hod, 'bevcsmTargSoC'.$c, undef);                         # eingestellter Ziel-SOC (%) des BEV-Verbrauchers XX 
+              my $evbatcap = HistoryVal ($name, $pvd, $hod, 'bevcsmBatCap'.$c,  undef);                         # EV Batteriekapazität                     
+              my $evcurpwr = HistoryVal ($name, $pvd, $hod, 'bevcsmPwr'.$c,     undef);                         # EV aktuelle Ladeleistung
               
               if (defined $csme)     { $data{$name}{aidectree}{airaw}{$ridx}{'csme'.$c}          = round0 ($csme) } 
               if (defined $evsoc)    { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmSoC'.$c}     = round0 ($evsoc) } 
-              if (defined $evtgtsoc) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmTargSoC'.$c} = round0 ($evtgtsoc) }               
+              if (defined $evtgtsoc) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmTargSoC'.$c} = round0 ($evtgtsoc) }  
+              if (defined $evbatcap) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmBatCap'.$c}  = round0 ($evbatcap) } 
+              if (defined $evcurpwr) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmPwr'.$c}     = round0 ($evcurpwr) }               
           }
   
           $dosave++;
@@ -24035,7 +24223,7 @@ sub aiFannCreateConTrainData {
 
   my ($msg, $serial, $regv);
   
-  my $pv_max_limit = _aiFannPvMaxLimit ($name);
+  my $pv_max_limit = _pvMaxLimit ($name);
 
   if (!$pv_max_limit ) {
       $msg = 'No peak output is provided by the PV system';
@@ -24906,7 +25094,8 @@ sub _aiFannOversampling {
   my $targetsnorm_ref    = $paref->{targetsnorm_ref};
   my $presencevalues_ref = $paref->{presencevalues_ref};
   
-  my $absence_oversample = CurrentVal ($name, 'aiConAbsOversample', 0.0); 
+  my $absence_oversample = __aiGetConAbsOversampleVal ($name);                                              # bei "1" keine Berücksichtigung Abwesenheit
+  return if($absence_oversample == 1);                                                                          
 
   my @absence_idx = grep { 
       my $pres_idx = $_ + $splice_len;                                                                      # $_ + $splice_len bildet den (post-splice) Trainingsindex zurück auf den (pre-splice) @presence_values-Index ab, da splice die ersten $splice_len Elemente aus @training_data entfernt hat, aber @presence_values noch unverändert ist
@@ -24963,6 +25152,12 @@ sub _aiFannOversampling {
   }
  
 return; 
+}
+
+sub __aiGetConAbsOversampleVal {
+  my ($name) = @_;
+  
+return CurrentVal ($name, 'aiConAbsOversample', 0.0);
 }
 
 ################################################################
@@ -26114,7 +26309,7 @@ sub aiFannGetConResult {
   debugLog ($paref, 'aiData', "Start AI FANN consumption result check");
   $data{$name}{current}{$fanntyp.'NNGetResultState'} = 'ok';
   
-  my $pv_max_limit = _aiFannPvMaxLimit ($name);
+  my $pv_max_limit = _pvMaxLimit ($name);
   
   if (!$pv_max_limit) {
       $msg = 'no peak output is provided by the PV system';
@@ -26673,10 +26868,30 @@ sub aiFannDetectDrift {
 
   if ($age_hours < 24) {
       $flag = 'fresh_model';
+      
+      # --- harter Reset der Drift-Historie beim frischen Modell
+      my $nn = $data{$name}{neuralnet}{$fanntyp} //= {};
+
+      $nn->{DriftZoneHistory}  = [];
+      $nn->{DriftZone3Hours}   = 0;
+      $nn->{DriftBias}         = 0;
+      $nn->{DriftSlope}        = 1;
+
+      # --- Referenzwerte auf Modellniveau setzen                                                           # V 2.6.2
+      my $mae_model      = AiNeuralVal ($name, $fanntyp, 'Mae',     1);
+      my $rmse_rel_model = AiNeuralVal ($name, $fanntyp, 'RmseRel', 30);
+      my $bias_model     = AiNeuralVal ($name, $fanntyp, 'ModelBias',  0);
+      my $slope_model    = AiNeuralVal ($name, $fanntyp, 'ModelSlope', 1);
+
+      $nn->{DriftRefMae}   = $mae_model;
+      $nn->{DriftRefRmse}  = $rmse_rel_model;
+      $nn->{DriftRefBias}  = $bias_model;
+      $nn->{DriftRefSlope} = $slope_model;                                                                  # V 2.6.2
+      
       $data{$name}{neuralnet}{$fanntyp}{DriftFlag} = $flag;
       return $flag;
   } 
-
+  
   # --- nur Daten, die vom neuen Modell stammen
   my @post_train_idx = grep {   
       my $idx   = $_;
@@ -26825,43 +27040,26 @@ sub aiFannDetectDrift {
   $data{$name}{neuralnet}{$fanntyp}{DriftBiasLive}     = round2 ($bias_live);
   $data{$name}{neuralnet}{$fanntyp}{DriftScore}        = round2 ($drift_score);
   $data{$name}{neuralnet}{$fanntyp}{DriftRmseRelRatio} = round2 ($rmse_rel_ratio);
-  $data{$name}{neuralnet}{$fanntyp}{DriftRefRmse}      = round3 ($rmse_rel_live);
-  $data{$name}{neuralnet}{$fanntyp}{DriftRefMae}       = round2 ($mae_live);
-  
-  
+
   # --- Drift-Rekalibrierung (automatisch) ---
   # die Werte aus dem ursprünglichen Training werden überschrieben.
   # die letzten 96 Stunden bestimmen danach das neue Modellniveau ($window)
-  # Bias → absolut ersetzt
-  # Slope → multiplikativ angepasst
-  # Drift‑KPIs → zurückgesetzt
-  # Drift‑Zonen‑Timer → zurückgesetzt
-  #  
-  # Historie der letzten Drift-Zonen speichern
+
+  # --- Historie der letzten Drift-Zonen für Log-Ausgabe speichern
   $data{$name}{neuralnet}{$fanntyp}{DriftZoneHistory} //= [];
   push @{$data{$name}{neuralnet}{$fanntyp}{DriftZoneHistory}}, $flag;
 
   my $hist = $data{$name}{neuralnet}{$fanntyp}{DriftZoneHistory};
-  splice @$hist, 0, @$hist - 20 if @$hist > 20;
+  splice @$hist, 0, @$hist - 20 if(@$hist > 20);
 
-  # Hysterese: stabile Zone 3 nur wenn 3 von 4 Messungen "moderate" oder "severe"
   my $hist_ref    = $data{$name}{neuralnet}{$fanntyp}{DriftZoneHistory} // [];                      # Historie holen, falls undef → leeres Array
-  my @hist        = @$hist_ref;
-  my $len         = scalar @hist;
-  my $start       = $len > 4 ? $len - 4 : 0;                                                        # Nur die letzten bis zu 4 Einträge betrachten
-  my $zone3_count = 0;
-  
-  if ($len > 0) {
-      $zone3_count = scalar grep { $_ eq 'moderate' || $_ eq 'severe' } @hist[$start .. $len - 1];
-  }
+  my @hist        = @$hist_ref;           
+  my $zone3_reset = $drift_index <= 1.5 ? 1 : 0;                                                    # V 2.6.2 unterhalb 'mild'-Schwelle
 
-  my $stable_zone3 = ($zone3_count >= 3) ? 1 : 0;
-  
-  # --- Rekalibrierung auslösen, wenn Zone 3 > X Stunden stabil  
-  if (!$stable_zone3) {
+  if ($zone3_reset) {                                                                               # V 2.6.2
       $data{$name}{neuralnet}{$fanntyp}{DriftZone3Hours} = 0;
   }
-  
+
   $data{$name}{neuralnet}{$fanntyp}{DriftZone3Hours}++;
   
   my $block_reason = _aiDrift_safety_blocked ( {  name            => $name,                         # prüfen ob Rekalibrierung vorgenommen werden darf
@@ -26883,29 +27081,29 @@ sub aiFannDetectDrift {
                                              );
 
   if (!$block_reason) {                                                                             # Rekalibrierung
-      if ($data{$name}{neuralnet}{$fanntyp}{DriftZone3Hours} >= DRIFTHZN3TH) {                      # DRIFTHZN3TH => 8                                 
-          #my $new_bias  = $ref_bias + 0.7 * $bias_drift;
+      my $drifthzn3th = ($flag eq 'severe') ? 4 : DRIFTHZN3TH;                                      # V 2.6.2 - 4h bei severe, sonst 8h -> schnellere Rekalibrierung nur bei schwerem Drift
+
+      if ($data{$name}{neuralnet}{$fanntyp}{DriftZone3Hours} >= $drifthzn3th) {                                                     
           # ---- Effektiver Bias-Drift: Kombination aus DriftBias und MAE-Drift
           my $bias_drift_effective = 0.5 * $bias_drift + 0.5 * ($mae_live - $ref_mae);
           $bias_drift_effective    = max(-2*$ref_mae, min(2*$ref_mae, $bias_drift_effective));      # Clamping gegen Überreaktionen
           my $new_bias             = $ref_bias + 0.4 * $bias_drift_effective;                       # Sanfte Anpassung (40 % statt 70 %)        
           
-          #my $new_slope = 1.0 + ($slope_live - 1.0) * 0.5;
-          #$new_slope    = max (0.85, min (1.15, $new_slope));
           # --- Slope-Fehler relativ zur Referenz
           my $slope_error           = $slope_live - $ref_slope;
           my $slope_drift_effective = 0.6 * $slope_error + 0.4 * ($rmse_rel_ratio - 1.0) * 0.1;     # Effektiver Slope-Drift: Kombination aus Slope-Drift und RMSE-Drift
           my $new_slope             = $ref_slope + $slope_drift_effective;                          # Neue Steigung
           $new_slope                = max(0.85, min(1.15, $new_slope));                             # Clamping für Stabilität
      
-          $data{$name}{neuralnet}{$fanntyp}{DriftRefBias}  = $new_bias;
-          $data{$name}{neuralnet}{$fanntyp}{DriftRefSlope} = $new_slope;
-        
-          $data{$name}{neuralnet}{$fanntyp}{DriftBias}  = 0;
-          $data{$name}{neuralnet}{$fanntyp}{DriftSlope} = 1;
-
+          $data{$name}{neuralnet}{$fanntyp}{DriftRefBias}       = $new_bias;
+          $data{$name}{neuralnet}{$fanntyp}{DriftRefSlope}      = $new_slope;
+          $data{$name}{neuralnet}{$fanntyp}{DriftBias}          = 0;
+          $data{$name}{neuralnet}{$fanntyp}{DriftSlope}         = 1;
           $data{$name}{neuralnet}{$fanntyp}{DriftZone3Hours}    = 0;
           $data{$name}{neuralnet}{$fanntyp}{DriftLastRecalTime} = (timestampToTimestring ($name, $t, $lang))[0];
+          
+          $data{$name}{neuralnet}{$fanntyp}{DriftRefMae}  = round2 ($mae_live);
+          $data{$name}{neuralnet}{$fanntyp}{DriftRefRmse} = round3 ($rmse_rel_live);
         
           $flag = 'recalibrated';
       }
@@ -26918,15 +27116,14 @@ sub aiFannDetectDrift {
       Log3 ($name, 1, sprintf (
           "%s DEBUG> DRIFT [%s]: ".
           "Flag=%s | Block=%s | SlopeLive=%.3f | DriftSlope=%.3f | BiasLive=%.2f | DriftBias=%.2f | ".
-          "RMSErelLive=%.1f | RMSErelRatio=%.2f | BiasVarNorm=%.2f |DriftScore=%.2f | ".
-          "Zone3Hours=%d | Hist=[%s]",
+          "RMSErelLive=%.1f | RMSErelRatio=%.2f | BiasVarNorm=%.2f | DriftIndex=%.2f | DriftScore=%.2f | ".
+          "Zone3Hours=%d | Zone3Reset=%d | Hist=[%s]",
           $name, $fanntyp,
           $flag,
           ($block_reason // 'none'),
           $slope_live, $slope_drift, $bias_live, $bias_drift,
-          $rmse_rel_live, $rmse_rel_ratio, $bias_var_norm, $drift_score,
-          $data{$name}{neuralnet}{$fanntyp}{DriftZone3Hours} // 0,
-          join (",", @hist)
+          $rmse_rel_live, $rmse_rel_ratio, $bias_var_norm, $drift_index, $drift_score, 
+          $data{$name}{neuralnet}{$fanntyp}{DriftZone3Hours} // 0, $zone3_reset, join (",", @hist)
       ) );
   }
   
@@ -27293,7 +27490,7 @@ return $range;
 #    PV maximum Limit - Begrenzung durch Strings oder 
 #    installierter Inverterleistung
 ################################################################
-sub _aiFannPvMaxLimit {            
+sub _pvMaxLimit {            
   my ($name) = @_;              
     
   my $aspeak       = CurrentVal ($name, 'allstringspeak',   0);                     # PV Anlage Peakleistung (W)
@@ -28577,17 +28774,21 @@ sub _listDataPoolPvHist {
               my $csmh     = HistoryVal ($name, $day, $key, "hourscsme${c}",      undef);
               my $csma     = HistoryVal ($name, $day, $key, "avgcycmntscsm${c}",  undef);
               my $evsoc    = HistoryVal ($name, $day, $key, "bevcsmSoC${c}",      undef);   
-              my $evtgtsoc = HistoryVal ($name, $day, $key, "bevcsmTargSoC${c}",  undef);
+              my $evtgtsoc = HistoryVal ($name, $day, $key, "bevcsmTargSoC${c}",  undef);     
+              my $evbatcap = HistoryVal ($name, $day, $key, "bevcsmBatCap${c}",   undef);
+              my $evcurpwr = HistoryVal ($name, $day, $key, "bevcsmPwr${c}",      undef);
 
               if ($export eq 'csv') {
-                  $hexp->{$day}{$key}{"CyclesCsm${c}"}          = $csmc  // '-';
-                  $hexp->{$day}{$key}{"Csmt${c}"}               = $csmt  // '-';
-                  $hexp->{$day}{$key}{"Csme${c}"}               = $csme  // '-';
-                  $hexp->{$day}{$key}{"MinutesCsm${c}"}         = $csmm  // '-';
-                  $hexp->{$day}{$key}{"HoursCsme${c}"}          = $csmh  // '-';
-                  $hexp->{$day}{$key}{"AvgCycleMinutesCsm${c}"} = $csma  // '-';
-                  $hexp->{$day}{$key}{"BEVcsmSoC${c}"}          = $evsoc // '-';
-                  $hexp->{$day}{$key}{"BEVcsmTargSoC${c}"}      = $evsoc // '-';
+                  $hexp->{$day}{$key}{"CyclesCsm${c}"}          = $csmc     // '-';
+                  $hexp->{$day}{$key}{"Csmt${c}"}               = $csmt     // '-';
+                  $hexp->{$day}{$key}{"Csme${c}"}               = $csme     // '-';
+                  $hexp->{$day}{$key}{"MinutesCsm${c}"}         = $csmm     // '-';
+                  $hexp->{$day}{$key}{"HoursCsme${c}"}          = $csmh     // '-';
+                  $hexp->{$day}{$key}{"AvgCycleMinutesCsm${c}"} = $csma     // '-';
+                  $hexp->{$day}{$key}{"BEVcsmSoC${c}"}          = $evsoc    // '-';
+                  $hexp->{$day}{$key}{"BEVcsmTargSoC${c}"}      = $evtgtsoc // '-';
+                  $hexp->{$day}{$key}{"BEVcsmBatCap${c}"}       = $evbatcap // '-';
+                  $hexp->{$day}{$key}{"BEVcsmPwr${c}"}          = $evcurpwr // '-';
               }
 
               if (defined $csmc) {
@@ -28634,6 +28835,18 @@ sub _listDataPoolPvHist {
               if (defined $evtgtsoc) {
                   $csm .= ", " if($nl);
                   $csm .= "bevcsmTargSoC${c}: $evtgtsoc";
+                  $nl   = 1;
+              }
+              
+              if (defined $evbatcap) {
+                  $csm .= ", " if($nl);
+                  $csm .= "bevcsmBatCap${c}: $evbatcap";
+                  $nl   = 1;
+              }
+              
+              if (defined $evcurpwr) {
+                  $csm .= ", " if($nl);
+                  $csm .= "bevcsmPwr${c}: $evcurpwr";
                   $nl   = 1;
               }
 
@@ -29241,6 +29454,8 @@ sub _listDataPoolAiRawData {
           my $csme     = AiRawdataVal ($name, $idx, 'csme'.$c,          undef);
           my $evsoc    = AiRawdataVal ($name, $idx, 'bevcsmSoC'.$c,     undef);
           my $evtgtsoc = AiRawdataVal ($name, $idx, 'bevcsmTargSoC'.$c, undef);
+          my $evbatcap = AiRawdataVal ($name, $idx, 'bevcsmBatCap'.$c,  undef);
+          my $evcurpwr = AiRawdataVal ($name, $idx, 'bevcsmPwr'.$c,     undef);
 
           if (defined $csme) {
               $csm .= ", " if($csm);
@@ -29255,6 +29470,16 @@ sub _listDataPoolAiRawData {
           if (defined $evtgtsoc) {
               $csm .= ", " if($csm);
               $csm .= "bevcsmTargSoC${c}: $evtgtsoc";
+          }
+          
+          if (defined $evbatcap) {
+              $csm .= ", " if($csm);
+              $csm .= "bevcsmBatCap${c}: $evbatcap";
+          }
+          
+          if (defined $evcurpwr) {
+              $csm .= ", " if($csm);
+              $csm .= "bevcsmPwr${c}: $evcurpwr";
           }
       }
 
@@ -30680,7 +30905,7 @@ sub timestringsFromOffset {
       minute  => $zp->($min),                                                                   # Minute (00-59)
       second  => $zp->($sec),                                                                   # aktuelle Sekunde (00-60)                                    
 
-      # --- Locale‑abhängig, aber ohne strftime‑Kosten
+      # --- Locale-abhängig, aber ohne strftime Kosten
       dayname => LOCALE_DAYNAMES->[$wday],                                                      # Wochentagsname
 
       # --- %u (1=Mo … 7=So)
@@ -35196,6 +35421,8 @@ to ensure that the system configuration is correct.
             <tr><td> <b>batmaxsocXX</b>     </td><td>Maximum SOC (%) achieved by battery XX on the day                                                                        </td></tr>
             <tr><td> <b>batsetsocXX</b>     </td><td>Optimum SOC setpoint (%) of battery XX  for the day                                                                      </td></tr>
             <tr><td> <b>bevcsm</b>          </td><td>Consumer numbers of registered electric cars (BEV)                                                                       </td></tr>
+            <tr><td> <b>bevcsmBatCapXX</b>  </td><td>nominal battery capacity (Wh) of the BEV consumer XX                                                                     </td></tr>
+            <tr><td> <b>bevcsmPwrXX</b>     </td><td>Charging power (W) of BEV consumer XX at the end of the hour                                                             </td></tr>
             <tr><td> <b>bevcsmSoCXX</b>     </td><td>current SOC (%) of the BEV consumer XX                                                                                   </td></tr>
             <tr><td> <b>bevcsmTargSoCXX</b> </td><td>Target SOC (%) set for BEV consumer XX                                                                                   </td></tr>
             <tr><td> <b>comforttemp</b>     </td><td>set comfort temperature for the building in °C                                                                           </td></tr>
@@ -38263,6 +38490,8 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>batmaxsocXX</b>     </td><td>maximal erreichter SOC (%) der Batterie XX an dem Tag                                                  </td></tr>
             <tr><td> <b>batsetsocXX</b>     </td><td>optimaler SOC Sollwert (%) der Batterie XX für den Tag                                                 </td></tr>
             <tr><td> <b>bevcsm</b>          </td><td>Verbrauchernummern der registrierten E-Autos (BEV)                                                     </td></tr>
+            <tr><td> <b>bevcsmBatCapXX</b>  </td><td>nominale Batteriekapazität (Wh) des BEV-Verbrauchers XX                                                </td></tr>
+            <tr><td> <b>bevcsmPwrXX</b>     </td><td>Ladeleistung (W) des BEV-Verbrauchers XX am Ende der Stunde                                            </td></tr>
             <tr><td> <b>bevcsmSoCXX</b>     </td><td>aktueller SOC (%) des BEV-Verbrauchers XX                                                              </td></tr>
             <tr><td> <b>bevcsmTargSoCXX</b> </td><td>eingestellter Ziel-SOC (%) des BEV-Verbrauchers XX                                                     </td></tr>
             <tr><td> <b>comforttemp</b>     </td><td>eingestellte Komforttemperatur des Gebäudes in °C                                                      </td></tr>
