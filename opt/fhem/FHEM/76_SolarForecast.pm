@@ -161,9 +161,10 @@ BEGIN {
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.1"  => "14.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
+  "2.9.1"  => "16.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
                            "neuer Befehl set .. reset aiData setValue ... ".
-                           "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ",
+                           "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ".
+                           "die Victron API ((Model VictronKiAPI) kann nun den neuen Token-Auth verwenden ",
   "2.9.0"  => "10.07.2026  speichere Gründe für Retrainstatus in RetrainReason, Persistenztyp mit plantControl->writeForceType ".
                            "_aiFannRetrainIndicator: berücksichtige neuen bias_abs_min, Gemini Prompt Erweiterung ".
                            "Consumer Typ 'heatpump' für Planung & automatisches Schalten freigegeben, hef angepasst für: dishwasher, dryer, dehydrator ".
@@ -3130,7 +3131,6 @@ return $msg;
 sub _setVictronCredentials {                 ## no critic "not used"
   my $paref = shift;
   my $name  = $paref->{name};
-  my $type  = $paref->{type};
   my $opt   = $paref->{opt};
   my $arg   = $paref->{arg};
 
@@ -3148,14 +3148,16 @@ sub _setVictronCredentials {                 ## no critic "not used"
       $msg = qq{Credentials for the Victron VRM API are deleted. };
   }
   else {
-      if (!$h->{user} || !$h->{pwd} || !$h->{idsite}) {
+      if (!$h->{user} || !$h->{idsite} || (!$h->{pwd} && !$h->{token})) {
           return qq{The syntax of "$opt" is not correct. Please consider the commandref.};
       }
-
+      if ($h->{pwd} && $h->{token}) {
+          return qq{Please provide either "pwd" or "token", not both.};
+      }
       my $serial = eval { freeze ($h)
                         }
                         or do { return "Serialization ERROR: $@" };
-
+      
       $data{$name}{statusapi}{'?VRM'}{'?API'}{credentials} = chew ($serial);
       $msg = qq{Credentials for the Victron VRM API has been saved.};
   }
@@ -5209,55 +5211,67 @@ return;
 # https://vrm-api-docs.victronenergy.com/#/
 ################################################################
 sub __VictronVRM_ApiRequestLogin {
-  my $paref = shift;
-  my $name  = $paref->{name};
-  my $debug = $paref->{debug};
-  my $type  = $paref->{type};
+  my $paref  = shift;
+  my $name   = $paref->{name};
+  my $debug  = $paref->{debug};
+  my $hash   = $defs{$name};
+  my $caller = (caller(0))[3];
 
-  my $hash  = $defs{$name};
-  my $url   = 'https://vrmapi.victronenergy.com/v2/auth/login';
-
-  debugLog ($paref, "apiProcess|apiCall", qq{Request VictronVRM API Login: $url});
-
-  my $caller = (caller(0))[3];                                                     # Rücksprungmarke
-
-  my ($user, $pwd, $idsite);
-
+  my ($user, $pwd, $token, $idsite, $authtype);
   my $serial = StatusAPIVal ($hash, '?VRM', '?API', 'credentials', '');
 
   if ($serial) {
-      my $h   = eval { thaw (assemble ($serial)) };                                # Deserialisierung
-      $user   = $h->{user}   // q{};
-      $pwd    = $h->{pwd}    // q{};
-      $idsite = $h->{idsite} // q{};
+      my $h     = eval { thaw (assemble ($serial)) };
+      $user     = $h->{user}     // q{};
+      $pwd      = $h->{pwd}      // q{};                          # nur bei klassischem Login gesetzt
+      $token    = $h->{token}    // q{};                          # nur bei Token-Auth gesetzt
+      $idsite   = $h->{idsite}   // q{};
+      
+      $authtype = $token ? 'token' : 'password';                  # Unterscheidung anhand vorhandener Felder
 
-      debugLog ($paref, "apiCall", qq{Used credentials for Login: user->$user, pwd->$pwd, idsite->$idsite});
+      debugLog ($paref, "apiCall", qq{Used credentials for Login: user->$user, authtype->$authtype, idsite->$idsite});
   }
   else {
       my $msg = "Victron VRM API credentials are not set or couldn't be decrypted. Use 'set $name vrmCredentials' to set it.";
       Log3              ($name, 2, "$name - $msg");
       singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
-
       $data{$name}{statusapi}{VictronKi}{'?All'}{response_message} = $msg;
       return;
   }
 
+  $paref->{idsite}   = $idsite;
+  $paref->{authtype} = $authtype;
+
+  if ($authtype eq 'token') {
+      debugLog ($paref, "apiProcess|apiCall", qq{VictronVRM API: using Access Token auth, skipping /v2/auth/login});
+      
+      $paref->{token} = $token;
+      
+      __VictronVRM_ApiRequestForecast ($paref);                   # direkt weiter, kein Login-Roundtrip nötig
+      
+      return;
+  }
+
+  # ---- ab hier unverändert der bisherige Passwort-Login-Zweig ----
+  my $url = 'https://vrmapi.victronenergy.com/v2/auth/login';
+  
+  debugLog ($paref, "apiProcess|apiCall", qq{Request VictronVRM API Login: $url});
+
   my $param = {
-      url        => $url,
-      timeout    => APITIMEOUT,
-      name       => $name,
-      type       => $paref->{type},
-      stc        => [gettimeofday],
-      debug      => $debug,
-      caller     => \&$caller,
-      lang       => $paref->{lang},
-      chour      => $paref->{chour},                                            # aktuelle Stunde in 24h format (00-23)
-      date       => $paref->{date},
-      idsite     => $idsite,
-      header     => { "Content-Type" => "application/json" },
-      data       => qq({ "username": "$user",  "password": "$pwd" }),
-      method     => 'POST',
-      callback   => \&__VictronVRM_ApiResponseLogin
+      url      => $url,
+      timeout  => APITIMEOUT,
+      name     => $name,
+      stc      => [gettimeofday],
+      debug    => $debug,
+      caller   => \&$caller,
+      lang     => $paref->{lang},
+      chour    => $paref->{chour},
+      date     => $paref->{date},
+      idsite   => $idsite,
+      header   => { "Content-Type" => "application/json" },
+      data     => qq({ "username": "$user",  "password": "$pwd" }),
+      method   => 'POST',
+      callback => \&__VictronVRM_ApiResponseLogin
   };
 
   if ($debug =~ /apiCall/x) {
@@ -5265,7 +5279,7 @@ sub __VictronVRM_ApiRequestLogin {
   }
 
   HttpUtils_NonblockingGet ($param);
-
+  
 return;
 }
 
@@ -5278,7 +5292,6 @@ sub __VictronVRM_ApiResponseLogin {
   my $myjson = shift;
 
   my $name   = $paref->{name};
-  my $type   = $paref->{type};
   my $caller = $paref->{caller};
   my $stc    = $paref->{stc};
   my $lang   = $paref->{lang};
@@ -5366,37 +5379,41 @@ return;
 # # API Beschreibung: https://vrm-api-docs.victronenergy.com/#/operations/installations/idSite/stats
 ######################################################################################################
 sub __VictronVRM_ApiRequestForecast {
-  my $paref  = shift;
-  my $name   = $paref->{name};
-  my $token  = $paref->{token};
-  my $debug  = $paref->{debug};
-  my $lang   = $paref->{lang};
-  my $idsite = $paref->{idsite};
-  my $chour  = $paref->{chour};                                                   # aktuelle Stunde in 24h format (00-23)
-  my $date   = $paref->{date};
+  my $paref    = shift;
+  my $name     = $paref->{name};
+  my $token    = $paref->{token};
+  my $debug    = $paref->{debug};
+  my $lang     = $paref->{lang};
+  my $idsite   = $paref->{idsite};
+  my $chour    = $paref->{chour};
+  my $date     = $paref->{date};
+  my $authtype = $paref->{authtype} // 'password';                 # Fallback falls nicht gesetzt
 
   my $hash   = $defs{$name};
   my $tstart = timestringToTimestamp ($hash, "$date $chour:00:00");
-  my $tend   = $tstart + 259200;                                                  # 172800 = 2 Tage
+  my $tend   = $tstart + 259200;
 
   my $url = "https://vrmapi.victronenergy.com/v2/installations/$idsite/stats?type=forecast&interval=hours&start=$tstart&end=$tend";
 
   debugLog ($paref, "apiProcess|apiCall", qq{Request VictronVRM API Forecast: $url});
 
-  my $caller = (caller(0))[3];                                                    # Rücksprungmarke
+  my $caller = (caller(0))[3];
+
+  my $authheader = ($authtype eq 'token') ? "Token $token" : "Bearer $token";  # <-- Kernänderung
 
   my $param = {
-      url     => $url,
-      timeout => APITIMEOUT,
-      name    => $name,
-      type    => $paref->{type},
-      stc     => [gettimeofday],
-      debug   => $debug,
-      token   => $token,
-      caller  => \&$caller,
-      lang    => $paref->{lang},
-      header  => { "Content-Type" => "application/json", "x-authorization" => "Bearer $token" },
-      method  => 'GET',
+      url      => $url,
+      timeout  => APITIMEOUT,
+      name     => $name,
+      type     => $paref->{type},
+      stc      => [gettimeofday],
+      debug    => $debug,
+      token    => $token,
+      authtype => $authtype,                                       # für Response-Handler durchreichen
+      caller   => \&$caller,
+      lang     => $paref->{lang},
+      header   => { "Content-Type" => "application/json", "x-authorization" => $authheader },
+      method   => 'GET',
       callback => \&__VictronVRM_ApiResponseForecast
   };
 
@@ -5405,7 +5422,7 @@ sub __VictronVRM_ApiRequestForecast {
   }
 
   HttpUtils_NonblockingGet ($param);
-
+  
 return;
 }
 
@@ -5418,7 +5435,6 @@ sub __VictronVRM_ApiResponseForecast {
   my $myjson = shift;
 
   my $name   = $paref->{name};
-  my $type   = $paref->{type};
   my $caller = $paref->{caller};
   my $stc    = $paref->{stc};
   my $lang   = $paref->{lang};
@@ -5524,12 +5540,12 @@ sub __VictronVRM_ApiResponseForecast {
 
           $k = 0;
           while ($jdata->{'records'}{'vrm_consumption_fc'}[$k]) {
-              if (ref $jdata->{'records'}{'vrm_consumption_fc'}[$k] ne "ARRAY") {              # Forum: https://forum.fhem.de/index.php?msg=1288637
+              if (ref $jdata->{'records'}{'vrm_consumption_fc'}[$k] ne "ARRAY") {                           # Forum: https://forum.fhem.de/index.php?msg=1288637
                   $k++;
                   next;
               }
 
-              my $starttmstr = $jdata->{'records'}{'vrm_consumption_fc'}[$k][0];               # Millisekunden geliefert
+              my $starttmstr = $jdata->{'records'}{'vrm_consumption_fc'}[$k][0];                            # Millisekunden geliefert
               my $val        = $jdata->{'records'}{'vrm_consumption_fc'}[$k][1];
               $starttmstr    = (timestampToTimestring ($name, $starttmstr, $lang))[3];
 
@@ -5547,10 +5563,12 @@ sub __VictronVRM_ApiResponseForecast {
       }
   }
 
-  $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval  ($sta));                                    # Verarbeitungszeit ermitteln
-  $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval ($stc) - tv_interval ($sta));                # API Laufzeit ermitteln
+  $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval  ($sta));                               # Verarbeitungszeit ermitteln
+  $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval ($stc) - tv_interval ($sta));           # API Laufzeit ermitteln
 
-  __VictronVRM_ApiRequestLogout ($paref);
+  if (($paref->{authtype} // 'password') ne 'token') {
+      __VictronVRM_ApiRequestLogout ($paref);                                                               # nur bei Session-Login nötig
+  }
 
 return;
 }
@@ -5577,7 +5595,6 @@ sub __VictronVRM_ApiRequestLogout {
       url        => $url,
       timeout    => APITIMEOUT,
       name       => $name,
-      type       => $paref->{type},
       debug      => $debug,
       caller     => \&$caller,
       lang       => $paref->{lang},
