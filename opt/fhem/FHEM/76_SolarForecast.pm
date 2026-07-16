@@ -39104,32 +39104,43 @@ to ensure that the system configuration is correct.
 
     <ul>
       <a id="SolarForecast-set-vrmCredentials"></a>
-      <li><b>vrmCredentials user=&lt;Benutzer&gt; pwd=&lt;Paßwort&gt; idsite=&lt;idSite&gt; </b> <br>
+      <li><b>vrmCredentials user=&lt;Benutzer&gt; idsite=&lt;idSite&gt; pwd=&lt;Paßwort&gt; | token=&lt;API-Token&gt; </b> <br>
       (only when using Model VictronKiAPI) <br><br>
 
        If the Victron VRM API is used, the required access data must be stored with this set command. <br><br>
-
+      
       <ul>
          <table>
          <colgroup> <col width="10%"> <col width="90%"> </colgroup>
             <tr><td> <b>user</b>   </td><td>Username for the Victron VRM Portal                                              </td></tr>
-            <tr><td> <b>pwd</b>    </td><td>Password for access to the Victron VRM Portal                                    </td></tr>
             <tr><td> <b>idsite</b> </td><td>idSite is the identifier "XXXXXX" in the Victron VRM Portal Dashboard URL.       </td></tr>
             <tr><td>               </td><td>URL of the Victron VRM Dashboard:                                                </td></tr>
             <tr><td>               </td><td>https://vrm.victronenergy.com/installation/<b>XXXXXX</b>/dashboard               </td></tr>
+         </table>
+      </ul>
+
+      In the credentials, set either a password (deprecated method) <b>or</b> API Access token:
+
+      <ul>
+         <table>
+         <colgroup> <col width="10%"> <col width="90%"> </colgroup>
+			<tr><td> <b>pwd</b>    </td><td>Password for access to the Victron VRM Portal                                     </td></tr>
+			<tr><td> <b>token</b>  </td><td>API Access Token                                                                  </td></tr>
+			<tr><td>               </td><td>Create the API token in the Victron VRM Portal under Preferences > Integrations.  </td></tr>
          </table>
       </ul>
       <br>
 
       To delete the stored credentials, only the argument <b>delete</b> must be passed to the command. <br><br>
 
-       <ul>
-        <b>Examples: </b> <br>
-        set &lt;name&gt; vrmCredentials user=john@example.com pwd=somepassword idsite=212008 <br>
-        set &lt;name&gt; vrmCredentials delete <br>
-       </ul>
-
-      </li>
+      <ul>
+       <b>Examples: </b> <br>
+       set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 pwd=somepassword <br>
+	   set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 token=addd5....b3e72e15e0 <br>
+       set &lt;name&gt; vrmCredentials delete <br>
+      </ul>
+      
+    </li>
     </ul>
     <br>
 
@@ -42222,7 +42233,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
 
     <ul>
       <a id="SolarForecast-set-vrmCredentials"></a>
-      <li><b>vrmCredentials user=&lt;Benutzer&gt; pwd=&lt;Paßwort&gt; idsite=&lt;idSite&gt; </b> <br>
+      <li><b>vrmCredentials user=&lt;Benutzer&gt; idsite=&lt;idSite&gt; pwd=&lt;Paßwort&gt; | token=&lt;API-Token&gt; </b> <br>
       (nur bei Verwendung Model VictronKiAPI) <br><br>
 
        Wird die Victron VRM API genutzt, sind mit diesem set-Befehl die benötigten Zugangsdaten zu hinterlegen. <br><br>
@@ -42231,23 +42242,34 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
          <table>
          <colgroup> <col width="10%"> <col width="90%"> </colgroup>
             <tr><td> <b>user</b>   </td><td>Benutzername für das Victron VRM Portal                                           </td></tr>
-            <tr><td> <b>pwd</b>    </td><td>Paßwort für den Zugang zum Victron VRM Portal                                     </td></tr>
             <tr><td> <b>idsite</b> </td><td>idSite ist der Bezeichner "XXXXXX" in der Victron VRM Portal Dashboard URL.       </td></tr>
             <tr><td>               </td><td>URL des Victron VRM Dashboard ist:                                                </td></tr>
             <tr><td>               </td><td>https://vrm.victronenergy.com/installation/<b>XXXXXX</b>/dashboard                </td></tr>
+         </table>
+      </ul>
+
+      In den Credentials entweder Paßwort (abgekündigtes Verfahren) <b>oder</b> API-Zugriffstoken setzen:
+
+      <ul>
+         <table>
+         <colgroup> <col width="10%"> <col width="90%"> </colgroup>
+			<tr><td> <b>pwd</b>    </td><td>Paßwort für den Zugang zum Victron VRM Portal                                     </td></tr>
+			<tr><td> <b>token</b>  </td><td>API-Zugriffstoken                                                                 </td></tr>
+			<tr><td>               </td><td>Das API-Token im Victron VRM Portal unter Präferenzen->Integrationen anlegen.     </td></tr>
          </table>
       </ul>
       <br>
 
       Um die gespeicherten Credentials zu löschen, ist dem Kommando nur das Argument <b>delete</b> zu übergeben. <br><br>
 
-       <ul>
-        <b>Beispiele: </b> <br>
-        set &lt;name&gt; vrmCredentials user=john@example.com pwd=somepassword idsite=212008 <br>
-        set &lt;name&gt; vrmCredentials delete <br>
-       </ul>
+      <ul>
+       <b>Beispiele: </b> <br>
+       set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 pwd=somepassword <br>
+	   set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 token=addd5....b3e72e15e0 <br>
+       set &lt;name&gt; vrmCredentials delete <br>
+      </ul>
 
-      </li>
+    </li>
     </ul>
     <br>
 
