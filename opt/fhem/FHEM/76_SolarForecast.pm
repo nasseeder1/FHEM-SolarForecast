@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31417 2026-06-30 20:25:53Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31475 2026-07-10 20:59:10Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -161,6 +161,9 @@ BEGIN {
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.9.1"  => "14.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
+                           "neuer Befehl set .. reset aiData setValue ... ".
+                           "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ",
   "2.9.0"  => "10.07.2026  speichere Gründe für Retrainstatus in RetrainReason, Persistenztyp mit plantControl->writeForceType ".
                            "_aiFannRetrainIndicator: berücksichtige neuen bias_abs_min, Gemini Prompt Erweiterung ".
                            "Consumer Typ 'heatpump' für Planung & automatisches Schalten freigegeben, hef angepasst für: dishwasher, dryer, dehydrator ".
@@ -2391,6 +2394,51 @@ semantics_heatpump => sub {
     ];
 },
 
+# --------------------------------------------------------------------------
+# Schliesst die Luecke fuer WP-Haushalte OHNE PV.
+# Identisch zu semantics_heatpump, aber OHNE die zwei PV-abhaengigen
+# Zeilen (ww_pv_boost*pv_norm und pv_norm*hour_class_noon), damit der
+# Block auch ohne PV-Signal sinnvolle (nicht dauerhaft-0) Werte liefert.
+# --------------------------------------------------------------------------
+semantics_heatpump_nopv => sub {
+    my ($f) = @_;
+    return [
+        # --- HEIZEN ---
+        softplus($f->{hp_heating_mode} * $f->{temp_delta_1h_neg}),
+        softplus($f->{hp_heating_mode} * $f->{temp_trend_neg}),
+        softplus($f->{hp_heating_mode} * $f->{frost_load}),
+        softplus($f->{hp_heating_mode} * $f->{hour_class_morning}),
+        softplus($f->{hp_heating_mode} * $f->{hour_class_evening}),
+
+        # --- KUEHLEN ---
+        softplus($f->{hp_cooling_mode} * $f->{temp_delta_1h_pos}),
+        softplus($f->{hp_cooling_mode} * $f->{temp_trend_pos}),
+        softplus($f->{hp_cooling_mode} * $f->{hour_class_noon}),
+
+        # --- WARM-WASSER (ohne PV-Boost-Zeile) ---
+        softplus($f->{ww_morning}    * $f->{hp_heating_mode}),
+        softplus($f->{ww_evening}    * $f->{hp_heating_mode}),
+        softplus($f->{ww_cycle_flag} * $f->{hp_heating_mode}),
+        softplus($f->{ww_cold_boost} * $f->{temp_delta_1h_neg}),
+
+        # --- EFFIZIENZ ---
+        softplus($f->{cop_inverse} * $f->{trend_up_strength}),
+        softplus($f->{cop_proxy}   * $f->{trend_down_strength}),
+
+        # --- FROSTSCHUTZ ---
+        softplus($f->{frost_protect} * $f->{hour_class_midnight}),
+        softplus($f->{frost_protect} * $f->{temp_delta_1h_neg}),
+
+        # --- TEMPERATUR + TREND ---
+        softplus($f->{temp_delta_3h_neg} * $f->{trend_up_strength}),
+        softplus($f->{temp_delta_3h_pos} * $f->{trend_down_strength}),
+
+        # --- Verstaerker (ohne pv_norm*hour_class_noon Zeile) ---
+        $f->{ww_morning} * $f->{hour_class_morning},
+        $f->{frost_load} * $f->{hour_class_morning},
+    ];
+},
+
 semantics_heatpump_boost_special => sub {                                               # NEU 14.01.
     my ($f) = @_;
 
@@ -3532,7 +3580,7 @@ return;
 }
 
 ################################################################
-#                     KI Daten löschen
+#                 KI Raw-Daten löschen/ändern
 ################################################################
 sub __resetAiData {
   my ($name, $arg, $argsref) = @_;
@@ -3639,6 +3687,27 @@ sub __resetAiData {
               Log3 ($name, 1, "$name - AI Raw data $done - idx: $idx -> key=$key, val=$val");
           }
       }
+  }
+  elsif ($args[1] eq 'setValue') {                                                   # den Wert eines Schlüssels in einem bestimmten Index setzen/ändern
+      my $idx = $ha->{Index};
+      my $key = $ha->{key};
+      my $val = $ha->{value};
+
+      return "the arguments of 'setValue' are not specified correctly, use: setValue Index=<idx> key=<key> value=<value>"
+          if (!defined $idx || !defined $key || !defined $val || !length $idx || !length $key || !length $val);
+
+      return "Index '$idx' must be numeric" if ($idx !~ /^\d+$/);
+      return "key '$key' contains invalid characters"
+          if ($key !~ /^[A-Za-z0-9_]+$/);
+      return "AI Raw data index '$idx' doesn't exist"
+          if (!exists $data{$name}{aidectree}{airaw}{$idx});
+
+      my $old = AiRawdataVal ($name, $idx, $key, undef);
+      $data{$name}{aidectree}{airaw}{$idx}{$key} = $val;
+      $dosave = 1;
+
+      Log3 ($name, 1, qq{$name - AI Raw data set - idx: $idx -> key=$key, old value=}.
+                       (defined $old ? $old : '<undef>').qq{, new value=$val});
   }
   
   if ($dosave) {
@@ -7622,20 +7691,7 @@ sub __getaiFannState {            ## no critic "not used"
   $rating_content   .= "<b>".$hqtxt{drfrat}{$lang}.":</b> ".(encode('utf8', $display_driftflag))."\n";
   $rating_content   .= "<b>".(encode('utf8', $hqtxt{rcdfor}{$lang}.' Retrain')).
                        ":</b> $retrampel $recomd_translated $show_retreason \n";  
-  
-  # ------------------------------
-  #my $linkGemini     = qq{"FW_cmd('$::FW_ME$::FW_subdir?XHR=1&cmd=get $name valDecTree aiConAssessGemini', function(data){FW_okDialog(data)})"};
-  
-  #my $privacyHint    = $lang eq 'DE'
-  #                   ? encode ('utf8', 'Es werden Trainingsmetriken an Google Gemini übertragen (sichtbar im Log mit ctrlDebug=apiCall)')
-  #                   : 'Training metrics are transmitted to Google Gemini (visible in the log with ctrlDebug=apiCall)';
-  #my $privacyNote    = qq{<span style="font-size:0.75em;color:#888;margin-left:6px">($privacyHint)</span>};
-  #my $askGemini      = qq{<span title="$privacyHint"> <a style="cursor:pointer" onClick=$linkGemini>Google Gemini</a> </span>};
-
-  #$rating_content   .= "\n";
-  #$rating_content   .= "<b>".$hqtxt{exeval}{$lang}.":</b> $askGemini $privacyNote \n";
-  
-  # ----------------------------
+  # ------------------------------  
   
   my $linkGemini       = qq{"FW_cmd('$::FW_ME$::FW_subdir?XHR=1&cmd=get $name valDecTree aiConAssessGemini', function(data){FW_okDialog(data)})"};
   my $linkPromptExport = qq{"FW_cmd('$::FW_ME$::FW_subdir?XHR=1&cmd=get $name valDecTree aiConTrainState LLM', function(data){FW_okDialog(data)})"};
@@ -8104,8 +8160,7 @@ sub _aiFannGeminiApiAssess {
       return "The AI for forecasting $fanntyp is not yet operational. \n<b>Cause:</b> $cause";
   }
   
-  my $hash   = $defs{$name};
-  my $apiKey = CurrentVal ($name, 'geminiAPIkey');
+  my ($apiKey, $model) = split ( ":", CurrentVal ($name, 'geminiAPIkey', ':') );
   
   unless ($apiKey) {
       my $ret = $lang eq 'DE' 
@@ -8118,8 +8173,7 @@ sub _aiFannGeminiApiAssess {
       return encode ('utf8', $ret); 
   }
 
-  #my $model = 'gemini-2.5-flash-lite';                                                          # alternativ: gemini-2.0-flash (aber älter und qualitativ schlechter), gemini-2.5-flash-lite, gemini-2.5-flash
-  my $model = 'gemini-2.5-flash';
+  $model = $model ? $model : 'gemini-2.5-flash';
   
   # --- Metriken sammeln ---
   my $profile   = AiNeuralVal ($name, $fanntyp, 'RegVersion',     'n/a');                       # verwendete Feature-Registry Version
@@ -8147,6 +8201,7 @@ sub _aiFannGeminiApiAssess {
   my $epochPct  = AiNeuralVal ($name, $fanntyp, 'EpochRelPct',    'n/a');                       # % der max. Epochen genutzt
   my $maxepoch  = AINUMEPOCHS;                                                                  # oder als Konstante
 
+  my $hash      = $defs{$name};
   my $version   = $hash->{HELPER}{VERSION} // 'n/a';
     
       
@@ -8308,6 +8363,7 @@ END_EN
 
   if ($debug =~ /apiCall/x) {
       $param->{loglevel} = 1;
+      Log3 ($name, 1, "$name DEBUG> Google Gemini model $model is used for external analysis.");
       Log3 ($name, 1, "$name DEBUG> The following data are transmitted to Google Gemini for analysis: \n$userMsg");
   }
 
@@ -28956,6 +29012,9 @@ sub _aiFannFeatureBuilder {
       elsif ($flags->{pv}) {                                                                # WP + PV
           push @features, @{ $FEATURE_BLOCKS{semantics_heatpump}->($f) };
       }
+      else {                                                                                # WP ohne PV - schliesst die zuvor bestehende Luecke
+          push @features, @{ $FEATURE_BLOCKS{semantics_heatpump_nopv}->($f) };
+      }
   }
     
   # --------------------------------------------------------
@@ -38942,7 +39001,7 @@ to ensure that the system configuration is correct.
       <ul>
          <table>
          <colgroup> <col width="20%"> <col width="80%"> </colgroup>
-            <tr><td> <b>aiData</b>             </td><td>The following arguments can be used to selectively or completely remove AI raw data:                                                                            </td></tr>
+            <tr><td> <b>aiData</b>             </td><td>AI raw data can be manipulated using the following methods:                                                                                                     </td></tr>
             <tr><td>                           </td><td><b>delDataAll</b> - deletes the AI instance, including all training and raw data as well as data at the file level, and reinitializes it.                       </td></tr>
             <tr><td>                           </td><td><b>delIndex=&lt;Index&gt;,&lt;Index&gt;,...</b> - deletes one or more records with the index. The index can be specified as a regex.                            </td></tr>
             <tr><td>                           </td><td>If there are spaces in the argument, the entire argument must be enclosed in quotation marks.                                                                   </td></tr>
@@ -38951,6 +39010,8 @@ to ensure that the system configuration is correct.
             <tr><td>                           </td><td>Examples: <b>1.)</b> searchValue=con==9786  <b>2.)</b> searchValue=con>=14578  <b>3.)</b> searchValue=temp<=-5                                                  </td></tr>
             <tr><td>                           </td><td><b>delValue</b> - deletes the numerical value in the specified key. Possible comparison operators are: > | >= | == | <= | < (Deletion confirmation in log file) </td></tr>
             <tr><td>                           </td><td>Examples: <b>1.)</b> delValue=con==9786  <b>2.)</b> delValue=con>=14578  <b>3.)</b> delValue=temp<=-5                                                           </td></tr>
+            <tr><td>                           </td><td><b>setValue</b> - Sets or changes the value for the specified key in a data record index. (The operation is confirmed in the log file.)                         </td></tr>
+            <tr><td>                           </td><td>Examples: <b>1.)</b> setValue Index=2026071416 key=presence value=0 <b>2.)</b> setValue Index=2026071418 key=pvrl value=1722                                    </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>batteryTriggerSet</b>  </td><td>deletes the trigger points of the battery storage                                                                                                               </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
@@ -39750,8 +39811,9 @@ to ensure that the system configuration is correct.
             <tr><td>                          </td><td>The default value of '0' uses all available data records.                                                                                                    </td></tr>
             <tr><td>                          </td><td>Values:<b> 0 or Integer >= 2000 </b>, default: 0                                                                                                             </td></tr>
             <tr><td>                          </td><td>                                                                                                                                                             </td></tr>
-            <tr><td> <b>geminiAPIkey</b>      </td><td>The Google Gemini API key can be entered here for external analysis of AI training results for consumption forecasts.                                        </td></tr>
+            <tr><td> <b>geminiAPIkey</b>      </td><td>To perform an external analysis of the consumption forecast AI training results, you can enter the Google Gemini API key and model version here.             </td></tr>
             <tr><td>                          </td><td>The API key can be generated for free at aistudio.google.com->‘Get API key’.                                                                                 </td></tr>
+            <tr><td>                          </td><td>Syntax: <b> &lt;API-Key&gt;:&lt;Gemini-Model&gt; </b>, default Gemini-Model: gemini-2.5-flash                                                                </td></tr>
             <tr><td>                          </td><td><b>Transparency Notice:</b> Data transmitted to Gemini is logged with ctrlDebug=apiCall enabled.                                                             </td></tr>
             <tr><td>                          </td><td>                                                                                                                                                             </td></tr>
        </table>
@@ -42058,7 +42120,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
       <ul>
          <table>
          <colgroup> <col width="20%"> <col width="80%"> </colgroup>
-            <tr><td> <b>aiData</b>             </td><td>Mit den nachfolgenden Argumenten können KI-Rohdaten selektiv oder komplett entfernt werden:                                                                     </td></tr>
+            <tr><td> <b>aiData</b>             </td><td>Mit den nachfolgenden Argumenten können KI-Rohdaten manipuliert werden:                                                                                         </td></tr>
             <tr><td>                           </td><td><b>delDataAll</b> - löscht die KI Instanz inklusive aller Trainings- und Rohdaten sowie Daten auf Fileebene und initialisiert sie neu                           </td></tr>
             <tr><td>                           </td><td><b>delIndex=&lt;Index&gt;,&lt;Index&gt;,...</b> - löscht einen oder mehrere Datensätze mit dem Index. Der Index kann als Regex angegeben sein.                  </td></tr>
             <tr><td>                           </td><td>Sind im Argument Leerzeichen vorhanden, ist das gesamte Argument in Hochkomma einzuschließen.                                                                   </td></tr>
@@ -42067,6 +42129,8 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                           </td><td>Beispiele: <b>1.)</b> searchValue=con==9786  <b>2.)</b> searchValue=con>=14578  <b>3.)</b> searchValue=temp<=-5                                                 </td></tr>
             <tr><td>                           </td><td><b>delValue</b> - löscht den Zahlenwert im angegebenen Schlüssel. Mögliche Vergleichsoperatoren sind: > | >= | == | <= | <  (Löschbestätigung im Logfile)       </td></tr>
             <tr><td>                           </td><td>Beispiele: <b>1.)</b> delValue=con==9786  <b>2.)</b> delValue=con>=14578  <b>3.)</b> delValue=temp<=-5                                                          </td></tr>
+            <tr><td>                           </td><td><b>setValue</b> - setzt bzw. ändert den Wert im angegebenen Schlüssel eines Datensatzes Index. (Bestätigung der Operation erfolgt im Logfile)                   </td></tr>
+            <tr><td>                           </td><td>Beispiele: <b>1.)</b> setValue Index=2026071416 key=presence value=0 <b>2.)</b> setValue Index=2026071418 key=pvrl value=1722                                   </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>batteryTriggerSet</b>  </td><td>löscht die Triggerpunkte des Batteriespeichers                                                                                                                  </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
@@ -42864,8 +42928,9 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                          </td><td>Mit dem Standardwert '0' werden alle verfügbaren Datensätze verwendet.                                                                                       </td></tr>
             <tr><td>                          </td><td>Werte:<b> 0 oder Ganzzahl >= 2000 </b>, default: 0                                                                                                           </td></tr>
             <tr><td>                          </td><td>                                                                                                                                                             </td></tr>
-            <tr><td> <b>geminiAPIkey</b>      </td><td>Für die externe Analyse der Verbrauchsprognose KI Trainingsergebnisse kann hier der Google Gemini API-Schlüssel hinterlegt werden.                           </td></tr>
+            <tr><td> <b>geminiAPIkey</b>      </td><td>Für die externe Analyse der Verbrauchsprognose KI Trainingsergebnisse kann hier der Google Gemini API-Schlüssel und Modelversion hinterlegt werden.          </td></tr>
             <tr><td>                          </td><td>Der API-Schlüssel kann kostenlos unter aistudio.google.com->'Get API key' generiert werden.                                                                  </td></tr>
+            <tr><td>                          </td><td>Syntax: <b> &lt;API-Key&gt;:&lt;Gemini-Model&gt; </b>, default Gemini-Model: gemini-2.5-flash                                                                </td></tr>
             <tr><td>                          </td><td><b>Transparenzhinweis:</b> Die an Gemini übertragenen Daten werden mit ativierten ctrlDebug=apiCall im Log ausgegeben.                                       </td></tr>
             <tr><td>                          </td><td>                                                                                                                                                             </td></tr>
         </table>
