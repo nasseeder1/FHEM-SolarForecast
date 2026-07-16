@@ -8,6 +8,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Gemini model auf gemini-3.5-flash geändert
 - neuer Befehl set .. reset aiData setValue ... 
 - das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden 
+- die Victron API ((Model VictronKiAPI) kann nun den neuen Token-Auth verwenden
 
 
 
