@@ -9,6 +9,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - neuer Befehl set .. reset aiData setValue ... 
 - das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden 
 
+
+
 ## [v1.1.0] - 2026-07-13
 
 - (Beispiel: hier steht später der Inhalt, der beim Release v1.1.0 aus "Unreleased" übernommen wurde)
