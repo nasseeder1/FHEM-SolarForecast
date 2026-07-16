@@ -11,7 +11,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 
 
-## [v1.1.0] - 2026-07-13
+## [v1.1.0] - 13.07.2026
 
 - (Beispiel: hier steht später der Inhalt, der beim Release v1.1.0 aus "Unreleased" übernommen wurde)
 
@@ -21,6 +21,6 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 - Neue Einträge immer oben unter `[Unreleased]` ergänzen, während du entwickelst
 - Kurze Stichpunkte reichen – Zweck ist die eigene Erinnerung, keine formelle Doku
-- Beim Release: Abschnitt umbenennen zu `[vX.Y.Z] - JJJJ-MM-TT`, Text 1:1 in die
+- Beim Release: Abschnitt umbenennen zu `[vX.Y.Z] - TT.MM.JJJJ`, Text 1:1 in die
   Forgejo-Release-Beschreibung kopieren, danach neuen leeren `[Unreleased]`-Block
   oben ergänzen
