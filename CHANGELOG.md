@@ -4,11 +4,10 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 ## [Unreleased] - Weiterentwicklung (Planrelease: 2.9.1)
 
-- neuer FEATURE BLOCKS semantics_heatpump_nopv
-- Gemini model auf gemini-3.5-flash geändert
-- neuer Befehl set .. reset aiData setValue ... 
-- das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden 
-- die Victron API ((Model VictronKiAPI) kann nun den neuen Token-Auth verwenden
+- neuer FEATURE BLOCKS semantics_heatpump_nopv (Beseitigung Gap in heatpump-Profilen ohne pv)
+- neuer Befehl "set .. reset aiData setValue ...". Damit können aiRawdata-Werte gezielt korrigiert werden.
+- das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden (default: gemini-2.5-flash)
+- die Victron API ((Model VictronKiAPI) kann nun den neuen Token-Auth verwenden. Der Befehl "set ... vrmCredentials" entsprechend erweitert
 
 
 
