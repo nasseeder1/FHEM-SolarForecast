@@ -2,7 +2,7 @@
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
-## [Unreleased] - Weiterentwicklung (Stand: 14.07.2026, Planrelease: 2.9.1)
+## [Unreleased] - Weiterentwicklung (Planrelease: 2.9.1)
 
 - neuer FEATURE BLOCKS semantics_heatpump_nopv
 - Gemini model auf gemini-3.5-flash geändert
