@@ -22841,20 +22841,27 @@ sub _graphicConsumerLegend {
       
       my $caicon                  = $paref->{caicon};                                               # Consumer AdviceIcon
       my ($err, $cname, $dswname) = getCDnames  ($name, $c);                                        # Consumer und Switch Device Name
-      my $calias                  = ConsumerVal ($name, $c, 'alias',   $cname);                     # Alias des Consumerdevices
-      #my $cicon                   = ConsumerVal ($name, $c, 'icon',        '');                     # Icon des Consumerdevices
+      my $calias                  = ConsumerVal ($name, $c, 'alias', $cname);                       # Alias des Consumerdevices
+      my $iconfix                 = ConsumerVal ($name, $c, 'iconfix',   '');                       # Icon Darstellung fixiert (nicht dynamisiert)
+      
+      my $cicon;
+      
+      if ($iconfix =~ /panel/xs) {
+          $cicon = ConsumerVal ($name, $c, 'icon', '');                                             # Icon des Consumerdevices
+      }
+      else {
+          ($cicon) = __substituteIcon ( { name  => $name,                                           # dynamisches Icon verwenden
+                                          pn    => $c,
+                                          ptyp  => 'consumer',
+                                          pcurr => ConsumerVal ($name, $c, 'currpower', 0),                              
+                                          lang  => $lang
+                                        } );
+      }
 
-      my ($cicon) = __substituteIcon ( { name  => $name,                                            # Icon des Consumerdevices
-                                         pn    => $c,
-                                         ptyp  => 'consumer',
-                                         pcurr => ConsumerVal ($name, $c, 'currpower', 0),                              
-                                         lang  => $lang
-                                       } );
-
-      my $oncom                   = ConsumerVal ($name, $c, 'oncom',       '');                     # Consumer Einschaltkommando
-      my $offcom                  = ConsumerVal ($name, $c, 'offcom',      '');                     # Consumer Ausschaltkommando
-      my $autord                  = ConsumerVal ($name, $c, 'autoreading', '');                     # Readingname f. Automatiksteuerung
-      my $auto                    = ConsumerVal ($name, $c, 'auto',         1);                     # Automatic Mode
+      my $oncom   = ConsumerVal ($name, $c, 'oncom',       '');                                     # Consumer Einschaltkommando
+      my $offcom  = ConsumerVal ($name, $c, 'offcom',      '');                                     # Consumer Ausschaltkommando
+      my $autord  = ConsumerVal ($name, $c, 'autoreading', '');                                     # Readingname f. Automatiksteuerung
+      my $auto    = ConsumerVal ($name, $c, 'auto',         1);                                     # Automatic Mode
       
       my $cactive = __queryConsumerActiveState ( { name     => $name, 
                                                    consumer => $c,
