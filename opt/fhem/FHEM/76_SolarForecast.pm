@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31475 2026-07-10 20:59:10Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31499 2026-07-19 11:01:15Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -161,6 +161,7 @@ BEGIN {
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.9.2"  => "21.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ",
   "2.9.1"  => "16.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
                            "neuer Befehl set .. reset aiData setValue ... ".
                            "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ".
@@ -317,6 +318,7 @@ use constant {
   AIACCUPLIM      => 150,                                                           # obere Abweichungsgrenze (%) AI 'Accurate' von API Prognose
   AIACCLOWLIM     => 50,                                                            # untere Abweichungsgrenze (%) AI 'Accurate' von API Prognose
   AIACCTRNMIN     => 3500,                                                          # Mindestanzahl KI Regeln für Verwendung "KI Accurate"
+  AILRATEMIN      => 0.0001,                                                        # untere Grenze mögliche Lerrate
   AIMODELMINAGE   => 6,                                                             # Alter eines trainierten AI FANN Model bis zu dem es als "neu/frisch" gilt 
   APITIMEOUT      => 30,                                                            # default Timeout HTTP API-Call
   
@@ -966,8 +968,10 @@ my %epoche_translations = (
                DE => "Konvergenz erfolgt früh, Momentum/Lernrate sind bereits konservativ: um mehr nützliche Epochen vor dem Early-Stopping zu ermöglichen, aiConSteepness leicht reduzieren (z.B. um 0.1) für langsamere, feinere Konvergenz - bei zu niedrigen aiConSteepness-Wert kann das Netz komplett aufhören zu lernen (Slope≈0); alternativ Hidden-Layer-Größe/Tiefe (aiConHiddenLayers) leicht erhöhen für mehr Lernkapazität, was aber ggf. mehr Trainingsdaten erfordert" },
   hint24  => { EN => "High momentum (%.2f) likely amplifies shuffle-event overshooting (validation loss jumps at each shuffle boundary): reduce momentum to 0.4–0.5 (aiControl->aiConMomentum). This stabilizes the validation curve and typically improves Slope, as the optimizer can settle into narrower minima without bouncing out on each data reshuffle.",
                DE => "Hohes Momentum (%.2f) verstärkt wahrscheinlich Shuffle-Event-Overshooting (Validierungsfehler springt an jedem Shuffle-Ereignis nach oben): Momentum auf 0.4–0.5 reduzieren (aiControl->aiConMomentum). Dies stabilisiert den Validierungsverlauf und verbessert typischerweise die Slope, da der Optimizer in engere Minima einsinken kann ohne bei jedem Datenshuffle herauszuschießen." },
-  hint25 =>  { EN => "Consider switching training algorithm: use RPROP instead of INCREMENTAL - RPROP adapts its step size automatically without manual learning rate tuning, which often converges faster when slope remains flat despite healthy training (aiControl->aiConTrainAlgo)",
+  hint25  => { EN => "Consider switching training algorithm: use RPROP instead of INCREMENTAL - RPROP adapts its step size automatically without manual learning rate tuning, which often converges faster when slope remains flat despite healthy training (aiControl->aiConTrainAlgo)",
                DE => "Trainingsalgorithmus wechseln: RPROP statt INCREMENTAL verwenden - RPROP passt seine Schrittweite automatisch an und kommt ohne manuelle Lernraten-Einstellung aus, was bei anhaltend flacher Slope trotz gesunden Trainings oft deutlich schneller zum Ziel führt (aiControl->aiConTrainAlgo)" },
+  hint26 =>  { EN => "Learning rate already at floor (%.4f) – network still converges very early. In some cases a moderate increase of the learning rate (e.g. +50-100%%) combined with a matching momentum (currently %.2f) can help escape a flat plateau.",
+               DE => "Lernrate bereits am unteren Limit (%.4f) – Netz konvergiert dennoch sehr früh. In manchen Fällen hilft hier ausnahmsweise eine moderate Erhöhung der Lernrate (z.B. +50-100%%) in Kombination mit passend abgestimmtem Momentum (aktuell %.2f), um ein flaches Plateau zu verlassen." },
 ); 
 
 my %hqtxt = (                                                                               # Hash (Setup) Texte
@@ -29332,7 +29336,8 @@ sub _aiFannEpochDiagnostic {
   my $rmse_rel_warn  = $profileweights{$profile}{rmse_rel_warn};  
   my $is_dead_net    = defined $slope && abs($slope) < 0.05 && $mse_val < $mse_train * 0.7;
   my $lim_bitfail    = AIBITFAILLIMIT;                                                         # Bit_Fail-Limit für rprop-Guard
-
+  my $lr_at_floor    = $learning_rate <= AILRATEMIN;
+  
   my $code  = 'ok';
   my $label = '';
   my @hints;
@@ -29343,11 +29348,13 @@ sub _aiFannEpochDiagnostic {
   my $thr_early      = $dpr > 20 ? 0.04  : $dpr > 6  ? 0.06 : 0.12;
 
   # --- 1. Relative Epochen-Position
-  if ($rel < $thr_very_early) {                                                                    
+  if ($rel < $thr_very_early) {      
       $code  = 'very_early';
       $label = $epoche_translations{vearly}{$lang};
         
-      push @hints, $epoche_translations{hint1}{$lang} unless $is_dead_net;
+      push @hints, $epoche_translations{hint1}{$lang} unless ($is_dead_net || $lr_at_floor);
+      push @hints, sprintf $epoche_translations{hint26}{$lang}, $learning_rate, $learning_momentum
+          if ($lr_at_floor && !$is_dead_net);      
       
       my $ratio_ok = !$dpr || $dpr > 20;                                                # hint2 nur wenn DPR sehr hoch → Architektur ist gemessen an den Daten zu klein
       
@@ -29360,7 +29367,7 @@ sub _aiFannEpochDiagnostic {
       if ($best_epoch < 200) {
           push @hints, $epoche_translations{hint3}{$lang};
       }
-  }
+  }  
   elsif ($rel < $thr_early) {                                               
       $code  = 'early';
       $label = $epoche_translations{early}{$lang};
@@ -29609,7 +29616,7 @@ sub __aiFannArchHint {
       return { hints => \@hints };                                                                      # weitere Architekturhinweise sinnlos
   }
   
-  my $lr_hint = (defined $learning_rate && abs($sug_lr - $learning_rate) < 0.0001)                      # Hilfssub-äquivalent: hint19 nur ausgeben wenn Empfehlung von aktueller LR abweicht
+  my $lr_hint = (defined $learning_rate && abs($sug_lr - $learning_rate) < AILRATEMIN)                  # Hilfssub-äquivalent: hint19 nur ausgeben wenn Empfehlung von aktueller LR abweicht
                 ? ''
                 : sprintf $epoche_translations{hint19}{$lang}, $sug_arch, $num_inputs, $sug_lr;  
   
