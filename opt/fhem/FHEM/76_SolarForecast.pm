@@ -8975,6 +8975,7 @@ sub _attrconsumerControl {               ## no critic "not used"
       dummyIcon     => { comp => '.*',                                          act => 0 },
       globalMode    => { comp => '(can|must|mustNot|unset)',                    act => 0 },
       showLegend    => { comp => '(icon_top|icon_bottom|text_top|text_bottom)', act => 0 },
+      iconFix       => { comp => '(panel|flow)(,(?!\1)(panel|flow))?',          act => 0 },
   };
 
   my ($a, $h) = parseParams ($aVal);
@@ -22842,7 +22843,7 @@ sub _graphicConsumerLegend {
       my $caicon                  = $paref->{caicon};                                               # Consumer AdviceIcon
       my ($err, $cname, $dswname) = getCDnames  ($name, $c);                                        # Consumer und Switch Device Name
       my $calias                  = ConsumerVal ($name, $c, 'alias', $cname);                       # Alias des Consumerdevices
-      my $iconfix                 = ConsumerVal ($name, $c, 'iconfix',   '');                       # Icon Darstellung fixiert (nicht dynamisiert)
+      my $iconfix                 = ConsumerVal ($name, $c, 'iconFix',   '');                       # Icon Darstellung fixiert (nicht dynamisiert)
       
       my $cicon;
       
