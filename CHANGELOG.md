@@ -5,6 +5,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 ## [Unreleased] - Weiterentwicklung
 
 - Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate
+- neuer Schlüssel consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons, schaltet die Dynamik entsprechend Verbrauchsstatus ab
 
 
 ## [v2.9.1] - 19.07.2026

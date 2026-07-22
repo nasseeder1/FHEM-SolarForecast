@@ -161,7 +161,8 @@ BEGIN {
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.2"  => "21.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ",
+  "2.9.2"  => "21.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
+                           "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ",
   "2.9.1"  => "16.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
                            "neuer Befehl set .. reset aiData setValue ... ".
                            "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ".
@@ -22843,7 +22844,7 @@ sub _graphicConsumerLegend {
       my $caicon                  = $paref->{caicon};                                               # Consumer AdviceIcon
       my ($err, $cname, $dswname) = getCDnames  ($name, $c);                                        # Consumer und Switch Device Name
       my $calias                  = ConsumerVal ($name, $c, 'alias', $cname);                       # Alias des Consumerdevices
-      my $iconfix                 = ConsumerVal ($name, $c, 'iconFix',   '');                       # Icon Darstellung fixiert (nicht dynamisiert)
+      my $iconfix                 = CurrentVal  ($name, 'iconFix',       '');                       # Icon Darstellung fixiert (nicht dynamisiert)
       
       my $cicon;
       
@@ -24441,15 +24442,23 @@ END0
       $cons_left      = $consumer_start + 15;
 
       for my $c (@consumers) {
-          my $calias  = ConsumerVal ($name, $c, 'alias', '');                                              # Name des Consumerdevices
+          my $calias  = ConsumerVal ($name, $c, 'alias', '');                                               # Name des Consumerdevices
           $cnsmrpower = $cnsmr->{$c}{p};
-
-          my ($cicon) = __substituteIcon ( { name  => $name,                                               # Icon des Consumerdevices
-                                             pn    => $c,
-                                             ptyp  => $cnsmr->{$c}{ptyp},
-                                             pcurr => $cnsmrpower,
-                                             lang  => $lang
-                                           } );
+          my $iconfix = CurrentVal  ($name, 'iconFix', '');                                                 # Icon Darstellung fixiert (nicht dynamisiert)
+          
+          my $cicon;
+          
+          if ($iconfix =~ /flow/xs) {
+              $cicon = ConsumerVal ($name, $c, 'icon', '');                                                 
+          }
+          else {
+              ($cicon) = __substituteIcon ( { name  => $name,                                               
+                                              pn    => $c,
+                                              ptyp  => $cnsmr->{$c}{ptyp},
+                                              pcurr => $cnsmrpower,
+                                              lang  => $lang
+                                            } );
+          }
 
           my $ccicon = (split '@', $cicon)[1];
           $cicon     = FW_makeImage         ($cicon, '');
@@ -39899,6 +39908,11 @@ to ensure that the system configuration is correct.
             <tr><td>                            </td><td><b>must</b> - Consumers will be optimally scheduled even if there is likely to be insufficient surplus PV power available.                         </td></tr>
             <tr><td>                            </td><td><b>mustNot</b> - Consumers must not be scheduled or started. Consumers that have been started will be stopped.                                     </td></tr>
             <tr><td>                            </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>iconFix</b>             </td><td>By default, the consumer icons in the flow chart and the consumer panel are dynamically colored and, if necessary, updated based on their status.  </td></tr>
+            <tr><td>                            </td><td>This feature can be disabled for both displays. The settings are specified using a comma-separated list.                                           </td></tr>
+            <tr><td>                            </td><td><b>panel</b> - The icons in the user panel are displayed statically as defined.                                                                    </td></tr>
+            <tr><td>                            </td><td><b>flow</b> - The icons in the flowchart are displayed statically as defined.                                                                      </td></tr>
+            <tr><td>                            </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>showLegend</b>          </td><td>Defines the position or display method of the consumer legend if consumers are registered.                                                         </td></tr>
             <tr><td>                            </td><td>To hide the consumer panel, please use <a href="#SolarForecast-attr-graphicSelect">graphicSelect</a>.                                              </td></tr>
             <tr><td>                            </td><td><b>icon_top</b> - the legend is displayed above the bar chart with consumer icons (default)                                                        </td></tr>
@@ -39910,7 +39924,7 @@ to ensure that the system configuration is correct.
 
        <ul>
          <b>Example: </b> <br>
-         attr &lt;name&gt; consumerControl dummyIcon=status_comfort@#ff8c00 adviceIcon=times showLegend=icon_bottom globalMode=mustNot
+         attr &lt;name&gt; consumerControl dummyIcon=status_comfort@#ff8c00 adviceIcon=times showLegend=icon_bottom globalMode=mustNot iconFix=panel,flow
        </ul>
 
        </li>
@@ -43028,6 +43042,11 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                            </td><td><b>must</b> - Verbraucher werden optimiert eingeplant auch wenn wahrscheinlich nicht genügend PV Überschuß vorhanden sein wird                     </td></tr>
             <tr><td>                            </td><td><b>mustNot</b> - Verbraucher dürfen nicht geplant bzw. gestartet werden. Gestartete Verbraucher werden gestoppt                                    </td></tr>
             <tr><td>                            </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>iconFix</b>             </td><td>Die Verbrauchericons werden im Standard in der Flußgrafik und im Verbraucherpaneel entsprechend ihres Status dynamisch gefärbt und ggf. geändert.  </td></tr>
+            <tr><td>                            </td><td>Diese Dynamik kann für beide Anzeigen ausgeschaltet werden. Die Angabe erfolgt durch eine Komma getrennte Liste.                                   </td></tr>
+            <tr><td>                            </td><td><b>panel</b> - die Icons im Verbraucherpaneel werden wie definiert statisch angezeigt                                                              </td></tr>
+            <tr><td>                            </td><td><b>flow</b> - die Icons in der Flußgrafik werden wie definiert statisch angezeigt                                                                  </td></tr>
+            <tr><td>                            </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>showLegend</b>          </td><td>Definiert die Lage bzw. Darstellungsweise der Verbraucherlegende sofern Verbraucher registriert sind.                                              </td></tr>
             <tr><td>                            </td><td>Zur Ausblendung des Verbraucherpaneels bitte <a href="#SolarForecast-attr-graphicSelect ">graphicSelect</a> verwenden.                             </td></tr>
             <tr><td>                            </td><td><b>icon_top</b> - die Legende wird oberhalb der Balkengrafik mit Verbrauchericons angezeigt (default)                                              </td></tr>
@@ -43040,7 +43059,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
 
        <ul>
          <b>Beispiel: </b> <br>
-         attr &lt;name&gt; consumerControl dummyIcon=status_comfort@#ff8c00 adviceIcon=times showLegend=icon_bottom globalMode=mustNot
+         attr &lt;name&gt; consumerControl dummyIcon=status_comfort@#ff8c00 adviceIcon=times showLegend=icon_bottom globalMode=mustNot iconFix=panel,flow
        </ul>
 
        </li>
