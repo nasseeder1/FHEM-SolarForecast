@@ -162,7 +162,8 @@ BEGIN {
 # Versions History intern
 my %vNotesIntern = (
   "2.9.2"  => "21.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
-                           "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ",
+                           "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ".
+                           "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ",
   "2.9.1"  => "16.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
                            "neuer Befehl set .. reset aiData setValue ... ".
                            "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ".
@@ -7153,7 +7154,7 @@ sub __getaiFannPromptExport {          ## no critic "not used"
 
   if (!$prepared || (!$rdy && $cause !~ /Training\sonly/xs)) {
       return $lang eq 'DE'
-           ? "Die KI für die $fanntyp Vorhersage ist noch nicht einsatzbereit.\n<b>Grund:</b> $cause"
+           ? encode('utf8', "Die KI für die $fanntyp Vorhersage ist noch nicht einsatzbereit.\n<b>Grund:</b> $cause")
            : "The AI for forecasting $fanntyp is not yet operational.\n<b>Cause:</b> $cause";
   }
 
@@ -7517,13 +7518,13 @@ sub __getaiFannState {            ## no critic "not used"
   my $aiAlpha = 1;
   
   if ($fanntyp eq 'con') {
-      ($prepared, $rdy, $cause) = _aiFannModelReady ($name, $fanntyp);
+      ($prepared, $rdy, $cause) = _aiFannModelReady ($name, $fanntyp, $lang);
       $aiAlpha                  = CurrentVal ($name, 'aiConAlpha', 1);                      # eingestellte Gewichtung AI
   }
   
   if (!$prepared || (!$rdy && $cause !~ /Training\sonly/xs)) {
       return $lang eq 'DE'
-           ? "Die KI für die $fanntyp Vorhersage ist noch nicht einsatzbereit.\n<b>Grund:</b> $cause"
+           ? encode('utf8', "Die KI für die $fanntyp Vorhersage ist noch nicht einsatzbereit.\n<b>Grund:</b> $cause")
            : "The AI for forecasting $fanntyp is not yet operational.\n<b>Cause:</b> $cause";
   }
   
@@ -8186,7 +8187,7 @@ sub _aiFannGeminiApiAssess {
   
   unless ($apiKey) {
       my $ret = $lang eq 'DE' 
-              ? "Der benötigte geminiAPIkey ist nicht gesetzt. <br>"
+              ? "Der geminiAPIkey ist nicht gesetzt. <br>"
                 ."Kostenlosen Key unter aistudio.google.com->'Get API key' generieren und im Attribut aiControl->geminiAPIkey hinterlegen."
               : "The required geminiAPIkey is not set. <br>"
                 ."Generate a free key at aistudio.google.com -> “Get API key” and enter it in the aiControl->geminiAPIkey attribute.";
@@ -19356,7 +19357,7 @@ sub _calcConsForecast {                  ## no critic "not used"
   
   _calcConsForecast_legacy ($paref);                                                # legacy Verbrauchsprognose
   
-  my ($prepared, $rdy, $cause) = _aiFannModelReady ($name, 'con');
+  my ($prepared, $rdy, $cause) = _aiFannModelReady ($name, 'con', 'EN');
   
   if ($rdy) {                                                                       # NN Verbrauch ist ready to use      
       my $err = aiFannConInfer ($paref);                                            # Verbrauchsprognose via neuronales Netz
@@ -26116,7 +26117,7 @@ sub aiEnterTrain {
   my $blkkey = 'AINNTRAIN_' . uc($fanntyp) . '_BLOCKRUN';
   my $hash   = $defs{$name};
 
-  my ($prepared, $rdy, $cause) = _aiFannModelReady ($name, $fanntyp);
+  my ($prepared, $rdy, $cause) = _aiFannModelReady ($name, $fanntyp, 'EN');
       
   my $ai_attr   = $fanntyp eq 'con' ? 'aiConActivate' : 'aiPvActivate';
   my $targettyp = $fanntyp eq 'con' ? 'consumption'   : 'PV';
@@ -31400,8 +31401,9 @@ return $med;
 #       neurales Network Readiness prüfen
 ################################################################
 sub _aiFannModelReady {
-  my ($name, $fanntyp) = @_;
+  my ($name, $fanntyp, $lang) = @_;
 
+  $lang      //= 'EN';
   my $cause    = '';
   my $prepared = 1;                                                             # Netz ist vorbereitet
   my $ready    = 1;                                                             # Netz ist bereit
@@ -31414,27 +31416,37 @@ sub _aiFannModelReady {
   my $aiconact = CurrentVal ($name, $nactive, 0);
   
   if ($aifannabs) { 
-      $cause    = "Perl Modul AI::FANN is missing"; 
+      $cause    = $lang eq 'DE' 
+                ? "das Perl-Modul AI::FANN ist nicht installiert" 
+                : "Perl Modul AI::FANN is missing";  
       $ready    = 0;
       $prepared = 0;
   }
   elsif (!$aiconact) { 
-      $cause    = "the neural network for consumption forecasting is not activated"; 
+      $cause    = $lang eq 'DE' 
+                ? "das neuronale Netzwerk zur Verbrauchsprognose ist nicht aktiviert" 
+                : "the neural network for consumption forecasting is not activated"; 
       $ready    = 0;
       $prepared = 0;   
   }
   elsif ($aiconact == 2) {
-      $cause    = "the neural network for consumption forecasting is in 'Training only' mode";
+      $cause    = $lang eq 'DE' 
+                ? "das neuronale Netzwerk für die Verbrauchsprognose befindet sich im Modus 'nur Training'" 
+                : "the neural network for consumption forecasting is in 'Training only' mode";
       $ready    = 0;
       $prepared = 2;       
   }
   elsif (!defined $nctst) {
-      $cause    = "the neural network for consumption forecasting has not yet been trained";
+      $cause    = $lang eq 'DE' 
+                ? "das neuronale Netzwerk zur Verbrauchsprognose wurde noch nicht trainiert" 
+                : "the neural network for consumption forecasting has not yet been trained";
       $ready    = 0;
       $prepared = 1;
   }
   elsif ($nctst eq 'is just retrained') {
-      $cause    = "the neural network for consumption forecasting is just being trained";
+      $cause    = $lang eq 'DE' 
+                ? "das neuronale Netzwerk für die Verbrauchsprognose wird gerade trainiert" 
+                : "the neural network for consumption forecasting is just being trained";
       $ready    = 0;
       $prepared = 1;
   }
