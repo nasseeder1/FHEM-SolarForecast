@@ -161,7 +161,7 @@ BEGIN {
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.2"  => "21.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
+  "2.9.2"  => "23.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
                            "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ".
                            "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ".
                            "Ergänzung Datensammlung und Training für consumerXX->type heatpump->opmode 'eco' ".
