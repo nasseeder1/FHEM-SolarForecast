@@ -8,7 +8,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - neuer Schlüssel consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons, schaltet die Dynamik entsprechend Verbrauchsstatus ab
 - der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben
 - Einbau UTF8 Encoding im GUI Popup (Fix Darstellung Umlaute)
-- Ergänzung consumerXX->type heatpump->opmode 'eco', Einbau Datensammlung für diesen neuen opmode
+- Ergänzung Datensammlung und Training für consumerXX->type heatpump->opmode 'eco'
+- vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext
 
 ## [v2.9.1] - 19.07.2026
 
