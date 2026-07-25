@@ -1437,6 +1437,30 @@ my %htitles = (                                                                 
                 DE => qq{kein Abregelungsstatus verf&uuml;gbar\nSetzen sie bitte den Schl&uuml;ssel 'reductionState' mit 'attr <NAME> plantControl'}                                    },
 );
 
+# -----------------------------------------------------------------------------------------------------------------
+# Zentrale Zuordnung: welcher Key liegt wo in %data und wie wird er
+# gelesen (get) bzw. zurückgeschrieben (set).
+# Hier alle Keys eintragen, die im 'initfirst' Cache landen sollen -
+# unabhängig davon aus welchem Datenbereich (current, circular, ...)
+# sie stammen.
+# -----------------------------------------------------------------------------------------------------------------
+my %initfirstMap = (
+  writeForceType => {
+      get => sub { my $name = shift;      return CurrentVal ($name, 'writeForceType', undef); },
+      set => sub { my ($name, $val) = @_; $data{$name}{current}{writeForceType} = $val;       },
+  },
+
+  # Beispiel für einen Wert aus 'circular' (Index 99):
+  # someCircKey => {
+  #     get => sub { my $name = shift; return CircularVal ($name, 99, 'someCircKey', undef); },
+  #     set => sub { my ($name, $val) = @_; $data{$name}{circular}{99}{someCircKey} = $val;  },
+  # },
+
+  # beliebig erweiterbar
+);
+
+
+# -----------------------------------------------------------------------------------------------------------------
 # Wetterintertretation
 # https://www.dwd.de/DE/forschung/wettervorhersage/num_modellierung/01_num_vorhersagemodelle/01c_wetterinterpretation/wetter_interpretation.pdf?__blob=publicationFile&v=7
 #
@@ -1454,7 +1478,7 @@ my %htitles = (                                                                 
 # ww = 01 leicht bewölkt
 # ww = 02 wolkig
 # ww = 03 stark bewölkt bis bedeckt
-#################################################
+# -----------------------------------------------------------------------------------------------------------------
 my %weather_ids = (
   '0'   => { s => '0', icon => 'weather_sun',                       txtd => 'wolkenloser Himmel',                                                       txte => 'cloudless sky'                                                              },
   '1'   => { s => '0', icon => 'weather_cloudy_light',              txtd => 'leicht bewölkt',                                                           txte => 'slightly cloudy'                                                            },
@@ -11759,19 +11783,10 @@ sub readCacheFile {
 
           if ($isuccess) {
               $data{$name}{$cachename} = decode_json ($ijson);
-              
+
               Log3 ($name, 3, qq{$name - cached data "$title" restored});
-              
-              for my $key (keys %{$data{$name}{$cachename}}) {
-                  unless (defined $data{$name}{$cachename}{$key}) {             # undefinierter Schlüsselwert
-                      delete $data{$name}{$cachename}{$key};                    # Schlüssel löschen
-                      next;
-                  }
-                  
-                  $data{$name}{current}{$key} = delete $data{$name}{$cachename}{$key};
-                  
-                  Log3 ($name, 3, qq{$name - set init data $key=$data{$name}{current}{$key} before load over data});
-              }
+
+              _initfirstSync ( { name => $name, cachename => $cachename, direction => 'apply' } );
           }
           else {
               Log3 ($name, 1, qq{$name - WARNING - The content of file "$file" is not readable or may be corrupt});
@@ -11991,7 +12006,7 @@ sub writeCacheFile {
       return ('', $nr, $na);
   }
   elsif ($cachename eq 'initfirst') {                                                           # --- Initialisierungswerte (werden beim Load zuerst geladen!)
-      $data{$name}{$cachename}{writeForceType} = CurrentVal ($name, 'writeForceType', undef);
+      _initfirstSync ( { name => $name, cachename => $cachename, direction => 'collect' } );
       
       push my @inits, encode_json ($data{$name}{$cachename});
       
@@ -12040,6 +12055,51 @@ sub writeCacheFile {
   $lw                 = gettimeofday();
   $hash->{LCACHEFILE} = "last write time: ".FmtTime($lw)." File: $file";
   singleUpdateState ( {hash => $hash, state => "wrote cachefile $cachename successfully", evt => 1} );
+
+return;
+}
+
+################################################################
+#  Sammelt (collect) oder verteilt (apply) die initfirst-Werte
+################################################################
+sub _initfirstSync {
+  my $paref     = shift;
+  my $name      = $paref->{name};
+  my $cachename = $paref->{cachename};
+  my $dir       = $paref->{direction};                                                      # 'collect' (Schreiben) | 'apply' (Lesen)
+
+  if ($dir eq 'collect') {                                                                  # --- Werte aus den Quellbereichen einsammeln ---
+      $data{$name}{$cachename} = {};
+      
+      for my $key (keys %initfirstMap) {
+          my $val = $initfirstMap{$key}{get}->($name);
+          next if !defined $val;
+          
+          $data{$name}{$cachename}{$key} = $val;
+      }
+      
+      return;
+  }
+
+  if ($dir eq 'apply') {                                                                    # --- Werte in die Zielbereiche zurückschreiben ---
+      for my $key (keys %{$data{$name}{$cachename} // {}}) {
+          my $val = delete $data{$name}{$cachename}{$key};
+
+          if (!defined $val) {
+              next;
+          }
+
+          if (!exists $initfirstMap{$key}) {                                                # unbekannter/veralteter Key im Cache-File
+              Log3 ($name, 2, qq{$name - WARNING - unknown $cachename key "$key" ignored});
+              next;
+          }
+
+          $initfirstMap{$key}{set}->($name, $val);
+          Log3 ($name, 3, qq{$name - set init data $key=$val before load over data});
+      }
+      
+      return;
+  }
 
 return;
 }
