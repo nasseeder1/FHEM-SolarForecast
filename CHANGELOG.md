@@ -10,6 +10,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Einbau UTF8 Encoding im GUI Popup (Fix Darstellung Umlaute)
 - Ergänzung Datensammlung und Training für consumerXX->type heatpump->opmode 'eco'
 - vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext
+- Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead)
 
 ## [v2.9.1] - 19.07.2026
 

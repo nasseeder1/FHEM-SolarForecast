@@ -161,11 +161,12 @@ BEGIN {
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.2"  => "23.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
+  "2.9.2"  => "25.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
                            "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ".
                            "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ".
                            "Ergänzung Datensammlung und Training für consumerXX->type heatpump->opmode 'eco' ".
-                           "vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext ",
+                           "vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext ".
+                           "Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead) ",
   "2.9.1"  => "16.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
                            "neuer Befehl set .. reset aiData setValue ... ".
                            "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ".
@@ -6800,7 +6801,7 @@ sub __generateCatOut {
 
       push @data, '</gpx>';
 
-      my $forceType = CurrentVal ($name, 'writeForceType', 'auto');
+      my $forceType = CurrentVal ($name, 'writeForceType', 'file');
       
       $err = FileWrite ( { FileName  => $dwdcatgpx,
                            ForceType => $forceType,
@@ -9439,7 +9440,7 @@ sub _attrplantControl {                  ## no critic "not used"
       consForecastBase          => { comp => $cforegex,                                           act => 1 },
       showLink                  => { comp => '(0|1)',                                             act => 0 },
       comforttemp               => { comp => '.*',                                                act => 1 },
-      writeForceType            => { comp => '(auto|file)',                                       act => 0 },
+      writeForceType            => { comp => '(auto|db|file)',                                    act => 0 },
   };
 
   my ($a, $h) = parseParams ($aVal);
@@ -9469,6 +9470,13 @@ sub _attrplantControl {                  ## no critic "not used"
       }
 
       for my $key (keys %{$h}) {
+          ### nicht mehr benötigte Daten verarbeiten - Bereich kann später wieder raus !!
+          ########################################################################################################################
+          if ($key eq 'writeForceType' && $h->{$key} eq 'auto') {            # 25.07.
+              $h->{$key} = 'db';
+          }
+          ########################################################################################################################
+          
           $data{$name}{current}{$key} = $h->{$key};
       }
   }
@@ -11728,8 +11736,11 @@ sub readCacheFile {
       return ('', $nr, $na);
   }
   
+  my $forceType = CurrentVal ($name, 'writeForceType', 'file');
 
-  my ($error, @content) = FileRead ($file);
+  my ($error, @content) = FileRead ( { FileName  => $file,
+                                       ForceType => $forceType,
+                                     } );
 
   if (!$error) {
       my $json      = join "", @content;
@@ -11955,7 +11966,7 @@ sub writeCacheToFile {
 
   push my @arr, encode_json ($data{$name}{$cachename});
   
-  my $forceType = CurrentVal ($name, 'writeForceType', 'auto');
+  my $forceType = CurrentVal ($name, 'writeForceType', 'file');
   
   $error = FileWrite ( { FileName  => $file,
                          ForceType => $forceType,
@@ -33637,7 +33648,7 @@ sub _writeAsCsv {
       }
   }
   
-  my $forceType = CurrentVal ($name, 'writeForceType', 'auto');
+  my $forceType = CurrentVal ($name, 'writeForceType', 'file');
   
   my $err = FileWrite ( { FileName  => $outfile,
                           ForceType => $forceType,
@@ -41080,7 +41091,7 @@ to ensure that the system configuration is correct.
             <tr><td>                                  </td><td><b>0</b> - Display off, <b>1</b> - Display on, default: 0                                                                                                                </td></tr>
             <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
             <tr><td> <b>writeForceType</b>            </td><td>Specifies the persistence type for storing transaction data. (Some data is always persisted in the file system.)                                                         </td></tr>
-            <tr><td>                                  </td><td><b>auto</b> - Storage in the file system or ConfigDB, if available, <b>file</b> - Storage in the file system, default: auto                                              </td></tr>
+            <tr><td>                                  </td><td><b>db</b> - stored in ConfigDB if available; otherwise, in the file system <b>file</b> - Stored in the file system, default: file                                        </td></tr>
             <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
          </table>
          </ul>
@@ -44213,9 +44224,9 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>showLink</b>                  </td><td>Anzeige eines Links zur Detailansicht des Device über dem Grafikbereich                                                                                              </td></tr>
             <tr><td>                                  </td><td><b>0</b> - Anzeige aus, <b>1</b> - Anzeige an, default: 0                                                                                                            </td></tr>
             <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
-            <tr><td> <b>writeForceType</b>            </td><td>Legt den Persistenztyp für die Speicherung der Bewegungsdaten fest. (Manche Daten werden grundsätzlich im Filesystem persistiert)     </td></tr>
-            <tr><td>                                  </td><td><b>auto</b> - Speicherung in Filesystem oder ConfigDB wenn vorhanden, <b>file</b> - Speicherung im Filesystem, default: auto          </td></tr>
-            <tr><td>                                  </td><td>                                                                                                                                      </td></tr>
+            <tr><td> <b>writeForceType</b>            </td><td>Legt den Persistenztyp für die Speicherung der Bewegungsdaten fest. (Manche Daten werden grundsätzlich im Filesystem persistiert)                                    </td></tr>
+            <tr><td>                                  </td><td><b>db</b> - Speicherung in ConfigDB wenn vorhanden, sonst im Dateisystem <b>file</b> - Speicherung im Dateisystem, default: file                                     </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
          </table>
          </ul>
 
