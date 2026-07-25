@@ -38953,16 +38953,16 @@ to ensure that the system configuration is correct.
       <ul>
          <table>
          <colgroup> <col width="17%"> <col width="83%"> </colgroup>
-            <tr><td> <b>backup</b>               </td><td>Saves the active in-memory structures with the current timestamp.                                                                             </td></tr>
-            <tr><td>                             </td><td><a href="#SolarForecast-attr-plantControl">plantControl->backupFilesKeep</a> generations of the files are saved. Older versions are deleted.  </td></tr>
-            <tr><td>                             </td><td>Files: PVH_SolarForecast_&lt;name&gt;_&lt;Timestamp&gt;, PVC_SolarForecast_&lt;name&gt;_&lt;Timestamp&gt;                                     </td></tr>
-            <tr><td>                             </td><td>                                                                                                                                              </td></tr>
-            <tr><td> <b>save</b>                 </td><td>The active in-memory structures are saved.                                                                                                    </td></tr>
-            <tr><td>                             </td><td>Files: PVH_SolarForecast_&lt;name&gt;, PVC_SolarForecast_&lt;name&gt;                                                                         </td></tr>
-            <tr><td>                             </td><td>                                                                                                                                              </td></tr>
-            <tr><td> <b>recover-&lt;File&gt;</b> </td><td>Restores the data of the selected backup file as an active in-memory structure.                                                               </td></tr>
-            <tr><td>                             </td><td>To avoid inconsistencies, the PVH.* and PVC.* files should be restored in pairs                                                               </td></tr>
-            <tr><td>                             </td><td>with the same time stamp.                                                                                                                     </td></tr>
+            <tr><td> <b>backup</b>                </td><td>Saves the active in-memory structures with the current timestamp.                                                                             </td></tr>
+            <tr><td>                              </td><td><a href="#SolarForecast-attr-plantControl">plantControl->backupFilesKeep</a> generations of the files are saved. Older versions are deleted.  </td></tr>
+            <tr><td>                              </td><td>Files: PVH_SolarForecast_&lt;name&gt;_&lt;Timestamp&gt;, PVC_SolarForecast_&lt;name&gt;_&lt;Timestamp&gt;                                     </td></tr>
+            <tr><td>                              </td><td>                                                                                                                                              </td></tr>
+            <tr><td> <b>save</b>                  </td><td>The active in-memory structures are saved:                                                                                                    </td></tr>
+            <tr><td>                              </td><td><b>File(s):</b> ./FHEM/FhemUtils/X_SolarForecast_&lt;name&gt; with X = PVH, PVC, Messages, ScApi, StatApi, WeatherApi, Init                   </td></tr>
+            <tr><td>                              </td><td>                                                                                                                                              </td></tr>
+            <tr><td> <b>recover-&lt;File&gt;</b>  </td><td>Restores the data of the selected backup file as an active in-memory structure.                                                               </td></tr>
+            <tr><td>                              </td><td>To avoid inconsistencies, the PVH.* and PVC.* files should be restored in pairs                                                               </td></tr>
+            <tr><td>                              </td><td>with the same time stamp.                                                                                                                     </td></tr>
          </table>
       </ul>
       <br>
@@ -42083,8 +42083,8 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                              </td><td>Es werden <a href="#SolarForecast-attr-backupFilesKeep">plantControl->backupFilesKeep</a> Generationen der Dateien gespeichert. Ältere Versionen werden gelöscht.  </td></tr>
             <tr><td>                              </td><td>Dateien: PVH_SolarForecast_&lt;name&gt;_&lt;Zeitstempel&gt;, PVC_SolarForecast_&lt;name&gt;_&lt;Zeitstempel&gt;                                                    </td></tr>
             <tr><td>                              </td><td>                                                                                                                                                                   </td></tr>
-            <tr><td> <b>save</b>                  </td><td>Die aktiven In-Memory Strukturen werden gespeichert.                                                                                                               </td></tr>
-            <tr><td>                              </td><td>Dateien: PVH_SolarForecast_&lt;name&gt;, PVC_SolarForecast_&lt;name&gt;                                                                                            </td></tr>
+            <tr><td> <b>save</b>                  </td><td>Die aktiven In-Memory Strukturen werden gesichert:                                                                                                                 </td></tr>
+            <tr><td>                              </td><td><b>Datei(en):</b> ./FHEM/FhemUtils/X_SolarForecast_&lt;name&gt; mit X = PVH, PVC, Messages, ScApi, StatApi, WeatherApi, Init                                       </td></tr>
             <tr><td>                              </td><td>                                                                                                                                                                   </td></tr>
             <tr><td> <b>recover-&lt;Datei&gt;</b> </td><td>Stellt die Daten der ausgewählten Sicherungsdatei als aktive In-Memory Struktur wieder her.                                                                        </td></tr>
             <tr><td>                              </td><td>Um Inkonsistenzen zu vermeiden, sollten die Dateien PVH.* und PVC.* mit dem gleichen                                                                               </td></tr>
