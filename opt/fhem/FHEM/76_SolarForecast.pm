@@ -166,7 +166,8 @@ my %vNotesIntern = (
                            "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ".
                            "Ergänzung Datensammlung und Training für consumerXX->type heatpump->opmode 'eco' ".
                            "vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext ".
-                           "Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead) ",
+                           "Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead) ".
+                           "Integration initialen Cache-Load 'initfirst' um vor dem Laden weiterer Daten Voreinstellungen festzulegen ",
   "2.9.1"  => "16.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
                            "neuer Befehl set .. reset aiData setValue ... ".
                            "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ".
@@ -491,6 +492,7 @@ my %MCache_Stats;                                                               
 my @chours         = (5..21);                                                       # Stunden des Tages mit möglichen Korrekturwerten
 my $root           = $attr{global}{modpath};                                        # Pfad zu dem Verzeichnis der FHEM Module
 my $cachedir       = $root."/FHEM/FhemUtils";                                       # Directory für Cachefiles
+my $initcache      = $root."/FHEM/FhemUtils/Init_SolarForecast_";                   # Filename-Fragment für Initialisierung (wird mit Devicename ergänzt), muß vor allen anderen Files geladen werden!
 my $pvhcache       = $root."/FHEM/FhemUtils/PVH_SolarForecast_";                    # Filename-Fragment für PV History (wird mit Devicename ergänzt)
 my $pvccache       = $root."/FHEM/FhemUtils/PVC_SolarForecast_";                    # Filename-Fragment für PV Circular (wird mit Devicename ergänzt)
 my $plantcfg       = $root."/FHEM/FhemUtils/PVCfg_SolarForecast_";                  # Filename-Fragment für PV Anlagenkonfiguration (wird mit Devicename ergänzt)
@@ -2562,6 +2564,7 @@ sandbox => sub {
 # Information zu verwendeten internen Datenhashes
 ####################################################
 # Daten die nach einem Restart mit reloadCacheFiles nachgeladen werden müssen:
+# $data{$name}{initfirst}                                                     # erste Initialisierungen bevor weitere Loads erfolgen (auch vor Attr)
 # $data{$name}{pvhist}                                                        # historische Werte
 # $data{$name}{weatherapi}                                                    # Zwischenspeicher API-Wetterdaten
 # $data{$name}{solcastapi}                                                    # Zwischenspeicher API-Solardaten
@@ -11283,6 +11286,7 @@ sub Shutdown {
   
   BlockingKill ($hash->{HELPER}{$blkkey}) if(defined $hash->{HELPER}{$blkkey});
 
+  writeCacheToFile ($hash, 'initfirst',      $initcache.$name, 'nolog');             # Cache File für Initialisierung schreiben
   writeCacheToFile ($hash, 'pvhist',          $pvhcache.$name, 'nolog');             # Cache File für PV History schreiben
   writeCacheToFile ($hash, 'circular',        $pvccache.$name, 'nolog');             # Cache File für PV Circular schreiben
   writeCacheToFile ($hash, 'consumers',       $csmcache.$name, 'nolog');             # Cache File Consumer schreiben
@@ -11361,6 +11365,7 @@ sub periodicWriteMemcache {
   my (undef, $disabled, $inactive) = controller ($name);
   return if($disabled || $inactive);
 
+  writeCacheToFile ($hash, 'initfirst',      $initcache.$name);             # Cache File für Initialisierung schreiben
   writeCacheToFile ($hash, 'circular',        $pvccache.$name);             # Cache File PV Circular schreiben
   writeCacheToFile ($hash, 'pvhist',          $pvhcache.$name);             # Cache File PV History schreiben
   writeCacheToFile ($hash, 'solcastapi',     $scpicache.$name);             # Cache File Strahlungsdaten-API Werte schreiben
@@ -11530,7 +11535,15 @@ sub reloadCacheFiles {
   my $name  = $paref->{name};
 
   return if(CurrentVal ($name, 'cachefilesloaded', 0));
+  
+  # --- zuerst immer! Initialisierung einlesen
+  $paref->{file}      = $initcache.$name;                       # Cache File Initialisierung einlesen wenn vorhanden
+  $paref->{cachename} = 'initfirst';
+  $paref->{title}     = 'Initialize';
+  readCacheFile ($paref);
 
+
+  # --- folgende Cache Files
   $paref->{file}      = $pvhcache.$name;                       # Cache File PV History einlesen wenn vorhanden
   $paref->{cachename} = 'pvhist';
   $paref->{title}     = 'pvHistory';
@@ -11601,7 +11614,6 @@ sub readCacheFile {
   my $title     = $paref->{title};
   
   my $hash = $defs{$name};
-  my $lang = getLang ($hash);
 
   if ($cachename eq 'aitrained') {
       my ($err, $objref) = fileRetrieve ($file);
@@ -11735,6 +11747,38 @@ sub readCacheFile {
 
       return ('', $nr, $na);
   }
+  elsif ($cachename eq 'initfirst') {
+      my ($err, @init) = FileRead ( { FileName  => $file,
+                                      ForceType => 'file',                      # wird immer! aus dem Filesystem gelesen
+                                    } ); 
+
+      if (!$err) {
+          my $ijson      = join "", @init;
+          my ($isuccess) = evaljson ($hash, $ijson);
+
+          if ($isuccess) {
+              $data{$name}{$cachename} = decode_json ($ijson);
+              
+              Log3 ($name, 3, qq{$name - cached data "$title" restored});
+              
+              for my $key (keys %{$data{$name}{$cachename}}) {
+                  unless (defined $data{$name}{$cachename}{$key}) {             # undefinierter Schlüsselwert
+                      delete $data{$name}{$cachename}{$key};                    # Schlüssel löschen
+                      next;
+                  }
+                  
+                  $data{$name}{current}{$key} = delete $data{$name}{$cachename}{$key};
+                  
+                  Log3 ($name, 3, qq{$name - set init data $key=$data{$name}{current}{$key} before load over data});
+              }
+          }
+          else {
+              Log3 ($name, 1, qq{$name - WARNING - The content of file "$file" is not readable or may be corrupt});
+          }
+      }        
+      
+      return;
+  }
   
   my $forceType = CurrentVal ($name, 'writeForceType', 'file');
 
@@ -11801,9 +11845,8 @@ sub writeCacheToFile {
       singleUpdateState ( {hash => $hash, state => "wrote cachefile $cachename successfully", evt => 1} );
 
       return;
-  }
-  
-  if ($cachename eq 'airaw') {
+  }  
+  elsif ($cachename eq 'airaw') {
       my $dat = AiRawdataVal ($hash, '', '', undef);
 
       if (defined $dat) {
@@ -11822,8 +11865,7 @@ sub writeCacheToFile {
 
       return;
   }
-  
-  if ($cachename eq 'neuralnet') {
+  elsif ($cachename eq 'neuralnet') {
       if (scalar keys %{$data{$name}{neuralnet}}) {
           my $nnref = $data{$name}{neuralnet};
           my %saved_models;
@@ -11880,8 +11922,7 @@ sub writeCacheToFile {
           return "The AI FANN data cache is empty";
       }
   }
-
-  if ($cachename eq 'dwdcatalog') {
+  elsif ($cachename eq 'dwdcatalog') {
       if (scalar keys %{$data{$name}{dwdcatalog}}) {
           $error = fileStore ($data{$name}{dwdcatalog}, $file);
 
@@ -11897,8 +11938,7 @@ sub writeCacheToFile {
 
       return;
   }
-
-  if ($cachename eq 'statusapi') {
+  elsif ($cachename eq 'statusapi') {
       if (scalar keys %{$data{$name}{statusapi}}) {
           $error = fileStore ($data{$name}{statusapi}, $file);
 
@@ -11914,8 +11954,7 @@ sub writeCacheToFile {
 
       return;
   }
-
-  if ($cachename eq 'weatherapi') {
+  elsif ($cachename eq 'weatherapi') {
       if (scalar keys %{$data{$name}{weatherapi}}) {
           $error = fileStore ($data{$name}{weatherapi}, $file);
 
@@ -11931,8 +11970,7 @@ sub writeCacheToFile {
 
       return;
   }
-
-  if ($cachename eq 'plantconfig') {
+  elsif ($cachename eq 'plantconfig') {
       my ($plantcfg, $nr, $na) = _storePlantConfig ($hash);
 
       if (scalar keys %{$plantcfg}) {
@@ -11950,6 +11988,26 @@ sub writeCacheToFile {
       singleUpdateState ( {hash => $hash, state => "wrote cachefile $cachename successfully", evt => 1} );
 
       return ('', $nr, $na);
+  }
+  elsif ($cachename eq 'initfirst') {                                                           # --- Initialisierungswerte (werden beim Load zuerst geladen!)
+      $data{$name}{$cachename}{writeForceType} = CurrentVal ($name, 'writeForceType', undef);
+      
+      push my @inits, encode_json ($data{$name}{$cachename});
+      
+      delete $data{$name}{$cachename};                                                          # den Zwischencache löschen
+      
+      $error = FileWrite ( { FileName  => $file,
+                             ForceType => 'file',                                               # muß immer! 'file' sein
+                           }, @inits 
+                         );
+
+      if ($error) {
+          $err = qq{ERROR writing cache file "$file": $error};
+          Log3 ($name, 1, "$name - $err");
+          return $err;
+      }
+      
+      return;
   }
 
   if (!keys %{$data{$name}{$cachename}}) {

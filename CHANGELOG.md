@@ -11,6 +11,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Ergänzung Datensammlung und Training für consumerXX->type heatpump->opmode 'eco'
 - vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext
 - Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead)
+- Integration initialen Cache-Load 'initfirst' um vor dem Laden weiterer Daten Voreinstellungen festzulegen
 
 ## [v2.9.1] - 19.07.2026
 
