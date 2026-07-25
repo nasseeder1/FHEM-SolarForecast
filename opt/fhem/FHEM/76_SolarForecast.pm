@@ -443,6 +443,7 @@ use constant {
   
   PI              => 3.141592653589793,                                             # die Konstante π
   PERCCONINSOC    => 0.75,                                                          # Batterie SoC-Management: Anteilsfaktor für Verbrauch
+  PERSISTDEST     => 'file',                                                        # Standard Ziel für Datenpersistenz ist das Dateisystem
   PRDEF           => 0.9,                                                           # default Performance Ratio (PR)
   PRDCRROWSHIFT   => 100,                                                           # Flußgrafik: Verschiebung bei Anzeige Producer/Inverter-Zeile
   PRODICONDEF     => 'sani_garden_pump',                                            # default Producer-Icon
@@ -6829,7 +6830,7 @@ sub __generateCatOut {
 
       push @data, '</gpx>';
 
-      my $forceType = CurrentVal ($name, 'writeForceType', 'file');
+      my $forceType = CurrentVal ($name, 'writeForceType', PERSISTDEST);
       
       $err = FileWrite ( { FileName  => $dwdcatgpx,
                            ForceType => $forceType,
@@ -11774,7 +11775,7 @@ sub readCacheFile {
   }
   elsif ($cachename eq 'initfirst') {
       my ($err, @init) = FileRead ( { FileName  => $file,
-                                      ForceType => 'file',                      # wird immer! aus dem Filesystem gelesen
+                                      ForceType => PERSISTDEST,                         # wird immer! aus dem Filesystem gelesen
                                     } ); 
 
       if (!$err) {
@@ -11796,7 +11797,7 @@ sub readCacheFile {
       return;
   }
   
-  my $forceType = CurrentVal ($name, 'writeForceType', 'file');
+  my $forceType = CurrentVal ($name, 'writeForceType', PERSISTDEST);
 
   my ($error, @content) = FileRead ( { FileName  => $file,
                                        ForceType => $forceType,
@@ -12013,7 +12014,7 @@ sub writeCacheFile {
       delete $data{$name}{$cachename};                                                          # den Zwischencache löschen
       
       $error = FileWrite ( { FileName  => $file,
-                             ForceType => 'file',                                               # muß immer! 'file' sein
+                             ForceType => PERSISTDEST,                                          # muß immer! 'file' sein
                            }, @inits 
                          );
 
@@ -12040,7 +12041,7 @@ sub writeCacheFile {
 
   push my @arr, encode_json ($data{$name}{$cachename});
   
-  my $forceType = CurrentVal ($name, 'writeForceType', 'file');
+  my $forceType = CurrentVal ($name, 'writeForceType', PERSISTDEST);
   
   $error = FileWrite ( { FileName  => $file,
                          ForceType => $forceType,
@@ -33767,7 +33768,7 @@ sub _writeAsCsv {
       }
   }
   
-  my $forceType = CurrentVal ($name, 'writeForceType', 'file');
+  my $forceType = CurrentVal ($name, 'writeForceType', PERSISTDEST);
   
   my $err = FileWrite ( { FileName  => $outfile,
                           ForceType => $forceType,
