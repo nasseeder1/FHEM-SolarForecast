@@ -13,7 +13,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead)
 - Integration initialen Cache-Load 'initfirst' um vor dem Laden weiterer Daten Voreinstellungen festzulegen
 
-- Intern: writeCacheToFile nach writeCacheFile umbenannt, restart nötig
+- Intern: writeCacheToFile nach writeCacheFile umbenannt -> restart nötig
+          Modulkopf neu strukturiert
 
 ## [v2.9.1] - 19.07.2026
 
