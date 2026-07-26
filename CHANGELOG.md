@@ -12,10 +12,12 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext
 - Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead)
 - Integration initialen Cache-Load 'initfirst' um vor dem Laden weiterer Daten Voreinstellungen festzulegen
+- Setter 'reset consumptionHistory' in 'reset consumptionShort' umbenannt
 
 - <b>Intern:</b> <br>
   writeCacheToFile nach writeCacheFile umbenannt -> restart nötig <br>
-  Modulkopf neu strukturiert
+  Modulkopf neu strukturiert <br>
+  delConsumerFromMem um fehlende Verbraucherschlüssel ergänzt <br>
 
 ## [v2.9.1] - 19.07.2026
 

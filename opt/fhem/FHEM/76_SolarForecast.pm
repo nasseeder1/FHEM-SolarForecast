@@ -70,13 +70,14 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.2"  => "25.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
+  "2.9.2"  => "26.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
                            "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ".
                            "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ".
                            "Ergänzung Datensammlung und Training für consumerXX->type heatpump->opmode 'eco' ".
                            "vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext ".
                            "Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead) ".
                            "Integration initialen Cache-Load 'initfirst' um vor dem Laden weiterer Daten Voreinstellungen festzulegen ".
+                           "Setter 'reset consumptionHistory' in 'reset consumptionShort' umbenannt ".
                            "Intern: writeCacheToFile nach writeCacheFile umbenannt ",
   "2.9.1"  => "16.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
                            "neuer Befehl set .. reset aiData setValue ... ".
@@ -2811,7 +2812,7 @@ sub Set {
                batteryTriggerSet
                consumerMaster
                consumerPlanning
-               consumptionHistory
+               consumptionShort
                energyH4TriggerSet
                powerTriggerSet
                pvCorrection
@@ -3443,7 +3444,7 @@ sub _setreset {                          ## no critic "not used"
       return;
   }
 
-  if ($args[0] eq 'consumptionHistory') {
+  if ($args[0] eq 'consumptionShort') {
       my $dday  = $args[1] // "";                                              # ein bestimmter Tag der pvHistory angegeben ?
       my $dhour = $args[2] // "";                                              # eine bestimmte Stunde eines Tages der pvHistory angegeben ?
 
@@ -11510,8 +11511,8 @@ sub delConsumerFromMem {
   for my $ridx (sort keys %{ $data{$name}{aidectree}{airaw} // {} }) {          # Consumer aus AI Raw Data löschen
       my $row = $data{$name}{aidectree}{airaw}{$ridx};
 
-      my @ckeys = ("csme${c}", "bevcsmSoC${c}", "bevcsmTargSoC${c}",
-                   "bevcsmBatCap${c}", "bevcsmPwr${c}");
+      my @ckeys = ("csme${c}", "bevcsmSoC${c}", "bevcsmTargSoC${c}", "exconfc${c}", 
+                   "rcmdcsm${c}", "bevcsmBatCap${c}", "bevcsmPwr${c}");
 
       next if !grep { defined $row->{$_} } @ckeys;                              # keiner der Keys vorhanden -> Zeile betrifft Consumer $c nicht
       delete @{$row}{@ckeys};                                                   # alle vorhandenen Keys in einem Rutsch entfernen
@@ -34368,7 +34369,7 @@ sub checkPlantConfig {
 
           if ($hcon < 0 || $hcon > $conlim) {                                                                              
               $conpvhfault++;
-              Log3 ($name, 1, "$name - WARNING - The stored Energy con=$hcon of day/hour $dy/$hh in pvHistory is faulty. The incorrect value can be deleted with 'set $name reset consumptionHistory $dy $hh'.");
+              Log3 ($name, 1, "$name - WARNING - The stored Energy con=$hcon of day/hour $dy/$hh in pvHistory is faulty. The incorrect value can be deleted with 'set $name reset consumptionShort $dy $hh'.");
           }
       }
   }
@@ -39227,11 +39228,11 @@ to ensure that the system configuration is correct.
             <tr><td>                           </td><td>To delete the data of only one consumer use:                                                                                                                    </td></tr>
             <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumerMaster &lt;Consumer number&gt; </ul>                                                                                         </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
-            <tr><td> <b>consumptionHistory</b> </td><td>deletes the stored consumption values of the house from the pvHistory memory                                                                                    </td></tr>
+            <tr><td> <b>consumptionShort</b>   </td><td>Deletes the stored energy consumption data for the house from the short-term memory (pvHistory).                                                                </td></tr>
             <tr><td>                           </td><td>To delete the consumption values of a specific day:                                                                                                             </td></tr>
-            <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumptionHistory &lt;Day&gt;   (e.g. set &lt;name&gt; reset consumptionHistory 08) </ul>                                           </td></tr>
+            <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumptionShort &lt;Day&gt;   (e.g. set &lt;name&gt; reset consumptionShort 08) </ul>                                               </td></tr>
             <tr><td>                           </td><td>To delete the consumption values of a specific hour of a day:                                                                                                   </td></tr>
-            <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumptionHistory &lt;Day&gt; &lt;Hour&gt; (e.g. set &lt;name&gt; reset consumptionHistory 08 10) </ul>                             </td></tr>
+            <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumptionShort &lt;Day&gt; &lt;Hour&gt; (e.g. set &lt;name&gt; reset consumptionShort 08 10) </ul>                                 </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>energyH4TriggerSet</b> </td><td>deletes the 4-hour energy trigger points                                                                                                                        </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
@@ -42357,16 +42358,16 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumerPlanning &lt;Verbrauchernummer&gt; </ul>                                                                                     </td></tr>
             <tr><td>                           </td><td>Das Modul führt eine automatische Neuplanung der Verbraucherschaltung durch.                                                                                    </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
-            <tr><td> <b>consumerMaster</b>     </td><td>löscht die aktuellen und historischen Daten aller registrierten Verbraucher aus dem Speicher                                                                    </td></tr>
+            <tr><td> <b>consumerMaster</b>     </td><td>Löscht die aktuellen und historischen Daten aller registrierten Verbraucher aus dem Speicher.                                                                   </td></tr>
             <tr><td>                           </td><td>Die definierten Consumer Attribute bleiben bestehen und die Daten werden neu gesammelt.                                                                         </td></tr>
             <tr><td>                           </td><td>Um die Daten nur eines Verbrauchers zu löschen verwendet man:                                                                                                   </td></tr>
             <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumerMaster &lt;Verbrauchernummer&gt; </ul>                                                                                       </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
-            <tr><td> <b>consumptionHistory</b> </td><td>löscht die gespeicherten Verbrauchswerte des Hauses aus dem pvHistory Speicher                                                                                  </td></tr>
+            <tr><td> <b>consumptionShort</b>   </td><td>Löscht die gespeicherten Verbrauchswerte des Hauses aus dem Kurzzeit-Speicher (pvHistory).                                                                      </td></tr>
             <tr><td>                           </td><td>Um die Verbrauchswerte eines bestimmten Tages zu löschen:                                                                                                       </td></tr>
-            <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumptionHistory &lt;Tag&gt;   (z.B. set &lt;name&gt; reset consumptionHistory 08) </ul>                                           </td></tr>
+            <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumptionShort &lt;Tag&gt;   (z.B. set &lt;name&gt; reset consumptionShort 08) </ul>                                               </td></tr>
             <tr><td>                           </td><td>Um die Verbrauchswerte einer bestimmten Stunde eines Tages zu löschen:                                                                                          </td></tr>
-            <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumptionHistory &lt;Tag&gt; &lt;Stunde&gt; (z.B. set &lt;name&gt; reset consumptionHistory 08 10) </ul>                           </td></tr>
+            <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumptionShort &lt;Tag&gt; &lt;Stunde&gt; (z.B. set &lt;name&gt; reset consumptionShort 08 10) </ul>                               </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>energyH4TriggerSet</b> </td><td>löscht die 4-Stunden Energie Triggerpunkte                                                                                                                      </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
@@ -42650,7 +42651,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
       Die Angabe 'exportToCsv' exportiert den gesamten Inhalt, oder bei Angabe von Filterparametern einen Teilinhalt der pvHistory 
       in eine CSV-Datei. <br><br>
       
-      Mit den Filterparamtern können nur bestimmte Tage, ausgewählte Stunden oder bestimmte Felder gefiltert werden. Diese 
+      Mit den Filterparametern können nur bestimmte Tage, ausgewählte Stunden oder bestimmte Felder gefiltert werden. Diese 
       Angaben können als Komma getrennte Liste den Filterschlüsseln übergeben werden, zum Beispiel:  <br><br>
       
            <ul><i> day=1,2,4 hod=12,13,99 key=pvfc,pvrl    </i></ul>   <br>
