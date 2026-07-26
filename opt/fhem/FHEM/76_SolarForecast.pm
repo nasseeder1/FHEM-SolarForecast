@@ -21833,7 +21833,7 @@ sub _graphicHeader {
                      ? FW_makeImage ('scene_power_grid@grey')
                      : $gridstat
                      ? FW_makeImage ('scene_power_grid')
-                     : FW_makeImage ('scene_power_grid_crossed@red');
+                     : FW_makeImage ('scene_power_grid_crossed_red@grey');
 
       my $presimg  = !defined $presence                         
                      ? FW_makeImage ('user_unknown@grey')
