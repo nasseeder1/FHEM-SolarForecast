@@ -9552,6 +9552,7 @@ sub _attrEnvironment {                   ## no critic "not used"
       outsideTemp => { comp => '.*:.*',          act => 1 },
       presence    => { comp => '.*:.*:.*',       act => 1 },
       windSpeed   => { comp => '.*:.*',          act => 1 },
+      gridStatus  => { comp => '.*:.*:.*',       act => 1 },
   };
   
   my ($a, $h) = parseParams ($aVal);
@@ -10524,7 +10525,7 @@ sub __attrKeyAction {
               my @hse = split ",", $akeyval;
 
               for my $env (@hse) {
-                  if (!grep /^$env$/, qw (outsideTemp presence windSpeed)) {
+                  if (!grep /^$env$/, qw (outsideTemp presence windSpeed gridStatus)) {
                       return qq{The value '$env' is not valid for key '$akey'};
                   }
               }
@@ -10576,7 +10577,7 @@ sub __attrKeyAction {
           }
           
           state %devCodeKeys    = map { $_ => 1 } qw(swoncond swoffcond spignorecond);              # Device + Code/Regex Pflicht
-          state %devRdgCodeKeys = map { $_ => 1 } qw(presence);                                     # Device + Reading + Code/Regex Pflicht
+          state %devRdgCodeKeys = map { $_ => 1 } qw(presence gridStatus);                          # Device + Reading + Code/Regex Pflicht
           state %devRdgKeys     = map { $_ => 1 } qw(outsideTemp windSpeed);                        # Device + Reading, Code optional
 
           if ($devCodeKeys{$akey}) {
@@ -15190,6 +15191,23 @@ sub _transferEnvironmentValues {
       delete $data{$name}{circular}{99}{accum_presence_seconds};                                    # Dauerwert entfernen wenn kein presence
   }
   
+  # --- Grid Status ermitteln
+  if (defined $peh->{gridstdev}) {
+      my $gridstdev = $peh->{gridstdev};
+      my $gridstrdg = $peh->{gridstrdg};
+      my $gridstrgx = $peh->{gridstrgx} // '';
+      
+      my $gridstring = ReadingsVal ($gridstdev, $gridstrdg, 0);
+      my $gridstat   = $gridstring =~ m/^$gridstrgx$/x ? 1 : 0;
+      
+      $data{$name}{current}{gridStatus} = $gridstat;
+      
+      debugLog ($paref, 'collectData_long', "collect Grid state - device=$gridstdev, Reading=$gridstrdg, Value=$gridstring => Result=$gridstat");  
+  }
+  else {
+      delete $data{$name}{current}{gridStatus};
+  }
+  
   # --- Komforttemperatur auslesen
   my $cft  = CurrentVal ($name, 'comforttemp', HPCOMFTEMP); 
   my $doct = 0;
@@ -15533,6 +15551,7 @@ sub __parseAttrEnvironment {
   my ($oustmpdev, $oustmprdg)             = split (':', $ph->{outsideTemp}, 2) if(defined $ph->{outsideTemp});
   my ($winddev,     $windrdg)             = split (':', $ph->{windSpeed},   2) if(defined $ph->{windSpeed});
   my ($presendev, $presenrdg, $presenrgx) = split (':', $ph->{presence},    3) if(defined $ph->{presence});
+  my ($gridstdev, $gridstrdg, $gridstrgx) = split (':', $ph->{gridStatus},  3) if(defined $ph->{gridStatus});
 
 
   my $parsed = {
@@ -15542,7 +15561,10 @@ sub __parseAttrEnvironment {
       windRdg         => $windrdg,     
       presenceDev     => $presendev,
       presenceRdg     => $presenrdg,  
-      presenceRgx     => $presenrgx,     
+      presenceRgx     => $presenrgx,   
+      gridstdev       => $gridstdev,
+      gridstrdg       => $gridstrdg,
+      gridstrgx       => $gridstrgx,
   };
 
 return $parsed;
@@ -21804,8 +21826,15 @@ sub _graphicHeader {
       
       my $dt       = timestringsFromOffset ($name, $paref->{t}, 0);
       my $hod      = sprintf "%02d", ($dt->{hour} + 1);
-      my $presence = CurrentVal ($name, 'presence', undef);                                             # Anwesenheit                 
+      my $presence = CurrentVal ($name, 'presence',   undef);                                           # Anwesenheit 
+      my $gridstat = CurrentVal ($name, 'gridStatus', undef);                                           # Netz Verfügbarkeit       
       
+      my $gridimg  = !defined $gridstat                         
+                     ? FW_makeImage ('scene_power_grid@grey')
+                     : $gridstat
+                     ? FW_makeImage ('scene_power_grid')
+                     : FW_makeImage ('scene_power_grid_crossed@red');
+
       my $presimg  = !defined $presence                         
                      ? FW_makeImage ('user_unknown@grey')
                      : $presence
@@ -22070,7 +22099,8 @@ sub _graphicHeader {
       
       my @parts1;
 
-      push @parts1, [ $presimg, 3 ]                    if(grep /^presence$/,    @$sa);              # Anwesenheitssymbol  
+      push @parts1, [ $presimg, 3 ]                    if(grep /^presence$/,    @$sa);              # Anwesenheitssymbol
+      push @parts1, [ $gridimg, 3 ]                    if(grep /^gridStatus$/,  @$sa);              # Grid verfügbar Symbol      
       push @parts1, [ $windimg, 1 ], [ $windspeed, 1 ] if(grep /^windSpeed$/,   @$sa);              # Windanzeige  
       push @parts1, [ $tempimg, 0 ], [ $temptxt,   3 ] if(grep /^outsideTemp$/, @$sa);              # Außentemperatur
       
@@ -40874,6 +40904,7 @@ to ensure that the system configuration is correct.
             <tr><td>                            </td><td>                                                                                                                                          </td></tr>
             <tr><td> <b>headerShowEnv</b>       </td><td>Select the environmental values to display in the header section of the graph. The selected options are separated by commas.              </td></tr>
             <tr><td>                            </td><td>The environment variables are set using the <a href="#SolarForecast-attr-setupEnvironment">setupEnvironment attribute.                    </td></tr>
+            <tr><td>                            </td><td><b>gridStatus</b>  - current availability/current connection status to the public network                                                 </td></tr>
 			<tr><td>                            </td><td><b>outsideTemp</b> - the current outdoor temperature                                                                                      </td></tr>
             <tr><td>                            </td><td><b>presence</b>    - presence status                                                                                                      </td></tr>
             <tr><td>                            </td><td><b>windSpeed</b>   - the current wind speed (smoothed)                                                                                    </td></tr>
@@ -41343,11 +41374,15 @@ to ensure that the system configuration is correct.
          <ul>
          <table>
          <colgroup> <col width="23%"> <col width="77%"> </colgroup>
+            <tr><td> <b>gridStatus</b>            </td><td>A &lt;Device&gt;:&lt;Reading&gt;:&lt;Regex&gt; combination for the connection status to the public grid. The specified regular expression         </td></tr>
+            <tr><td>                              </td><td>must evaluate to the Boolean value 'true' for the status 'Network available/connected', otherwise 'false'.                                        </td></tr>
+            <tr><td>                              </td><td>Syntax: &lt;Device&gt;:&lt;Reading&gt;:&lt;Regex&gt;                                                                                              </td></tr>
+            <tr><td>                              </td><td>                                                                                                                                                  </td></tr>
             <tr><td> <b>outsideTemp</b>           </td><td>A &lt;Device&gt;:&lt;Reading&gt; combination that provides the currently measured outside temperature in °C.                                      </td></tr>
             <tr><td>                              </td><td>Syntax: &lt;Device&gt;:&lt;Reading&gt;                                                                                                            </td></tr>
             <tr><td>                              </td><td>                                                                                                                                                  </td></tr>
             <tr><td> <b>presence</b>              </td><td>A &lt;device&gt;:&lt;reading&gt;:&lt;regex&gt; combination that provides the presence status of the residents. The specified regular expression   </td></tr>
-            <tr><td>                              </td><td>must return 'true' for the 'presence' status, otherwise 'false'.                                                                                  </td></tr>
+            <tr><td>                              </td><td>must return Boolean value 'true' for the 'presence' status, otherwise 'false'.                                                                    </td></tr>
             <tr><td>                              </td><td>Syntax: &lt;Device&gt;:&lt;Reading&gt;:&lt;Regex&gt;                                                                                              </td></tr>
             <tr><td>                              </td><td>                                                                                                                                                  </td></tr>         
             <tr><td> <b>windSpeed</b>             </td><td>A <Device>:<Reading> combination that provides the currently measured wind speed in m/s.                                                          </td></tr>
@@ -44008,7 +44043,8 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                            </td><td>                                                                                                                                </td></tr>
             <tr><td> <b>headerShowEnv</b>       </td><td>Auswahl der anzuzeigenden Umgebungswerte im Grafik Kopfbereich. Die gewählten Optionen werden durch Komma getrennt angegeben.   </td></tr>
             <tr><td>                            </td><td>Die Einrichtung der Umgebungswerte erfolgt mit Attribut <a href="#SolarForecast-attr-setupEnvironment">setupEnvironment</a>.    </td></tr>
-			<tr><td>                            </td><td><b>outsideTemp</b> - die aktuelle Außentemperatur                                                                               </td></tr>
+            <tr><td>                            </td><td><b>gridStatus</b>  - aktuelle Verfügbarkeit/aktueller Verbindungsstatus zum öffentlichen Netz                                   </td></tr>
+            <tr><td>                            </td><td><b>outsideTemp</b> - die aktuelle Außentemperatur                                                                               </td></tr>
             <tr><td>                            </td><td><b>presence</b>    - der Anwesenheitsstatus                                                                                     </td></tr>
             <tr><td>                            </td><td><b>windSpeed</b>   - die aktuelle Windgeschwindigkeit (geglätted)                                                               </td></tr>
             <tr><td>                            </td><td>                                                                                                                                </td></tr>
@@ -44475,11 +44511,15 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
          <ul>
          <table>
          <colgroup> <col width="23%"> <col width="77%"> </colgroup>
+            <tr><td> <b>gridStatus</b>            </td><td>Eine &lt;Gerät&gt;:&lt;Reading&gt;:&lt;Regex&gt; Kombination für den Verbindungsstatus zum öffentlichen Netz. Der angegebene reguläre Ausdruck    </td></tr>
+            <tr><td>                              </td><td>muß Boolean 'true' für den Status 'Netz verfügbar/verbunden' ergeben, sonst 'false'.                                                              </td></tr>
+            <tr><td>                              </td><td>Syntax: &lt;Gerät&gt;:&lt;Reading&gt;:&lt;Regex&gt;                                                                                               </td></tr>
+            <tr><td>                              </td><td>                                                                                                                                                  </td></tr>         
             <tr><td> <b>outsideTemp</b>           </td><td>Eine &lt;Gerät&gt;:&lt;Reading&gt; Kombination, die die aktuell gemessene Außentemperatur in °C liefert.                                          </td></tr>
             <tr><td>                              </td><td>Syntax: &lt;Gerät&gt;:&lt;Reading&gt;                                                                                                             </td></tr>
             <tr><td>                              </td><td>                                                                                                                                                  </td></tr>
             <tr><td> <b>presence</b>              </td><td>Eine &lt;Gerät&gt;:&lt;Reading&gt;:&lt;Regex&gt; Kombination, die den Anwesenheitsstatus der Bewohner liefert. Der angegebene reguläre Ausdruck   </td></tr>
-            <tr><td>                              </td><td>muß 'true' für den Status 'Anwesenheit' ergeben, sonst 'false'.                                                                                   </td></tr>
+            <tr><td>                              </td><td>muß Boolean 'true' für den Status 'Anwesenheit' ergeben, sonst 'false'.                                                                           </td></tr>
             <tr><td>                              </td><td>Syntax: &lt;Gerät&gt;:&lt;Reading&gt;:&lt;Regex&gt;                                                                                               </td></tr>
             <tr><td>                              </td><td>                                                                                                                                                  </td></tr>         
             <tr><td> <b>windSpeed</b>             </td><td>Eine &lt;Gerät&gt;:&lt;Reading&gt; Kombination, die die aktuell gemessene Windgeschwindigkeit in m/s liefert.                                     </td></tr>

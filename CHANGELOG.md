@@ -13,6 +13,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead)
 - Integration initialen Cache-Load 'initfirst' um vor dem Laden weiterer Daten Voreinstellungen festzulegen
 - Setter 'reset consumptionHistory' in 'reset consumptionShort' umbenannt
+- gridStatus kann in setupEnvironment gesetzt und mit graphicControl->headerShowEnv im Kopf angezeigt werden
 
 - <b>Intern:</b> <br>
   * writeCacheToFile nach writeCacheFile umbenannt -> restart nötig <br>
