@@ -10568,35 +10568,25 @@ sub __attrKeyAction {
 
           if ($akey eq 'reductionState') {
               my $rdcinfo = CurrentVal ($name, 'reductionState', '');
-              my ($rdcdev, $rdcrd, $code) = split ":", $rdcinfo, 3;
-
-              ($err) = isDeviceValid ( { name   => $name,
-                                         obj    => $rdcdev,
-                                         method => 'string',
-                                       }
-                                     );
-
-              if ($err) {
-                  delete $data{$name}{current}{$akey};
-                  return $err;
-              }
-
-              if ($code =~ m/^\s*\{.*\}\s*$/xs) {                                                      # prüft Perl-Code
-                  $code  =~ s/\s//xg;
-                  ($err) = checkCode ($name, $code);
-              }
-              else {                                                                                   # prüft Regex
-                  $err = checkRegex ($code);
-              }
+              
+              $err = checkDevRdCond ($name, $akey, $rdcinfo, 1);                                    # mit Device-Check
 
               if ($err) {
                   delete $data{$name}{current}{$akey};
                   return $err;
               }
           }
+          
+          my %condKeys = map { $_ => 1 } qw(swoncond swoffcond spignorecond);
+
+          if ($condKeys{$akey}) {
+              $err = checkDevRdCond ($name, $akey, $akeyval, 1);                                    # mit Device-Check
+              return $err if $err;
+          }
       }
       
       # --- Ende init_done Sektion
+
 
       if ($akey eq 'capacity') {
           if (!isNumeric ($akeyval)) {
@@ -10902,60 +10892,6 @@ sub __attrKeyAction {
           else {
               my $valid = checkhhmm ($akeyval);
               return qq{The syntax "notafter=$akeyval" is wrong!} if(!$valid);
-          }
-      }
-      
-      if ($akey eq 'swoncond') {
-          my ($dev, $rd, $code) = split ":", $akeyval, 3;
-
-          if (!$dev || !$rd || !defined $code) {
-              return qq{A Device, Reading and Regex/Code must be specified for the 'swoncond' key};
-          }
-
-          if ($code =~ m/^\s*\{.*\}\s*$/xs) {                                                      # swoncond prüft Perl-Code
-              $code  =~ s/\s//xg;
-              ($err) = checkCode ($name, $code);
-              return "swoncond: $err" if($err);
-          }
-          else {                                                                                   # swoncond prüft Regex
-              $err = checkRegex ($code);
-              return "swoncond: $err" if($err);
-          }
-      }
-
-      if ($akey eq 'swoffcond') {
-          my ($dev, $rd, $code) = split ":", $akeyval, 3;
-
-          if (!$dev || !$rd || !defined $code) {
-              return qq{A Device, Reading and Regex/Code must be specified for the 'swoffcond' key};
-          }
-
-          if ($code =~ m/^\s*\{.*\}\s*$/xs) {                                                      # swoffcond prüft Perl-Code
-              $code  =~ s/\s//xg;
-              ($err) = checkCode ($name, $code);
-              return "swoffcond: $err" if($err);
-          }
-          else {                                                                                   # swoffcond prüft Regex
-              $err = checkRegex ($code);
-              return "swoffcond: $err" if($err);
-          }
-      }
-      
-      if ($akey eq 'spignorecond') {
-          my ($dev, $rd, $code) = split ":", $akeyval, 3;
-
-          if (!$dev || !$rd || !defined $code) {
-              return qq{A Device, Reading and Regex/Code must be specified for the 'spignorecond' key};
-          }
-
-          if ($code =~ m/^\s*\{.*\}\s*$/xs) {                                                      # spignorecond prüft Perl-Code
-              $code  =~ s/\s//xg;
-              ($err) = checkCode ($name, $code);
-              return "spignorecond: $err" if($err);
-          }
-          else {                                                                                   # spignorecond prüft Regex
-              $err = checkRegex ($code);
-              return "spignorecond: $err" if($err);
           }
       }
       
@@ -15201,7 +15137,6 @@ sub _transferEnvironmentValues {
   
   my $peh = __parseAttrEnvironment ($name);                                                         # Parsed Hash
   my $err;
-  #return if(!$peh);
              
   # --- Anwesenheit auswerten
   my $presence_weighted;
@@ -36725,24 +36660,6 @@ return length ($decoded);
 }
 
 ################################################################
-#  Prüfung eines übergebenen Regex
-################################################################
-sub checkRegex {
-  my $regexp = shift;
-
-  return 'no Regex is provided' if(!defined $regexp);
-
-  eval { "Hallo" =~ m/^$regexp$/;
-         1;
-       }
-       or do { my $err = (split " at", $@)[0];
-               return "Bad regexp: ".$err;
-             };
-
-return;
-}
-
-################################################################
 #  Hilfsfunktion Sortierung numerische und 
 #  nicht numerische Daten zur Verwendung in sort ...
 ################################################################
@@ -36751,6 +36668,53 @@ sub naturalSort {
     return ( $a =~ /^-?\d+(\.\d+)?$/ && $b =~ /^-?\d+(\.\d+)?$/ )
         ? $a <=> $b
         : $a cmp $b;
+}
+
+########################################################################
+# Prüft eine "Device:Reading:Regex/Code" Angabe für die
+# angegebenen Condition-Keys (z.B. swoncond, swoffcond, spignorecond)
+#
+# $name     - Devicename (für checkCode)
+# $akey     - der aktuelle Attribut-Key (für die Fehlermeldung)
+# $akeyval  - der Wert, "Device:Reading:Code|Regex"
+# $checkdev - optionaler Check auf vorhandenes Device
+#
+# Rückgabe: Fehlertext oder undef bei Erfolg
+########################################################################
+sub checkDevRdCond {
+  my $name     = shift;
+  my $akey     = shift;
+  my $akeyval  = shift;
+  my $checkdev = shift // 0;
+
+  my ($dev, $rd, $code) = split ":", $akeyval, 3;
+
+  if (!$dev || !$rd || !defined $code) {
+      return qq{A Device, Reading and Regex/Code must be specified for the '$akey' key};
+  }
+  
+  my $err;
+  
+  if ($checkdev) {
+      ($err) = isDeviceValid ( { name   => $name,               # prüft Device vorhanden
+                                 obj    => $dev,
+                                 method => 'string',
+                               } );
+                               
+      return "$akey: $err" if $err;
+  }
+
+  if ($code =~ m/^\s*\{.*\}\s*$/xs) {                           # prüft Perl-Code
+      $code =~ s/\s//xg;
+      ($err) = checkCode ($name, $code);
+      return "$akey: $err" if $err;
+  }
+  else {                                                        # prüft Regex
+      $err = checkRegex ($code);
+      return "$akey: $err" if $err;
+  }
+
+return;
 }
 
 ################################################################
@@ -36766,6 +36730,24 @@ sub checkhhmm {
   }
 
 return $valid;
+}
+
+################################################################
+#  Prüfung eines übergebenen Regex
+################################################################
+sub checkRegex {
+  my $regexp = shift;
+
+  return 'no Regex is provided' if(!defined $regexp);
+
+  eval { "Hallo" =~ m/^$regexp$/;
+         1;
+       }
+       or do { my $err = (split " at", $@)[0];
+               return "Bad regexp: ".$err;
+             };
+
+return;
 }
 
 ################################################################

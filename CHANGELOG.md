@@ -19,6 +19,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
   * Modulkopf neu strukturiert <br>
   * delConsumerFromMem um fehlende Verbraucherschlüssel ergänzt <br>
   * Commandref bearbeitet <br>
+  * neue Funktion checkDevRdCond <br>
 
 ## [v2.9.1] - 19.07.2026
 
