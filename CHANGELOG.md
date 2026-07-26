@@ -15,9 +15,10 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Setter 'reset consumptionHistory' in 'reset consumptionShort' umbenannt
 
 - <b>Intern:</b> <br>
-  writeCacheToFile nach writeCacheFile umbenannt -> restart nötig <br>
-  Modulkopf neu strukturiert <br>
-  delConsumerFromMem um fehlende Verbraucherschlüssel ergänzt <br>
+  * writeCacheToFile nach writeCacheFile umbenannt -> restart nötig <br>
+  * Modulkopf neu strukturiert <br>
+  * delConsumerFromMem um fehlende Verbraucherschlüssel ergänzt <br>
+  * Commandref bearbeitet <br>
 
 ## [v2.9.1] - 19.07.2026
 

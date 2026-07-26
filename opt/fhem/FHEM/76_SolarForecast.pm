@@ -3505,8 +3505,8 @@ sub _setreset {                          ## no critic "not used"
                   delete $data{$name}{circular}{$circh}{$k} if($k =~ /^(pvrl_|pvfc_)/xs);
               }
 
-              for my $hid (keys %{$data{$name}{pvhist}}) {
-                  delete $data{$name}{pvhist}{$hid}{$circh}{pvcorrf};
+              for my $day (keys %{$data{$name}{pvhist}}) {
+                  delete $data{$name}{pvhist}{$day}{$circh}{pvcorrf};
               }
 
               Log3 ($name, 3, qq{$name - stored PV correction factor of hour "$circh" from pvCircular and pvHistory deleted});
@@ -3524,9 +3524,9 @@ sub _setreset {                          ## no critic "not used"
                   }
               }
 
-              for my $hid (keys %{$data{$name}{pvhist}}) {
-                  for my $hidh (keys %{$data{$name}{pvhist}{$hid}}) {
-                      delete $data{$name}{pvhist}{$hid}{$hidh}{pvcorrf};
+              for my $day (keys %{$data{$name}{pvhist}}) {
+                  for my $hod (keys %{$data{$name}{pvhist}{$day}}) {
+                      delete $data{$name}{pvhist}{$day}{$hod}{pvcorrf};
                   }
               }
 
@@ -39238,12 +39238,10 @@ to ensure that the system configuration is correct.
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>powerTriggerSet</b>    </td><td>deletes the trigger points for PV generation values                                                                                                             </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
-            <tr><td> <b>pvCorrection</b>       </td><td>Deletes the readings pvCorrectionFactor* and hidden control readings of the correction system.                                                                  </td></tr>
-            <tr><td>                           </td><td>To delete all previously stored PV correction factors from the caches:                                                                                          </td></tr>
-            <tr><td>                           </td><td><ul>set &lt;name&gt; reset pvCorrection cached </ul>                                                                                                            </td></tr>
-            <tr><td>                           </td><td>To delete stored PV correction factors of a certain hour from the caches:                                                                                       </td></tr>
-            <tr><td>                           </td><td><ul>set &lt;name&gt; reset pvCorrection cached &lt;Hour&gt;  </ul>                                                                                              </td></tr>
-            <tr><td>                           </td><td><ul>(e.g. set &lt;name&gt; reset pvCorrection cached 10)       </ul>                                                                                            </td></tr>
+            <tr><td> <b>pvCorrection</b>       </td><td>Deletes the pvCorrectionFactor* readings as well as hidden control readings from the correction system.                                                         </td></tr>
+            <tr><td>                           </td><td>Adding 'cached' will also delete the PV data/factors from short-term storage (pvHistory) and long-term storage (pvCircular).                                    </td></tr>
+            <tr><td>                           </td><td><b>set &lt;name&gt; reset pvCorrection cached</b> - deletes PV data/factors for each hour                                                                       </td></tr>
+            <tr><td>                           </td><td><b>set &lt;name&gt; reset pvCorrection cached &lt;Hour&gt;</b> - deletes PV data/factors for the given hour (e.g. set &lt;name&gt; reset pvCorrection cached 10)</td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>pvHistory</b>          </td><td>deletes the memory of all historical days (01 ... 31)                                                                                                           </td></tr>
             <tr><td>                           </td><td>To delete a specific historical day:                                                                                                                            </td></tr>
@@ -42374,11 +42372,9 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>powerTriggerSet</b>    </td><td>löscht die Triggerpunkte für PV Erzeugungswerte                                                                                                                 </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>pvCorrection</b>       </td><td>Löscht die Readings pvCorrectionFactor* sowie verborgene Steuerreadings des Korrektursystems.                                                                   </td></tr>
-            <tr><td>                           </td><td>Um alle bisher gespeicherten PV Korrekturfaktoren aus den Caches zu löschen:                                                                                    </td></tr>
-            <tr><td>                           </td><td><ul>set &lt;name&gt; reset pvCorrection cached </ul>                                                                                                            </td></tr>
-            <tr><td>                           </td><td>Um gespeicherte PV Korrekturfaktoren einer bestimmten Stunde aus den Caches zu löschen:                                                                         </td></tr>
-            <tr><td>                           </td><td><ul>set &lt;name&gt; reset pvCorrection cached &lt;Stunde&gt;  </ul>                                                                                            </td></tr>
-            <tr><td>                           </td><td><ul>(z.B. set &lt;name&gt; reset pvCorrection cached 10)       </ul>                                                                                            </td></tr>
+            <tr><td>                           </td><td>Mit dem Zusatz 'cached' werden die PV Daten/Faktoren aus Kurzzeit-Speicher (pvHistory) und Langzeit-Speicher (pvCircular) ebenfalls gelöscht.                   </td></tr>
+            <tr><td>                           </td><td><b>set &lt;name&gt; reset pvCorrection cached</b> - löscht PV Daten/Faktoren jeder Stunde                                                                       </td></tr>
+            <tr><td>                           </td><td><b>set &lt;name&gt; reset pvCorrection cached &lt;Stunde&gt;</b> - löscht PV Daten/Faktoren der Stunde (z.B. set &lt;name&gt; reset pvCorrection cached 10)     </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>pvHistory</b>          </td><td>löscht den Speicher aller historischen Tage (01 ... 31)                                                                                                         </td></tr>
             <tr><td>                           </td><td>Um einen bestimmten historischen Tag zu löschen:                                                                                                                </td></tr>
