@@ -30,6 +30,7 @@
 #########################################################################################################################
 use strict; 
 use warnings;
+use feature 'state';
 
 main::LoadModule ('Astro');                                                          # Astro Modul für Sonnenkennzahlen laden
 
@@ -9541,22 +9542,23 @@ sub _attrEnvironment {                   ## no critic "not used"
   my $name  = $paref->{name};
   my $aVal  = $paref->{aVal};
   my $aName = $paref->{aName};
+  my $cmd   = $paref->{cmd};
 
   return if(!$init_done);
 
   my $hash = $defs{$name};
 
   my $valid = {
-      outsideTemp => { comp => '.*:.*',          act => 0 },
-      presence    => { comp => '.*:.*:.*',       act => 0 },
-      windSpeed   => { comp => '.*:.*',          act => 0 },
+      outsideTemp => { comp => '.*:.*',          act => 1 },
+      presence    => { comp => '.*:.*:.*',       act => 1 },
+      windSpeed   => { comp => '.*:.*',          act => 1 },
   };
   
   my ($a, $h) = parseParams ($aVal);
 
-  if ($paref->{cmd} eq 'set') {
+  if ($cmd eq 'set') {
       for my $key (keys %{$h}) {
-          return 'The keys entered must not contain square brackets [...]' if($key =~ /[\[\]]+/xs);           # Absturzschutz!
+          return 'The keys entered must not contain square brackets [...]' if($key =~ /[\[\]]+/xs);         # Absturzschutz!
 
           if (!grep /^$key$/, keys %{$valid}) {
               return qq{The key '$key' is not a valid key in attribute '$aName'};
@@ -9565,29 +9567,25 @@ sub _attrEnvironment {                   ## no critic "not used"
           my $comp = $valid->{$key}{comp};
           next if(!$comp);
 
-          if ($h->{$key} !~ /^$comp$/xs) {
+          if ($h->{$key} =~ /^$comp$/xs) {
+              if ($valid->{$key}{act}) {
+                  my $err = __attrKeyAction ( { name    => $name,                                                                               
+                                                aName   => $aName,
+                                                pphash  => $h,                                              # parsed Param Hash: wichtig für Abhängigkeitsprüfungen                                                      
+                                                akey    => $key,
+                                                akeyval => $h->{$key},
+                                                cmd     => $cmd,
+                                              } );
+
+                  return $err if($err);
+              }
+          }
+          else {
               return "The key '$key=$h->{$key}' is not specified correctly. Please refer to the command reference.";
           }
       }
-
-      for my $akey (keys %{$h}) {          
-          my ($dv, $rd, $regex) = split ':', $h->{$akey};
-          my ($err)             = isDeviceValid ( { name => $name, obj => $dv, method => 'string' } );
-          return $err if($err);
-
-          my $val = ReadingsVal ($dv, $rd, undef);
-          
-          if (!defined $val) {
-              return "The reading '$rd' of device '$dv' is invalid or doesn't contain a defined value";
-          }
-          
-          if (defined $regex) {
-              $err = checkRegex ($regex);
-              return "$akey Regex check failed: $err" if($err);
-          }
-      }
   }
-  elsif ($paref->{cmd} eq 'del') {
+  elsif ($cmd eq 'del') {
 
   }
 
@@ -10551,7 +10549,7 @@ sub __attrKeyAction {
               for my $hnum (keys %{$h}) {                                
                   my ($cfodev, $cford, $def) = split ":", $h->{$hnum}; 
                   
-                  if ($cfodev && $cford) {                                                                  # Auswertung Device/Reading Kombi
+                  if ($cfodev && $cford) {                                                          # Auswertung Device/Reading Kombi
                       ($err) = isDeviceValid ( { name   => $name,
                                                  obj    => $cfodev,
                                                  method => 'string',
@@ -10569,7 +10567,7 @@ sub __attrKeyAction {
           if ($akey eq 'reductionState') {
               my $rdcinfo = CurrentVal ($name, 'reductionState', '');
               
-              $err = checkDevRdCond ($name, $akey, $rdcinfo, 1);                                    # mit Device-Check
+              $err = checkDevRdCond ($name, $akey, $rdcinfo, 1, 0, 1);                              # mit Device-Check, Code check
 
               if ($err) {
                   delete $data{$name}{current}{$akey};
@@ -10577,12 +10575,24 @@ sub __attrKeyAction {
               }
           }
           
-          my %condKeys = map { $_ => 1 } qw(swoncond swoffcond spignorecond);
+          state %devCodeKeys    = map { $_ => 1 } qw(swoncond swoffcond spignorecond);              # Device + Code/Regex Pflicht
+          state %devRdgCodeKeys = map { $_ => 1 } qw(presence);                                     # Device + Reading + Code/Regex Pflicht
+          state %devRdgKeys     = map { $_ => 1 } qw(outsideTemp windSpeed);                        # Device + Reading, Code optional
 
-          if ($condKeys{$akey}) {
-              $err = checkDevRdCond ($name, $akey, $akeyval, 1);                                    # mit Device-Check
+          if ($devCodeKeys{$akey}) {
+              $err = checkDevRdCond ($name, $akey, $akeyval, 1, 0, 1);                              # mit Device-Check, Code check
               return $err if $err;
           }
+
+          if ($devRdgCodeKeys{$akey}) {
+              $err = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 1);                              # mit Device-Check, Reading check, Code check
+              return $err if $err;
+          }
+
+          if ($devRdgKeys{$akey}) {
+              $err = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 0);                              # mit Device-Check, Reading check
+              return $err if $err;
+          }         
       }
       
       # --- Ende init_done Sektion
@@ -36674,10 +36684,12 @@ sub naturalSort {
 # Prüft eine "Device:Reading:Regex/Code" Angabe für die
 # angegebenen Condition-Keys (z.B. swoncond, swoffcond, spignorecond)
 #
-# $name     - Devicename (für checkCode)
+# $name     - Devicename
 # $akey     - der aktuelle Attribut-Key (für die Fehlermeldung)
-# $akeyval  - der Wert, "Device:Reading:Code|Regex"
+# $akeyval  - der Wert, "Device:Reading[:Code|Regex]"
 # $checkdev - optionaler Check auf vorhandenes Device
+# $checkrdg - optionaler Check auf definierten Reading-Wert
+# $codereq  - ob Code/Regex-Teil zwingend erforderlich ist
 #
 # Rückgabe: Fehlertext oder undef bei Erfolg
 ########################################################################
@@ -36686,32 +36698,43 @@ sub checkDevRdCond {
   my $akey     = shift;
   my $akeyval  = shift;
   my $checkdev = shift // 0;
+  my $checkrdg = shift // 0;
+  my $codereq  = shift // 0;
 
-  my ($dev, $rd, $code) = split ":", $akeyval, 3;
+  my ($dev, $rdg, $code) = split ":", $akeyval, 3;
 
-  if (!$dev || !$rd || !defined $code) {
+  if (!$dev || !$rdg || ($codereq && !defined $code)) {
       return qq{A Device, Reading and Regex/Code must be specified for the '$akey' key};
   }
-  
+
   my $err;
-  
+
   if ($checkdev) {
       ($err) = isDeviceValid ( { name   => $name,               # prüft Device vorhanden
                                  obj    => $dev,
                                  method => 'string',
                                } );
-                               
       return "$akey: $err" if $err;
   }
 
-  if ($code =~ m/^\s*\{.*\}\s*$/xs) {                           # prüft Perl-Code
-      $code =~ s/\s//xg;
-      ($err) = checkCode ($name, $code);
-      return "$akey: $err" if $err;
+  if ($checkrdg) {
+      my $val = ReadingsVal ($dev, $rdg, undef);
+      
+      if (!defined $val) {
+          return "The reading '$rdg' of device '$dev' is invalid or doesn't contain a defined value";
+      }
   }
-  else {                                                        # prüft Regex
-      $err = checkRegex ($code);
-      return "$akey: $err" if $err;
+
+  if (defined $code) {
+      if ($code =~ m/^\s*\{.*\}\s*$/xs) {                       # prüft Perl-Code
+          $code =~ s/\s//xg;
+          ($err) = checkCode ($name, $code);
+          return "$akey: $err" if $err;
+      }
+      else {                                                    # prüft Regex
+          $err = checkRegex ($code);
+          return "$akey: $err" if $err;
+      }
   }
 
 return;

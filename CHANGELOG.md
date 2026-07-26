@@ -20,6 +20,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
   * delConsumerFromMem um fehlende Verbraucherschlüssel ergänzt <br>
   * Commandref bearbeitet <br>
   * neue Funktion checkDevRdCond <br>
+  * use feature 'state' gesetzt und Code Rework <br>
 
 ## [v2.9.1] - 19.07.2026
 
