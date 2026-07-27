@@ -12350,7 +12350,10 @@ sub centralTask {
   #    ::CommandDeleteAttr (undef, "$name graphicBeamWidth");
   #}
   
-  readingsDelete ($hash, 'Tomorrow_ConsumptionForecast');               # 07.06.
+  if (!CurrentVal($name, 'TCF_cleanup_done', 0)) {
+      readingsDelete ($hash, 'Tomorrow_ConsumptionForecast');               # 07.06.
+      $data{$name}{current}{TCF_cleanup_done} = 1;                          # läuft nur einmal pro Session
+  }
   
   if (!CurrentVal($name, 'pvh_00_cleanup_done', 0)) {             # 09.07.
       for my $dy (1..31) {
