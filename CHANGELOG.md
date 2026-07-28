@@ -4,6 +4,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 ## [Unreleased]
 
+- Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten
+
 
 ## [v2.9.2] - 27.07.2026
 
