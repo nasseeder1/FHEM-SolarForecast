@@ -73,7 +73,8 @@ use MIME::Base64;
 my %vNotesIntern = (
   "2.9.3"  => "30.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
                            "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ".
-                           "_calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex ",
+                           "_calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex ".
+                           "neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours ",
   "2.9.2"  => "26.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
                            "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ".
                            "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ".
@@ -1820,6 +1821,7 @@ my %hfspvh = (
   socprogwhsum      => { fn => \&_saveHistP2, storname => 'socprogwhsum',   validkey => undef,    fpar => undef    },    # prognostizierter SoC (Wh) zusammengefasst über alle Batterien
   pvapifcraw        => { fn => \&_saveHistP2, storname => 'pvapifcraw',     validkey => undef,    fpar => undef    },    # prognostizierter Energieertrag Raw
   pvfc              => { fn => \&_saveHistP2, storname => 'pvfc',           validkey => undef,    fpar => 'calc99' },    # prognostizierter Energieertrag
+  pvfcfeedlim       => { fn => \&_saveHistP2, storname => 'pvfcfeedlim',    validkey => undef,    fpar => 'calc99' },    # prognostizierter Energieertrag mit Berücksichtigung Einspeiselimit/Nulleinspeiser
   confc             => { fn => \&_saveHistP2, storname => 'confc',          validkey => undef,    fpar => 'calc99' },    # durch KI oder herkömmlich prognostizierter Hausverbrauch
   conaifc           => { fn => \&_saveHistP2, storname => 'conaifc',        validkey => undef,    fpar => undef    },    # Hilfswert: durch KI prognostizierter Hausverbrauch
   conbiascorr       => { fn => \&_saveHistP2, storname => 'conbiascorr',    validkey => undef,    fpar => undef    },    # in der KI Verbrauchsprognose enthaltene kombinierte Bias- und Driftkorrektur 
@@ -20119,7 +20121,7 @@ sub _corrPVforecast4ZeroFeedIn {
                 "PVFCFeedLim NextHour$nhr $stt - raw: $pvfc_raw Wh, confc: $confc_raw Wh, batchg: $batchg Wh, limit: $feedinlim W -> pvfcfeedlim: $pvfc_feedlim Wh");
 
       if ($today && $hod) {
-          #writeToHistory ( { paref => $paref, key => 'pvfcfeedlim', val => $pvfc_feedlim, day => $day, hour => $hod } );
+          writeToHistory ( { paref => $paref, key => 'pvfcfeedlim', val => $pvfc_feedlim, day => $day, hour => $hod } );
       }
   }
 
@@ -32796,6 +32798,7 @@ sub _listDataPoolPvHist {
           $entry{pvrl}           = HistoryVal ($name, $day, $key, 'pvrl',           '-');
           $entry{pvrlvd}         = HistoryVal ($name, $day, $key, 'pvrlvd',         '-');
           $entry{pvfc}           = HistoryVal ($name, $day, $key, 'pvfc',           '-');
+          $entry{pvfcfeedlim}    = HistoryVal ($name, $day, $key, 'pvfcfeedlim',    '-');
           $entry{pvapifcraw}     = HistoryVal ($name, $day, $key, 'pvapifcraw',     '-');
           $entry{gcons}          = HistoryVal ($name, $day, $key, 'gcons',          '-');
           $entry{con}            = HistoryVal ($name, $day, $key, 'con',            '-');
@@ -32885,6 +32888,7 @@ sub _listDataPoolPvHist {
                   pvrl           => 'PVreal',
                   pvrlvd         => 'PVrealValid',
                   pvfc           => 'PVforecast',
+                  pvfcfeedlim    => 'PVforecastFeedLim',
                   pvapifcraw     => 'PVapiForecastRaw',
                   gcons          => 'GridConsumption',
                   con            => 'Consumption',
@@ -33013,7 +33017,7 @@ sub _listDataPoolPvHist {
           };
 
           # --- PV-Erzeugung (Summenfelder, alle hod) ----------------------------
-          $ret .= $line->(qw (pvapifcraw pvfc pvrl pvrlvd plantderated rad1h));
+          $ret .= $line->(qw (pvapifcraw pvfc pvfcfeedlim pvrl pvrlvd plantderated rad1h));
 
           # --- Inverter (etotali nur Stunden, pvrl alle hod) --------------------
           if ($key ne '99') {                                                                               # Gesamtertrag je Inverter – nur Stundensätze
@@ -39508,6 +39512,19 @@ to ensure that the system configuration is correct.
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>batteryTriggerSet</b>  </td><td>deletes the trigger points of the battery storage                                                                                                               </td></tr>
             <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
+            <tr><td> <b>circularData</b>       </td><td>The following arguments can be used to manipulate the array values of 'con_all' or 'gcons_a' in the circular cache:                                                             </td></tr>
+            <tr><td>                           </td><td><b>searchValue</b> - searches for the numeric value in the key (con_all | gcons_a). Possible comparison operators are: > | >= | == | <= | < (Results are in the log file)       </td></tr>
+            <tr><td>                           </td><td>Specifying <i>hod</i> (hour of the day) and <i>wday</i> (weekday abbreviation) is optional. If they are omitted, the search will cover all hours or all weekdays, respectively. </td></tr>
+            <tr><td>                           </td><td>Examples: <b>1.)</b> searchValue=con_all>1500 <b>2.)</b> searchValue=gcons_a==0 hod=05  <b>3.)</b> searchValue=con_all>=1000 hod=05 wday=Mo                                     </td></tr>
+            <tr><td>                           </td><td><b>delValue</b> - Deletes the numeric value in the key (con_all | gcons_a). Possible comparison operators are: > | >= | == | <= | < (deletion confirmation in the log file)     </td></tr>
+            <tr><td>                           </td><td>Specifying <i>hod</i> and <i>wday</i> is optional. If they are omitted, all hours or all days of the week will be deleted.                                                      </td></tr>
+            <tr><td>                           </td><td>Examples: <b>1.)</b> delValue=con_all>2000 <b>2.)</b> delValue=gcons_a==500 hod=02 wday=Do <b>3.)</b> delValue=con_all==0 hod=05                                                </td></tr>
+            <tr><td>                           </td><td><b>setValue</b> - Sets or changes the value at a specific position in a weekday array for a given hour. (The operation is confirmed in the log file.)                           </td></tr>
+            <tr><td>                           </td><td><i>hod, key, wday, pos</i>, and <i>value</i> must be specified here. <i>pos</i> is the array position (counting starts at 0!).                                                  </td></tr>
+            <tr><td>                           </td><td>In the list output, a day of the week may be split across multiple lines, each containing 20 values. The counting of <i>pos</i> continues across lines,                         </td></tr>
+            <tr><td>                           </td><td>i.e., position 25 of a day of the week is located in the second display line of that day of the week at the 6th position (line 1: pos 0–19, line 2: pos 20–39, etc.).           </td></tr>
+            <tr><td>                           </td><td>Examples: <b>1.)</b> setValue hod=05 key=con_all wday=Mo pos=3 value=999 <b>2.)</b> setValue hod=12 key=gcons_a wday=Fr pos=0 value=0                                           </td></tr>
+            <tr><td>                           </td><td>                                                                                                                                                                </td></tr>
             <tr><td> <b>consumerPlanning</b>   </td><td>deletes the planning data of all registered consumers                                                                                                           </td></tr>
             <tr><td>                           </td><td>To delete the planning data of only one consumer, use:                                                                                                          </td></tr>
             <tr><td>                           </td><td><ul>set &lt;name&gt; reset consumerPlanning &lt;Consumer number&gt; </ul>                                                                                       </td></tr>
@@ -39861,6 +39878,7 @@ to ensure that the system configuration is correct.
             <tr><td> <b>presence</b>        </td><td>time-weighted attendance status of household residents                                                                   </td></tr>
             <tr><td> <b>pvapifcraw</b>      </td><td>expected PV generation (Wh) of the API used (raw)                                                                        </td></tr>
             <tr><td> <b>pvfc</b>            </td><td>the predicted PV yield (Wh)                                                                                              </td></tr>
+            <tr><td> <b>pvfcfeedlim</b>     </td><td>the projected PV output (Wh), taking into account a statutory feed-in limit                                              </td></tr>
             <tr><td> <b>pvrlXX</b>          </td><td>real PV generation (Wh) of inverter XX                                                                                   </td></tr>
             <tr><td> <b>pvrl</b>            </td><td>Sum real PV generation (Wh) of all inverters                                                                             </td></tr>
             <tr><td> <b>pvrlvd</b>          </td><td>1-'pvrl' is valid and is taken into account in the learning process, 0-'pvrl' is assessed as copromitted                 </td></tr>
@@ -43012,6 +43030,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>presence</b>        </td><td>zeitlich gewichteter Anwesenheitsstatus der Bewohner des Haushalts                                     </td></tr>
             <tr><td> <b>pvapifcraw</b>      </td><td>erwartete PV Erzeugung (Wh) der verwendeten API (raw)                                                  </td></tr>
             <tr><td> <b>pvfc</b>            </td><td>der prognostizierte PV Ertrag (Wh)                                                                     </td></tr>
+            <tr><td> <b>pvfcfeedlim</b>     </td><td>der prognostizierte PV Ertrag (Wh) unter Berücksichtigung eines gesetzten Einspeiselimits              </td></tr>
             <tr><td> <b>pvrlXX</b>          </td><td>reale PV Erzeugung (Wh) von Inverter XX                                                                </td></tr>
             <tr><td> <b>pvrl</b>            </td><td>Summe reale PV Erzeugung (Wh) aller Inverter                                                           </td></tr>
             <tr><td> <b>pvrlvd</b>          </td><td>1-'pvrl' ist gültig und wird im Lernprozess berücksichtigt, 0-'pvrl' ist als komprimittiert bewertet   </td></tr>

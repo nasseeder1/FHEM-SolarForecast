@@ -11,6 +11,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 - <b>Intern:</b> <br>
   * _calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex <br>
+  * neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours <br>
 
 
 ## [v2.9.2] - 27.07.2026
