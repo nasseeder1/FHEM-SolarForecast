@@ -20115,7 +20115,7 @@ sub _corrPVforecast4ZeroFeedIn {
       my $pvfc_feedlim = min ($pvfc_raw, $confc_raw + $batchg + $feedinlim);
       $pvfc_feedlim    = max (0, round0 ($pvfc_feedlim));
 
-      #$data{$name}{nexthours}{'NextHour'.$nhr}{pvfcfeedlim} = $pvfc_feedlim;
+      $data{$name}{nexthours}{'NextHour'.$nhr}{pvfcfeedlim} = $pvfc_feedlim;
 
       debugLog ($paref, 'pvCorrectionWrite',
                 "PVFCFeedLim NextHour$nhr $stt - raw: $pvfc_raw Wh, confc: $confc_raw Wh, batchg: $batchg Wh, limit: $feedinlim W -> pvfcfeedlim: $pvfc_feedlim Wh");
@@ -33477,40 +33477,41 @@ sub _listDataPoolNextHours {
   }
 
   for my $idx (sort keys %{$h}) {
-      my $nhts       = NexthoursVal ($name, $idx, 'starttime',      '-');
-      my $day        = NexthoursVal ($name, $idx, 'day',            '-');
-      my $weekday    = NexthoursVal ($name, $idx, 'weekday',        '-');
-      my $holiday    = NexthoursVal ($name, $idx, 'holiday',        '-');                      
-      my $hod        = NexthoursVal ($name, $idx, 'hourofday',      '-');
-      my $today      = NexthoursVal ($name, $idx, 'today',          '-');
-      my $pvfc       = NexthoursVal ($name, $idx, 'pvfc',           '-');
-      my $pvapifc    = NexthoursVal ($name, $idx, 'pvapifc',        '-');       # PV Forecast der API incl. angewendeten Korrekturfaktor
-      my $pvapifcraw = NexthoursVal ($name, $idx, 'pvapifcraw',     '-');       # PV Forecast der API Raw
-      my $pvaifc     = NexthoursVal ($name, $idx, 'pvaifc',         '-');       # PV Forecast der KI
-      my $aihit      = NexthoursVal ($name, $idx, 'aihit',          '-');       # KI ForeCast Treffer Status
-      my $wid        = NexthoursVal ($name, $idx, 'weatherid',      '-');
-      my $wcc        = NexthoursVal ($name, $idx, 'wcc',            '-');
-      my $windspeed  = NexthoursVal ($name, $idx, 'windspeed',      '-');
-      my $wind_fast  = NexthoursVal ($name, $idx, 'windspeed_fast', '-');                    
-      my $crang      = NexthoursVal ($name, $idx, 'cloudrange',     '-');
-      my $rr1c       = NexthoursVal ($name, $idx, 'rr1c',           '-');
-      my $rrange     = NexthoursVal ($name, $idx, 'rainrange',      '-');
-      my $rad1h      = NexthoursVal ($name, $idx, 'rad1h',          '-');
-      my $pvcorrf    = NexthoursVal ($name, $idx, 'pvcorrf',        '-');
-      my $temp       = NexthoursVal ($name, $idx, 'temp',           '-');
-      my $confc      = NexthoursVal ($name, $idx, 'confc',          '-');
-      my $conaifc    = NexthoursVal ($name, $idx, 'conaifc',        '-');
-      my $conbiascor = NexthoursVal ($name, $idx, 'conbiascorr',    '-');
-      my $conlegfc   = NexthoursVal ($name, $idx, 'conlegfc',       '-');
-      my $confcex    = NexthoursVal ($name, $idx, 'confcEx',        '-');
-      my $don        = NexthoursVal ($name, $idx, 'DoN',            '-');
-      my $sunaz      = NexthoursVal ($name, $idx, 'sunaz',          '-');
-      my $sunalt     = NexthoursVal ($name, $idx, 'sunalt',         '-');
-      my $socprgs    = NexthoursVal ($name, $idx, 'socprogwhsum',   '-');
-      my $dinrang    = NexthoursVal ($name, $idx, 'DaysInRange',    '-');
+      my $nhts        = NexthoursVal ($name, $idx, 'starttime',      '-');
+      my $day         = NexthoursVal ($name, $idx, 'day',            '-');
+      my $weekday     = NexthoursVal ($name, $idx, 'weekday',        '-');
+      my $holiday     = NexthoursVal ($name, $idx, 'holiday',        '-');                      
+      my $hod         = NexthoursVal ($name, $idx, 'hourofday',      '-');
+      my $today       = NexthoursVal ($name, $idx, 'today',          '-');
+      my $pvfc        = NexthoursVal ($name, $idx, 'pvfc',           '-');
+      my $pvfcfeedlim = NexthoursVal ($name, $idx, 'pvfcfeedlim',    '-');
+      my $pvapifc     = NexthoursVal ($name, $idx, 'pvapifc',        '-');          # PV Forecast der API incl. angewendeten Korrekturfaktor
+      my $pvapifcraw  = NexthoursVal ($name, $idx, 'pvapifcraw',     '-');          # PV Forecast der API Raw
+      my $pvaifc      = NexthoursVal ($name, $idx, 'pvaifc',         '-');          # PV Forecast der KI
+      my $aihit       = NexthoursVal ($name, $idx, 'aihit',          '-');          # KI ForeCast Treffer Status
+      my $wid         = NexthoursVal ($name, $idx, 'weatherid',      '-');
+      my $wcc         = NexthoursVal ($name, $idx, 'wcc',            '-');
+      my $windspeed   = NexthoursVal ($name, $idx, 'windspeed',      '-');
+      my $wind_fast   = NexthoursVal ($name, $idx, 'windspeed_fast', '-');                    
+      my $crang       = NexthoursVal ($name, $idx, 'cloudrange',     '-');
+      my $rr1c        = NexthoursVal ($name, $idx, 'rr1c',           '-');
+      my $rrange      = NexthoursVal ($name, $idx, 'rainrange',      '-');
+      my $rad1h       = NexthoursVal ($name, $idx, 'rad1h',          '-');
+      my $pvcorrf     = NexthoursVal ($name, $idx, 'pvcorrf',        '-');
+      my $temp        = NexthoursVal ($name, $idx, 'temp',           '-');
+      my $confc       = NexthoursVal ($name, $idx, 'confc',          '-');
+      my $conaifc     = NexthoursVal ($name, $idx, 'conaifc',        '-');
+      my $conbiascor  = NexthoursVal ($name, $idx, 'conbiascorr',    '-');
+      my $conlegfc    = NexthoursVal ($name, $idx, 'conlegfc',       '-');
+      my $confcex     = NexthoursVal ($name, $idx, 'confcEx',        '-');
+      my $don         = NexthoursVal ($name, $idx, 'DoN',            '-');
+      my $sunaz       = NexthoursVal ($name, $idx, 'sunaz',          '-');
+      my $sunalt      = NexthoursVal ($name, $idx, 'sunalt',         '-');
+      my $socprgs     = NexthoursVal ($name, $idx, 'socprogwhsum',   '-');
+      my $dinrang     = NexthoursVal ($name, $idx, 'DaysInRange',    '-');
 
       my ($rcdbat, $socs, $lcintime, $lcstrategy);
-      for my $bn (1..MAXBATTERIES) {                                            # alle Batterien
+      for my $bn (1..MAXBATTERIES) {                                                # alle Batterien
           $bn = sprintf "%02d", $bn;
           my $rcdcharge = NexthoursVal ($name, $idx, 'rcdchargebat'.$bn, '-');
           my $intime    = NexthoursVal ($name, $idx, 'lcintimebat'.$bn,  '-');
@@ -33530,7 +33531,7 @@ sub _listDataPoolNextHours {
       $sq .= $idx." => ";
       $sq .= "starttime: $nhts, day: $day, weekday: $weekday, holiday: $holiday, hourofday: $hod, today: $today";
       $sq .= "\n              ";
-      $sq .= "pvapifcraw: $pvapifcraw, pvapifc: $pvapifc, pvaifc: $pvaifc, pvfc: $pvfc, aihit: $aihit";
+      $sq .= "pvapifcraw: $pvapifcraw, pvapifc: $pvapifc, pvaifc: $pvaifc, pvfc: $pvfc, pvfcfeedlim: $pvfcfeedlim, aihit: $aihit";
       $sq .= "\n              ";
       $sq .= "conlegfc: $conlegfc, conaifc: $conaifc, confc: $confc, conbiascorr: $conbiascor, confcEx: $confcex, weatherid: $wid, wcc: $wcc, rr1c: $rr1c";
       $sq .= "\n              ";
@@ -39788,6 +39789,7 @@ to ensure that the system configuration is correct.
             <tr><td> <b>pvapifc</b>         </td><td>expected PV generation (Wh) of the used API incl. a possible correction                </td></tr>
             <tr><td> <b>pvaifc</b>          </td><td>expected PV generation of the AI (Wh)                                                  </td></tr>
             <tr><td> <b>pvfc</b>            </td><td>PV generation forecast used (Wh)                                                       </td></tr>
+            <tr><td> <b>pvfcfeedlim</b>     </td><td>the projected PV output (Wh), taking into account a statutory feed-in limit            </td></tr>
             <tr><td> <b>rad1h</b>           </td><td>predicted global radiation                                                             </td></tr>
             <tr><td> <b>starttime</b>       </td><td>start time of the record                                                               </td></tr>
             <tr><td> <b>sunaz</b>           </td><td>Azimuth of the sun (in decimal degrees)                                                </td></tr>
@@ -42939,6 +42941,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>pvapifc</b>         </td><td>erwartete PV Erzeugung (Wh) der verwendeten API inkl. einer eventuellen Korrektur          </td></tr>
             <tr><td> <b>pvaifc</b>          </td><td>erwartete PV Erzeugung der KI (Wh)                                                         </td></tr>
             <tr><td> <b>pvfc</b>            </td><td>verwendete PV Erzeugungsprognose (Wh)                                                      </td></tr>
+            <tr><td> <b>pvfcfeedlim</b>     </td><td>der prognostizierte PV Ertrag (Wh) unter Berücksichtigung eines gesetzten Einspeiselimits  </td></tr>
             <tr><td> <b>rad1h</b>           </td><td>vorhergesagte Globalstrahlung                                                              </td></tr>
             <tr><td> <b>starttime</b>       </td><td>Startzeit des Datensatzes                                                                  </td></tr>
             <tr><td> <b>sunaz</b>           </td><td>Azimuth der Sonne (in Dezimalgrad)                                                         </td></tr>
