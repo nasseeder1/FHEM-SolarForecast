@@ -23438,8 +23438,8 @@ sub _beamGraphicFirstHour {
   my $val7 = CachedHistoryVal ($name, $day_str, $time_str, 'gfeedin', 0);
 
   my %beam_val = (
-      pvForecast          => CachedHistoryVal ($name, $day_str, $time_str, 'pvfc',  0),
-      pvReal              => CachedHistoryVal ($name, $day_str, $time_str, 'pvrl',  0),
+      pvForecast          => __pvHistOrFeedlim ($name, $day_str, $time_str), 
+      pvReal              => CachedHistoryVal  ($name, $day_str, $time_str, 'pvrl',  0),
       gridconsumption     => $val3,
       consumptionForecast => CachedHistoryVal ($name, $day_str, $time_str, 'confc', 0),
       consumption         => CachedHistoryVal ($name, $day_str, $time_str, 'con',   0),
@@ -23592,13 +23592,13 @@ sub _beamGraphicRemainingHours {
               $hfcg->{$i}{sunaz}   = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'sunaz',     '-');
               $hfcg->{$i}{don}     = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'DoN',         0);
 
-              $val1 = CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'pvfc',  0);
-              $val2 = CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'pvrl',  0);
-              $val3 = CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'gcons', 0);
-              $val4 = CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'confc', 0);
-              $val5 = CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'con',   0);
+              $val1 = __pvHistOrFeedlim ($name, $ds, $hfcg->{$i}{time_str});
+              $val2 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'pvrl',  0);
+              $val3 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'gcons', 0);
+              $val4 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'confc', 0);
+              $val5 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'con',   0);
               $val6 = round2 (CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'conprice',  0) * $val3 / 1000);  # Energiekosten der Stunde
-              $val7 = CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'gfeedin', 0);
+              $val7 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'gfeedin', 0);
               $val8 = round2 (CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'feedprice', 0) * $val7 / 1000);  # Einspeisevergütung der Stunde
 
               ## Batterien Selektionshash erstellen
@@ -23648,8 +23648,8 @@ sub _beamGraphicRemainingHours {
           $hfcg->{$i}{don}     = NexthoursVal ($name, 'NextHour'.$nh, 'DoN',         0);
           my $stt              = NexthoursVal ($name, 'NextHour'.$nh, 'starttime',  '');
 
-          $val1 = NexthoursVal ($name, 'NextHour'.$nh, 'pvfc',  0);
-          $val4 = NexthoursVal ($name, 'NextHour'.$nh, 'confc', 0);
+          $val1 = __pvNextOrFeedlim ($name, 'NextHour'.$nh); 
+          $val4 = NexthoursVal      ($name, 'NextHour'.$nh, 'confc', 0);
 
           ## Batterien Selektionshash anreichern
           ########################################
@@ -23733,6 +23733,32 @@ sub _beamGraphicRemainingHours {
   };
 
 return $back;
+}
+
+################################################################
+#   PV-Prognosewert aus pvHistory liefern, bevorzugt die
+#   Feed-in-Limit-korrigierte Variante falls vorhanden
+################################################################
+sub __pvHistOrFeedlim {
+  my ($name, $day_str, $time_str) = @_;
+
+  my $v = CachedHistoryVal ($name, $day_str, $time_str, 'pvfcfeedlim', undef);
+  $v    = CachedHistoryVal ($name, $day_str, $time_str, 'pvfc', 0) if(!defined $v);
+
+return $v;
+}
+
+################################################################
+#   PV-Prognosewert aus NextHours liefern, bevorzugt die
+#   Feed-in-Limit-korrigierte Variante falls vorhanden
+################################################################
+sub __pvNextOrFeedlim {
+  my ($name, $nh) = @_;
+
+  my $v = NexthoursVal ($name, $nh, 'pvfcfeedlim', undef);
+  $v    = NexthoursVal ($name, $nh, 'pvfc', 0) if(!defined $v);
+
+return $v;
 }
 
 ################################################################
