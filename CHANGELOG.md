@@ -6,6 +6,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 - Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten
 - Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod
+- Implementierung einer sequentiellen Energiebilanz-Simulation der Legacy PV-Prognose in Abhängigkeit der PV Raw-Prognose, dem eingestellten FeedIn-Limit und der Batterie Ladungsprognose.
+  Dadurch wird die Unterstützung einer Nulleinspeisung bzw. eines gesetzten Einspeiselimits in der PV Prognose berücksichtigt.
 
 - <b>Intern:</b> <br>
   * _calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex <br>
