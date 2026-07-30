@@ -12604,6 +12604,7 @@ sub centralTask {
   _manageConsumerData         ($centpars);                                            # Consumer Daten sammeln und Zeiten planen
   
   _calcConsForecast           ($centpars);                                            # Verbrauchsprognose
+  _corrPVforecast4ZeroFeedIn  ($centpars);                                            # PV-Prognose für Nulleinspeiser/Einspeiselimit korrigieren
   
   _evaluateTrigger            ($centpars);                                            # Schwellenwerte der Trigger bewerten und signalisieren
   _calcReadingsTomorrowPVFc   ($centpars);                                            # zusätzliche Readings Tomorrow_HourXX_PVforecast berechnen
@@ -20045,6 +20046,85 @@ sub __considerConsBase {
   
 return $confc;
 } 
+
+################################################################
+#   Korrektur der PV-Prognose für Nulleinspeiser / Anlagen
+#   mit Einspeiselimit unter Berücksichtigung von Verbrauchs-
+#   prognose und der bereits durch _batChargeMgmt berechneten
+#   Batterie-SoC-Prognose (socprogwhsum)
+#
+#   Muss NACH _calcConsForecast im centralTask-Ablauf aufgerufen
+#   werden, da sie auf 'confc' (Legacy/Hybrid-AI final) und
+#   'socprogwhsum' in NextHours zugreift.
+################################################################
+sub _corrPVforecast4ZeroFeedIn {
+  my $paref = shift;
+  my $name  = $paref->{name};
+  my $day   = $paref->{day};
+  my $chour = $paref->{chour};
+
+  my $feedinlim = CurrentVal ($name, 'feedinPowerLimit', INFINITE);             # Einspeiselimit in W (bei Nulleinspeisung = 0)
+
+  return if($feedinlim == INFINITE);                                            # keine Limitierung eingestellt -> Korrektur entfällt automatisch
+
+  my $hasBat = isBatteryUsed ($name);                                           # kann false sein -> darf NICHT zum Abbruch führen
+
+  debugLog ($paref, 'pvCorrectionWrite', "PVFCFeedLim - Start: feed-in limit $feedinlim W, battery used: ".($hasBat ? 'yes' : 'no'));
+
+  # aktuellen Gesamt-SoC (Wh) als Startwert für Stunde 0 ermitteln
+  # ohne Batterie bleibt soc_prev dauerhaft 0
+  # ----------------------------------------------------------------
+  my $soc_prev = CurrentVal ($name, 'batwhtotal', 0);                           # aktuelle Ist-Ladung in Wh, bereits vorhandene Aggregation
+
+  # Stundenschleife über NextHours (analog zu _batChargeMgmt)
+  # ----------------------------------------------------------------
+  for my $num (0..MAXNEXTHOURS) {
+      my ($fd, $fh) = calcDayHourMove ($chour, $num);
+      last if($fd > MAXNEXTDAYS);
+
+      my $nhr = sprintf "%02d", $num;
+      my $hod = NexthoursVal ($name, 'NextHour'.$nhr, 'hourofday', undef);
+      my $stt = NexthoursVal ($name, 'NextHour'.$nhr, 'starttime', undef);
+
+      next if(!defined $hod || !defined $stt);
+
+      my $today     = NexthoursVal ($name, 'NextHour'.$nhr, 'today', 0);
+      my $pvfc_raw  = NexthoursVal ($name, 'NextHour'.$nhr, 'pvfc',  0);        # Roh-PV-Prognose der Stunde
+      my $confc_raw = NexthoursVal ($name, 'NextHour'.$nhr, 'confc', 0);        # Verbrauchsprognose der Stunde (Legacy oder Hybrid-AI final)
+
+      # Batterie-Ladeenergie dieser Stunde aus bereits vorhandener
+      # SoC-Prognose ableiten (respektiert automatisch Soll-SoC-Deckel,
+      # Ladestrategie, Zeitfenster etc. aus _batChargeMgmt)
+      # ----------------------------------------------------------------
+      my $batchg = 0;
+
+      if ($hasBat) {
+          my $soc_now = NexthoursVal ($name, 'NextHour'.$nhr, 'socprogwhsum', undef);
+
+          if (defined $soc_now) {
+              $batchg   = max (0, $soc_now - $soc_prev);                       # nur Ladeanteil relevant, Entladung schafft keinen zusätzlichen PV-Spielraum
+              $soc_prev = $soc_now;                                            # Fortschreibung für Folgestunde
+          }
+      }
+
+      # Korrektur anwenden
+      # Vereinfachung: Stundenraster -> W und Wh numerisch gleichgesetzt
+      # ----------------------------------------------------------------
+      my $pvfc_feedlim = min ($pvfc_raw, $confc_raw + $batchg + $feedinlim);
+      $pvfc_feedlim    = max (0, round0 ($pvfc_feedlim));
+
+      #$data{$name}{nexthours}{'NextHour'.$nhr}{pvfcfeedlim} = $pvfc_feedlim;
+
+      debugLog ($paref, 'pvCorrectionWrite',
+                "PVFCFeedLim NextHour$nhr $stt - raw: $pvfc_raw Wh, confc: $confc_raw Wh, batchg: $batchg Wh, limit: $feedinlim W -> pvfcfeedlim: $pvfc_feedlim Wh");
+
+      if ($today && $hod) {
+          #writeToHistory ( { paref => $paref, key => 'pvfcfeedlim', val => $pvfc_feedlim, day => $day, hour => $hod } );
+      }
+  }
+
+return;
+}
 
 ################################################################
 #     Schwellenwerte für Trigger auswerten und signalisieren
