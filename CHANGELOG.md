@@ -7,6 +7,9 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten
 - Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod
 
+- <b>Intern:</b> <br>
+  * _calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex <br>
+
 
 ## [v2.9.2] - 27.07.2026
 

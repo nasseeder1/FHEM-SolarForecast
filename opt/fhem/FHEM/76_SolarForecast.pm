@@ -71,8 +71,9 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.3"  => "29.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
-                           "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ",
+  "2.9.3"  => "30.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
+                           "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ".
+                           "_calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex ",
   "2.9.2"  => "26.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
                            "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ".
                            "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ".
@@ -19700,6 +19701,7 @@ sub _calcConsForecast_legacy {
       my $nhn      = (split 'NextHour', $nh)[1];
       my $u        = $usage->{nxt}{$hod};                                                           # Kurzreferenz
       my $con_base = $u->{con} // 0;                                                                # Basiswert lesen, NICHT modifizieren
+      my $conraw   = $con_base;  
       
       my ($msg1, $msg2, $msg3, $msg4) = ('', '', '', '');
 
@@ -19741,11 +19743,17 @@ sub _calcConsForecast_legacy {
                                           debug     => $paref->{debug},
                                        });
 
+      my $conlegfc = __considerConsBase ({ name      => $name,                                     # V 2.9.3: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex
+                                           confc_raw => round0 ($conraw),
+                                           hod       => $hod, 
+                                           debug     => $paref->{debug},
+                                        });
+                                  
       # --- Ergebnisse in nexthours speichern
       my $nhref          = $data{$name}{nexthours}{$nh};
       $nhref->{confcEx}  = $confcex;
       $nhref->{confc}    = $confc;
-      $nhref->{conlegfc} = $confc;
+      $nhref->{conlegfc} = $conlegfc;
 
       $msg3 = "STORE NextHour$nhn -> confc=$confc Wh, confcEx=$confcex Wh";
 
@@ -19753,8 +19761,8 @@ sub _calcConsForecast_legacy {
       if ($isToday) {
           $data{$name}{circular}{$hod}{confc} = $confc;
 
-          writeToHistory ({ paref => $paref, key => 'confc',    val => $confc, day => $day, hour => $hod });
-          writeToHistory ({ paref => $paref, key => 'conlegfc', val => $confc, day => $day, hour => $hod });
+          writeToHistory ({ paref => $paref, key => 'confc',    val => $confc,    day => $day, hour => $hod });
+          writeToHistory ({ paref => $paref, key => 'conlegfc', val => $conlegfc, day => $day, hour => $hod });
 
           $msg4 = " ,STORE pvCircular/pvHistory -> confc=$confc Wh";
       }
