@@ -8,6 +8,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod
 - Implementierung einer sequentiellen Energiebilanz-Simulation der Legacy PV-Prognose in Abhängigkeit der PV Raw-Prognose, dem eingestellten FeedIn-Limit und der Batterie Ladungsprognose.
   Dadurch wird die Unterstützung einer Nulleinspeisung bzw. eines gesetzten Einspeiselimits in der PV Prognose berücksichtigt.
+- neue Auswahl pvForecastLimited im Attribut 'graphicBeamXContent' zur Anzeige der PV-Prognose unter Berücksichtigung einer gesetzten Einspeiselimitierung im Attribut plantControl->feedinPowerLimit
 
 - <b>Intern:</b> <br>
   * _calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex <br>

@@ -74,7 +74,8 @@ my %vNotesIntern = (
   "2.9.3"  => "30.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
                            "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ".
                            "_calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex ".
-                           "neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours ",
+                           "neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours ".
+                           "neue Auswahl pvForecastLimited im Attr 'graphicBeamXContent' zur Anzeige der Einspeise-limitierten PV-Prognose ",
   "2.9.2"  => "26.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
                            "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ".
                            "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ".
@@ -1286,166 +1287,168 @@ my %hqtxt = (                                                                   
 
 
 my %htitles = (                                                                                                 # Hash Hilfetexte (Mouse Over)
-  iaaf     => { EN => qq{Automatic mode off -> Enable automatic mode},
-                DE => qq{Automatikmodus aus -> Automatik freigeben}                                                },
-  ieas     => { EN => qq{Automatic mode on -> Lock automatic mode},
-                DE => qq{Automatikmodus ein -> Automatik sperren}                                                  },
-  iave     => { EN => qq{Off -> Switch on consumer},
-                DE => qq{Aus -> Verbraucher einschalten}                                                           },
-  ians     => { EN => qq{Off -> no on-command defined!},
-                DE => qq{Aus -> kein on-Kommando definiert!}                                                       },
-  ieva     => { EN => qq{On -> Switch off consumer},
-                DE => qq{Ein -> Verbraucher ausschalten}                                                           },
-  iens     => { EN => qq{On -> no off-command defined!},
-                DE => qq{Ein -> kein off-Kommando definiert!}                                                      },
-  natc     => { EN => qq{automatic cycle:},
-                DE => qq{automatischer Zyklus:}                                                                    },
-  predtime => { EN => qq{Prediction time Radiation data:},
-                DE => qq{Vorhersagezeitpunkt Strahlungsdaten:}                                                     },
-  dwdtime  => { EN => qq{Forecast time Weather data},
-                DE => qq{Vorhersagezeitpunkt Wetterdaten}                                                          },
-  upd      => { EN => qq{Click for update},
-                DE => qq{Klick f&#252;r Update}                                                                    },
-  on       => { EN => qq{switched on},
-                DE => qq{eingeschaltet}                                                                            },
-  off      => { EN => qq{switched off},
-                DE => qq{ausgeschaltet}                                                                            },
-  undef    => { EN => qq{undefined},
-                DE => qq{undefiniert}                                                                              },
-  ischawth => { EN => qq{is charged with},
-                DE => qq{wird aufgeladen mit}                                                                      },
-  isdchawt => { EN => qq{is discharged with},
-                DE => qq{wird entladen mit}                                                                        },
-  dela     => { EN => qq{delayed},
-                DE => qq{verzoegert}                                                                               },
-  autarky  => { EN => qq{Autarky rate},
-                DE => qq{Autarkierate}                                                                             },
-  azimuth  => { EN => qq{Azimuth},
-                DE => qq{Azimut}                                                                                   },
-  elevatio => { EN => qq{Elevation},
-                DE => qq{H&#246;he}                                                                                },
-  sunpos   => { EN => qq{Sun position (decimal degrees)},
-                DE => qq{Sonnenstand (Dezimalgrad)}                                                                },
-  enconsrl => { EN => qq{real Energy consumption},
-                DE => qq{realer Energieverbrauch}                                                                  },
-  enconsfc => { EN => qq{forecasted energy consumption},
-                DE => qq{prognostizierter Energieverbrauch}                                                        },
-  enpchcst => { EN => qq{Energy purchase costs},
-                DE => qq{Kosten Energiebezug}                                                                      },
-  rengfeed => { EN => qq{Remuneration for the grid feed-in},
-                DE => qq{Verg&#252;tung Netzeinspeisung}                                                           },
-  enppubgd => { EN => qq{Energy purchase from the public grid},
-                DE => qq{Energiebezug aus dem &#246;ffentlichen Netz}                                              },
-  enfeedgd => { EN => qq{Feed-in},
-                DE => qq{Einspeisung}                                                                              },
-  pvgenerl => { EN => qq{real PV generation},
-                DE => qq{reale PV-Erzeugung}                                                                       },
-  pvgenefc => { EN => qq{forecasted PV generation},
-                DE => qq{prognostizierte PV-Erzeugung}                                                             },
-  onlybatw => { EN => qq{Battery},
-                DE => qq{Batterie}                                                                                 },
-  simplyes => { EN => qq{yes},
-                DE => qq{ja}                                                                                       },
-  simpleno => { EN => qq{no},
-                DE => qq{nein}                                                                                     },
-  socrfcba => { EN => qq{real battery charge achieved or SoC forecast Battery},
-                DE => qq{real erreichte Batterieladung bzw. SoC Prognose Batterie}                                 },
-  socfcbat => { EN => qq{SoC forecast Battery},
-                DE => qq{SoC Prognose Batterie}                                                                    },
-  socfcsum => { EN => qq{SoC forecast (%) summarized across all batteries},
-                DE => qq{SoC Prognose (%) zusammengefasst &#252;ber alle Batterien}                                },
-  socrebat => { EN => qq{real achieved charge Battery},
-                DE => qq{real erreichte Ladung Batterie}                                                           },
-  socresum => { EN => qq{real SoC achieved (%) summarized across all batteries},
-                DE => qq{real errreichter SoC (%) zusammengefasst &#252;ber alle Batterien}                        },
-  socbacur => { EN => qq{SoC current},
-                DE => qq{SoC aktuell}                                                                              },
-  socbatfc => { EN => qq{SoC forecast},
-                DE => qq{SoC Prognose}                                                                             },
-  socbaths => { EN => qq{SoC at the end of the hour},
-                DE => qq{SoC am Ende der Stunde}                                                                   },
-  lcenable => { EN => qq{Charge management enabled},
-                DE => qq{Lademanagement aktiviert}                                                                 },
-  ldstratg => { EN => qq{Loading strategy},
-                DE => qq{Ladestrategie}                                                                            },
-  ldreleas => { EN => qq{load release},
-                DE => qq{Ladefreigabe}                                                                             },
-  optchpow => { EN => qq{optimized charging power},
-                DE => qq{optimierte Ladeleistung}                                                                  },
-  smtchpow => { EN => qq{Target-optimized charging power},
-                DE => qq{zieloptimierte Ladeleistung}                                                              },
-  bcharrel => { EN => qq{Charging release (activate release for charging the battery if necessary)},
-                DE => qq{Ladefreigabe (evtl. Freigabe zum Laden der Batterie aktivieren)}                          },
-  bncharel => { EN => qq{only charge if the feed-in limit is exceeded},
-                DE => qq{nur laden wenn Einspeiselimit &#252;berschritten}                                         },
-  conrec   => { EN => qq{Current time is within the consumption planning},
-                DE => qq{Aktuelle Zeit liegt innerhalb der Verbrauchsplanung}                                      },
-  conrecba => { EN => qq{Current time is within the consumption planning, Priority charging Battery is active},
-                DE => qq{Aktuelle Zeit liegt innerhalb der Verbrauchsplanung, Vorrangladen Batterie ist aktiv}     },
-  connorec => { EN => qq{Consumption planning is outside current time\n(Click for immediate planning)},
-                DE => qq{Verbrauchsplanung liegt ausserhalb aktueller Zeit\n(Klick f&#252;r sofortige Einplanung)} },
-  connoact => { EN => qq{the consumer is not activated},
-                DE => qq{der Verbraucher ist nicht aktiviert}                                                      },  
-  akorron  => { EN => qq{switched off\nenable auto correction with:\nset <NAME> pvCorrectionFactor_Auto on*},
-                DE => qq{ausgeschaltet\nAutokorrektur einschalten mit:\nset <NAME> pvCorrectionFactor_Auto on*}    },
-  splus    => { EN => qq{PV surplus sufficient},
-                DE => qq{PV-&#220;berschu&#223; ausreichend}                                                       },
-  nosplus  => { EN => qq{PV surplus insufficient},
-                DE => qq{PV-&#220;berschu&#223; unzureichend}                                                      },
-  plchk    => { EN => qq{Configuration check of the plant},
-                DE => qq{Konfigurationspr&#252;fung der Anlage}                                                    },
-  jtsfft   => { EN => qq{Open the SolarForecast Forum},
-                DE => qq{&#214;ffne das SolarForecast Forum}                                                       },
-  opwiki   => { EN => qq{Open the Wiki (German language)},
-                DE => qq{&#214;ffne das Wiki}                                                                      },
-  outpmsg  => { EN => qq{Messages are available - press the button to open them},
-                DE => qq{Mitteilungen sind vorhanden - dr&#252;cke die Taste um sie zu &#246;ffnen}                },
-  nomsgfo  => { EN => qq{there are no new messages},
-                DE => qq{es sind keine neuen Mitteilungen vorhanden}                                               },
-  lstmsgc  => { EN => qq{last message call},
-                DE => qq{letzter Mitteilungsabruf}                                                                 },
-  nxtmsgc  => { EN => qq{next message call},
-                DE => qq{n&auml;chster Mitteilungsabruf}                                                           },
-  scaresps => { EN => qq{API request successful},
-                DE => qq{API Abfrage erfolgreich}                                                                  },
-  dwfcrsu  => { EN => qq{Weather data are up to date according to used DWD model},
-                DE => qq{Wetterdaten sind aktuell entsprechend des verwendeten DWD Modell}                         },
-  scarespf => { EN => qq{API request failed},
-                DE => qq{API Abfrage fehlgeschlagen}                                                               },
-  dapic    => { EN => qq{API requests or request equivalents already carried out today},
-                DE => qq{Heute bereits durchgef&#252;hrte API-Anfragen bzw. Anfragen-&#196;quivalente}             },
-  rapic    => { EN => qq{remaining API requests},
-                DE => qq{verf&#252;gbare API-Anfragen}                                                             },
-  yheyfdl  => { EN => qq{You have exceeded your free daily limit!},
-                DE => qq{Sie haben Ihr kostenloses Tageslimit &#252;berschritten!}                                 },
-  rlfaccpr => { EN => qq{Rate limit for API requests reached in current period!},
-                DE => qq{Abfragegrenze f&#252;r API-Anfragen im aktuellen Zeitraums erreicht!}                     },
-  raricp   => { EN => qq{remaining API requests in the current period},
-                DE => qq{verf&#252;gbare API-Anfragen der laufenden Periode}                                       },
-  scakdne  => { EN => qq{API key does not exist},
-                DE => qq{API Schl&#252;ssel existiert nicht}                                                       },
-  scrsdne  => { EN => qq{Rooftop site does not exist or is not accessible},
-                DE => qq{Rooftop ID existiert nicht oder ist nicht abrufbar}                                       },
-  norate   => { EN => qq{not rated},
-                DE => qq{nicht bewertet}                                                                           },
-  aimstt   => { EN => qq{Perl module AI::DecisionTree is missing},
-                DE => qq{Perl Modul AI::DecisionTree ist nicht vorhanden}                                          },
-  dumtxt   => { EN => qq{unassignable consumption (takes into account any hidden consumers)},
-                DE => qq{nicht zuordenbarer Verbrauch (ber&#252;cksichtigt evtl. versteckte Verbraucher)}          },
-  rdcactiv => { EN => qq{Plant derating active},
-                DE => qq{Anlagenabregelung aktiv}                                                                  },
-  rdcnoact => { EN => qq{no Plant derating},
-                DE => qq{keine Anlagenabregelung}                                                                  },
-  pstate   => { EN => qq{Planning&nbsp;status:&nbsp;<pstate>\nInfo:&nbsp;<supplmnt>\n\nMode:&nbsp;<mode>\nOn:&nbsp;<start>\nOff:&nbsp;<stop>\nRemaining lock time:&nbsp;<RLT> seconds},
-                DE => qq{Planungsstatus:&nbsp;<pstate>\nInfo:&nbsp;<supplmnt>\n\nModus:&nbsp;<mode>\nEin:&nbsp;<start>\nAus:&nbsp;<stop>\nverbleibende Sperrzeit:&nbsp;<RLT> Sekunden}  },
-  ainuse   => { EN => qq{AI Perl module is installed, but the AI support is not used.\nRun 'set <NAME> plantConfiguration check' for hints.},
-                DE => qq{KI Perl Modul ist installiert, aber die KI Unterst&uuml;tzung wird nicht verwendet.\nPr&uuml;fen sie 'set <NAME> plantConfiguration check' f&uuml;r Hinweise.} },
-  arsrad2o => { EN => qq{API query successful but the radiation values are outdated.\nCheck the plant with 'set <NAME> plantConfiguration check'.},
-                DE => qq{API Abfrage erfolgreich aber die Strahlungswerte sind veraltet.\nPr&uuml;fen sie die Anlage mit 'set <NAME> plantConfiguration check'.}                        },
-  aswfc2o  => { EN => qq{The weather data is outdated.\nCheck the plant with 'set <NAME> plantConfiguration check'.},
-                DE => qq{Die Wetterdaten sind veraltet.\nPr&uuml;fen sie die Anlage mit 'set <NAME> plantConfiguration check'.}                                                         },
-  rdcstat  => { EN => qq{no reduction status available\nPlease set the key 'reductionState' with 'attr <NAME> plantControl'},
-                DE => qq{kein Abregelungsstatus verf&uuml;gbar\nSetzen sie bitte den Schl&uuml;ssel 'reductionState' mit 'attr <NAME> plantControl'}                                    },
+  iaaf        => { EN => qq{Automatic mode off -> Enable automatic mode},
+                   DE => qq{Automatikmodus aus -> Automatik freigeben}                                                },
+  ieas        => { EN => qq{Automatic mode on -> Lock automatic mode},
+                   DE => qq{Automatikmodus ein -> Automatik sperren}                                                  },
+  iave        => { EN => qq{Off -> Switch on consumer},
+                   DE => qq{Aus -> Verbraucher einschalten}                                                           },
+  ians        => { EN => qq{Off -> no on-command defined!},
+                   DE => qq{Aus -> kein on-Kommando definiert!}                                                       },
+  ieva        => { EN => qq{On -> Switch off consumer},
+                   DE => qq{Ein -> Verbraucher ausschalten}                                                           },
+  iens        => { EN => qq{On -> no off-command defined!},
+                   DE => qq{Ein -> kein off-Kommando definiert!}                                                      },
+  natc        => { EN => qq{automatic cycle:},
+                   DE => qq{automatischer Zyklus:}                                                                    },
+  predtime    => { EN => qq{Prediction time Radiation data:},
+                   DE => qq{Vorhersagezeitpunkt Strahlungsdaten:}                                                     },
+  dwdtime     => { EN => qq{Forecast time Weather data},
+                   DE => qq{Vorhersagezeitpunkt Wetterdaten}                                                          },
+  upd         => { EN => qq{Click for update},
+                   DE => qq{Klick f&#252;r Update}                                                                    },
+  on          => { EN => qq{switched on},
+                   DE => qq{eingeschaltet}                                                                            },
+  off         => { EN => qq{switched off},
+                   DE => qq{ausgeschaltet}                                                                            },
+  undef       => { EN => qq{undefined},
+                   DE => qq{undefiniert}                                                                              },
+  ischawth    => { EN => qq{is charged with},
+                   DE => qq{wird aufgeladen mit}                                                                      },
+  isdchawt    => { EN => qq{is discharged with},
+                   DE => qq{wird entladen mit}                                                                        },
+  dela        => { EN => qq{delayed},
+                   DE => qq{verzoegert}                                                                               },
+  autarky     => { EN => qq{Autarky rate},
+                   DE => qq{Autarkierate}                                                                             },
+  azimuth     => { EN => qq{Azimuth},
+                   DE => qq{Azimut}                                                                                   },
+  elevatio    => { EN => qq{Elevation},
+                   DE => qq{H&#246;he}                                                                                },
+  sunpos      => { EN => qq{Sun position (decimal degrees)},
+                   DE => qq{Sonnenstand (Dezimalgrad)}                                                                },
+  enconsrl    => { EN => qq{real Energy consumption},
+                   DE => qq{realer Energieverbrauch}                                                                  },
+  enconsfc    => { EN => qq{forecasted energy consumption},
+                   DE => qq{prognostizierter Energieverbrauch}                                                        },
+  enpchcst    => { EN => qq{Energy purchase costs},
+                   DE => qq{Kosten Energiebezug}                                                                      },
+  rengfeed    => { EN => qq{Remuneration for the grid feed-in},
+                   DE => qq{Verg&#252;tung Netzeinspeisung}                                                           },
+  enppubgd    => { EN => qq{Energy purchase from the public grid},
+                   DE => qq{Energiebezug aus dem &#246;ffentlichen Netz}                                              },
+  enfeedgd    => { EN => qq{Feed-in},
+                   DE => qq{Einspeisung}                                                                              },
+  pvgenerl    => { EN => qq{real PV generation},
+                   DE => qq{reale PV-Erzeugung}                                                                       },
+  pvgenefc    => { EN => qq{PV forecast},
+                   DE => qq{PV-Prognose}                                                                              },
+  pvgenefclim => { EN => qq{PV forecast with feed-in limitation},
+                   DE => qq{PV-Prognose mit Einspeisebegrenzung}                                                      },
+  onlybatw    => { EN => qq{Battery},
+                   DE => qq{Batterie}                                                                                 },
+  simplyes    => { EN => qq{yes},
+                   DE => qq{ja}                                                                                       },
+  simpleno    => { EN => qq{no},
+                   DE => qq{nein}                                                                                     },
+  socrfcba    => { EN => qq{real battery charge achieved or SoC forecast Battery},
+                   DE => qq{real erreichte Batterieladung bzw. SoC Prognose Batterie}                                 },
+  socfcbat    => { EN => qq{SoC forecast Battery},
+                   DE => qq{SoC Prognose Batterie}                                                                    },
+  socfcsum    => { EN => qq{SoC forecast (%) summarized across all batteries},
+                   DE => qq{SoC Prognose (%) zusammengefasst &#252;ber alle Batterien}                                },
+  socrebat    => { EN => qq{real achieved charge Battery},
+                   DE => qq{real erreichte Ladung Batterie}                                                           },
+  socresum    => { EN => qq{real SoC achieved (%) summarized across all batteries},
+                   DE => qq{real errreichter SoC (%) zusammengefasst &#252;ber alle Batterien}                        },
+  socbacur    => { EN => qq{SoC current},
+                   DE => qq{SoC aktuell}                                                                              },
+  socbatfc    => { EN => qq{SoC forecast},
+                   DE => qq{SoC Prognose}                                                                             },
+  socbaths    => { EN => qq{SoC at the end of the hour},
+                   DE => qq{SoC am Ende der Stunde}                                                                   },
+  lcenable    => { EN => qq{Charge management enabled},
+                   DE => qq{Lademanagement aktiviert}                                                                 },
+  ldstratg    => { EN => qq{Loading strategy},
+                   DE => qq{Ladestrategie}                                                                            },
+  ldreleas    => { EN => qq{load release},
+                   DE => qq{Ladefreigabe}                                                                             },
+  optchpow    => { EN => qq{optimized charging power},
+                   DE => qq{optimierte Ladeleistung}                                                                  },
+  smtchpow    => { EN => qq{Target-optimized charging power},
+                   DE => qq{zieloptimierte Ladeleistung}                                                              },
+  bcharrel    => { EN => qq{Charging release (activate release for charging the battery if necessary)},
+                   DE => qq{Ladefreigabe (evtl. Freigabe zum Laden der Batterie aktivieren)}                          },
+  bncharel    => { EN => qq{only charge if the feed-in limit is exceeded},
+                   DE => qq{nur laden wenn Einspeiselimit &#252;berschritten}                                         },
+  conrec      => { EN => qq{Current time is within the consumption planning},
+                   DE => qq{Aktuelle Zeit liegt innerhalb der Verbrauchsplanung}                                      },
+  conrecba    => { EN => qq{Current time is within the consumption planning, Priority charging Battery is active},
+                   DE => qq{Aktuelle Zeit liegt innerhalb der Verbrauchsplanung, Vorrangladen Batterie ist aktiv}     },
+  connorec    => { EN => qq{Consumption planning is outside current time\n(Click for immediate planning)},
+                   DE => qq{Verbrauchsplanung liegt ausserhalb aktueller Zeit\n(Klick f&#252;r sofortige Einplanung)} },
+  connoact    => { EN => qq{the consumer is not activated},
+                   DE => qq{der Verbraucher ist nicht aktiviert}                                                      },  
+  akorron     => { EN => qq{switched off\nenable auto correction with:\nset <NAME> pvCorrectionFactor_Auto on*},
+                   DE => qq{ausgeschaltet\nAutokorrektur einschalten mit:\nset <NAME> pvCorrectionFactor_Auto on*}    },
+  splus       => { EN => qq{PV surplus sufficient},
+                   DE => qq{PV-&#220;berschu&#223; ausreichend}                                                       },
+  nosplus     => { EN => qq{PV surplus insufficient},
+                   DE => qq{PV-&#220;berschu&#223; unzureichend}                                                      },
+  plchk       => { EN => qq{Configuration check of the plant},
+                   DE => qq{Konfigurationspr&#252;fung der Anlage}                                                    },
+  jtsfft      => { EN => qq{Open the SolarForecast Forum},
+                   DE => qq{&#214;ffne das SolarForecast Forum}                                                       },
+  opwiki      => { EN => qq{Open the Wiki (German language)},
+                   DE => qq{&#214;ffne das Wiki}                                                                      },
+  outpmsg     => { EN => qq{Messages are available - press the button to open them},
+                   DE => qq{Mitteilungen sind vorhanden - dr&#252;cke die Taste um sie zu &#246;ffnen}                },
+  nomsgfo     => { EN => qq{there are no new messages},
+                   DE => qq{es sind keine neuen Mitteilungen vorhanden}                                               },
+  lstmsgc     => { EN => qq{last message call},
+                   DE => qq{letzter Mitteilungsabruf}                                                                 },
+  nxtmsgc     => { EN => qq{next message call},
+                   DE => qq{n&auml;chster Mitteilungsabruf}                                                           },
+  scaresps    => { EN => qq{API request successful},
+                   DE => qq{API Abfrage erfolgreich}                                                                  },
+  dwfcrsu     => { EN => qq{Weather data are up to date according to used DWD model},
+                   DE => qq{Wetterdaten sind aktuell entsprechend des verwendeten DWD Modell}                         },
+  scarespf    => { EN => qq{API request failed},
+                   DE => qq{API Abfrage fehlgeschlagen}                                                               },
+  dapic       => { EN => qq{API requests or request equivalents already carried out today},
+                   DE => qq{Heute bereits durchgef&#252;hrte API-Anfragen bzw. Anfragen-&#196;quivalente}             },
+  rapic       => { EN => qq{remaining API requests},
+                   DE => qq{verf&#252;gbare API-Anfragen}                                                             },
+  yheyfdl     => { EN => qq{You have exceeded your free daily limit!},
+                   DE => qq{Sie haben Ihr kostenloses Tageslimit &#252;berschritten!}                                 },
+  rlfaccpr    => { EN => qq{Rate limit for API requests reached in current period!},
+                   DE => qq{Abfragegrenze f&#252;r API-Anfragen im aktuellen Zeitraums erreicht!}                     },
+  raricp      => { EN => qq{remaining API requests in the current period},
+                   DE => qq{verf&#252;gbare API-Anfragen der laufenden Periode}                                       },
+  scakdne     => { EN => qq{API key does not exist},
+                   DE => qq{API Schl&#252;ssel existiert nicht}                                                       },
+  scrsdne     => { EN => qq{Rooftop site does not exist or is not accessible},
+                   DE => qq{Rooftop ID existiert nicht oder ist nicht abrufbar}                                       },
+  norate      => { EN => qq{not rated},
+                   DE => qq{nicht bewertet}                                                                           },
+  aimstt      => { EN => qq{Perl module AI::DecisionTree is missing},
+                   DE => qq{Perl Modul AI::DecisionTree ist nicht vorhanden}                                          },
+  dumtxt      => { EN => qq{unassignable consumption (takes into account any hidden consumers)},
+                   DE => qq{nicht zuordenbarer Verbrauch (ber&#252;cksichtigt evtl. versteckte Verbraucher)}          },
+  rdcactiv    => { EN => qq{Plant derating active},
+                   DE => qq{Anlagenabregelung aktiv}                                                                  },
+  rdcnoact    => { EN => qq{no Plant derating},
+                   DE => qq{keine Anlagenabregelung}                                                                  },
+  pstate      => { EN => qq{Planning&nbsp;status:&nbsp;<pstate>\nInfo:&nbsp;<supplmnt>\n\nMode:&nbsp;<mode>\nOn:&nbsp;<start>\nOff:&nbsp;<stop>\nRemaining lock time:&nbsp;<RLT> seconds},
+                   DE => qq{Planungsstatus:&nbsp;<pstate>\nInfo:&nbsp;<supplmnt>\n\nModus:&nbsp;<mode>\nEin:&nbsp;<start>\nAus:&nbsp;<stop>\nverbleibende Sperrzeit:&nbsp;<RLT> Sekunden}  },
+  ainuse      => { EN => qq{AI Perl module is installed, but the AI support is not used.\nRun 'set <NAME> plantConfiguration check' for hints.},
+                   DE => qq{KI Perl Modul ist installiert, aber die KI Unterst&uuml;tzung wird nicht verwendet.\nPr&uuml;fen sie 'set <NAME> plantConfiguration check' f&uuml;r Hinweise.} },
+  arsrad2o    => { EN => qq{API query successful but the radiation values are outdated.\nCheck the plant with 'set <NAME> plantConfiguration check'.},
+                   DE => qq{API Abfrage erfolgreich aber die Strahlungswerte sind veraltet.\nPr&uuml;fen sie die Anlage mit 'set <NAME> plantConfiguration check'.}                        },
+  aswfc2o     => { EN => qq{The weather data is outdated.\nCheck the plant with 'set <NAME> plantConfiguration check'.},
+                   DE => qq{Die Wetterdaten sind veraltet.\nPr&uuml;fen sie die Anlage mit 'set <NAME> plantConfiguration check'.}                                                         },
+  rdcstat     => { EN => qq{no reduction status available\nPlease set the key 'reductionState' with 'attr <NAME> plantControl'},
+                   DE => qq{kein Abregelungsstatus verf&uuml;gbar\nSetzen sie bitte den Schl&uuml;ssel 'reductionState' mit 'attr <NAME> plantControl'}                                    },
 );
 
 # -----------------------------------------------------------------------------------------------------------------
@@ -23438,12 +23441,12 @@ sub _beamGraphicFirstHour {
   my $val7 = CachedHistoryVal ($name, $day_str, $time_str, 'gfeedin', 0);
 
   my %beam_val = (
-      #pvForecastLimited  => __pvHistOrFeedlim ($name, $day_str, $time_str),
-      pvForecast          => CachedHistoryVal ($name, $day_str, $time_str, 'pvfc',  0),      
+      pvForecastLimited   => __pvHistOrFeedlim ($name, $day_str, $time_str),
+      pvForecast          => CachedHistoryVal  ($name, $day_str, $time_str, 'pvfc',  0),      
       pvReal              => CachedHistoryVal  ($name, $day_str, $time_str, 'pvrl',  0),
       gridconsumption     => $val3,
-      consumptionForecast => CachedHistoryVal ($name, $day_str, $time_str, 'confc', 0),
-      consumption         => CachedHistoryVal ($name, $day_str, $time_str, 'con',   0),
+      consumptionForecast => CachedHistoryVal  ($name, $day_str, $time_str, 'confc', 0),
+      consumption         => CachedHistoryVal  ($name, $day_str, $time_str, 'con',   0),
       energycosts         => round2 (CachedHistoryVal ($name, $day_str, $time_str, 'conprice', 0) * $val3 / 1000),
       gridfeedin          => $val7,
       feedincome          => round2 (CachedHistoryVal ($name, $day_str, $time_str, 'feedprice', 0) * $val7 / 1000),
@@ -23486,7 +23489,7 @@ sub _beamGraphicFirstHour {
 
   my %beam_txt = (
       pvForecast          => $htitles{pvgenefc}{$lang}." ($kw)",
-      pvForecastLimited   => $htitles{pvgenefc}{$lang}." ($kw)",
+      pvForecastLimited   => $htitles{pvgenefclim}{$lang}." ($kw)",             # statischer Text, kein Pro-Stunde-Hinweis
       pvReal              => $htitles{pvgenerl}{$lang}." ($kw)",
       gridconsumption     => $htitles{enppubgd}{$lang}." ($kw)",
       consumptionForecast => $htitles{enconsfc}{$lang}." ($kw)",
@@ -23552,7 +23555,7 @@ sub _beamGraphicRemainingHours {
   my $beam2cont = $paref->{beam2cont};
   my $kw        = $paref->{kw};
 
-  my ($val1, $val2, $val3, $val4, $val5, $val6, $val7, $val8, $val9, $val10);
+  my ($val1, $val2, $val3, $val4, $val5, $val6, $val7, $val8, $val9, $val10, $val11);
   my $hbsocs;
 
   my $hash     = $defs{$name};
@@ -23563,7 +23566,8 @@ sub _beamGraphicRemainingHours {
   my $bcapsum  = CurrentVal ($name, 'batcapsum', 0);                                                    # Summe installierte Batterie Kapazität in Wh
 
   for my $i (1..($maxhours*2)-1) {                                                                      # doppelte Anzahl berechnen    my $val1 = 0;
-      ($val1, $val2, $val3 ,$val4 ,$val5, $val6, $val7 ,$val8, $val9, $val10) = (0,0,0,0,0,0,0,0,0,0);
+      ($val1, $val2, $val3 ,$val4 ,$val5, $val6, $val7 ,$val8, $val9, $val10, $val11) = 
+                (0,0,0,0,0,0,0,0,0,0,0);
 
       $hfcg->{$i}{time} = $hfcg->{0}{time} + $i;
 
@@ -23594,15 +23598,15 @@ sub _beamGraphicRemainingHours {
               $hfcg->{$i}{sunaz}   = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'sunaz',     '-');
               $hfcg->{$i}{don}     = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'DoN',         0);
 
-              #$val1 = __pvHistOrFeedlim ($name, $ds, $hfcg->{$i}{time_str});
-              $val1 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'pvfc',  0);
-              $val2 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'pvrl',  0);
-              $val3 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'gcons', 0);
-              $val4 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'confc', 0);
-              $val5 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'con',   0);
-              $val6 = round2 (CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'conprice',  0) * $val3 / 1000);  # Energiekosten der Stunde
-              $val7 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'gfeedin', 0);
-              $val8 = round2 (CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'feedprice', 0) * $val7 / 1000);  # Einspeisevergütung der Stunde
+              $val1  = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'pvfc',  0);
+              $val2  = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'pvrl',  0);
+              $val3  = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'gcons', 0);
+              $val4  = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'confc', 0);
+              $val5  = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'con',   0);
+              $val6  = round2 (CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'conprice',  0) * $val3 / 1000);            # Energiekosten der Stunde
+              $val7  = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'gfeedin', 0);
+              $val8  = round2 (CachedHistoryVal ($name, $ds, $hfcg->{$i}{time_str}, 'feedprice', 0) * $val7 / 1000);            # Einspeisevergütung der Stunde
+              $val11 = __pvHistOrFeedlim ($name, $ds, $hfcg->{$i}{time_str});
 
               ## Batterien Selektionshash erstellen
               #######################################
@@ -23651,9 +23655,9 @@ sub _beamGraphicRemainingHours {
           $hfcg->{$i}{don}     = NexthoursVal ($name, 'NextHour'.$nh, 'DoN',         0);
           my $stt              = NexthoursVal ($name, 'NextHour'.$nh, 'starttime',  '');
 
-          #$val1 = __pvNextOrFeedlim ($name, 'NextHour'.$nh);
-          $val1 = NexthoursVal      ($name, 'NextHour'.$nh, 'pvfc',  0);        
-          $val4 = NexthoursVal      ($name, 'NextHour'.$nh, 'confc', 0);
+          $val1  = NexthoursVal      ($name, 'NextHour'.$nh, 'pvfc',  0);        
+          $val4  = NexthoursVal      ($name, 'NextHour'.$nh, 'confc', 0);
+          $val11 = __pvNextOrFeedlim ($name, 'NextHour'.$nh);
 
           ## Batterien Selektionshash anreichern
           ########################################
@@ -23688,6 +23692,7 @@ sub _beamGraphicRemainingHours {
       ## Zuordnung Werte zu den Balken entsprechend Selektion
       #########################################################
       $hfcg->{$i}{beam1}    = $beam1cont eq 'pvForecast'          ? $val1  :
+                              $beam1cont eq 'pvForecastLimited'   ? $val11 :
                               $beam1cont eq 'pvReal'              ? $val2  :
                               $beam1cont eq 'gridconsumption'     ? $val3  :
                               $beam1cont eq 'consumptionForecast' ? $val4  :
@@ -23701,6 +23706,7 @@ sub _beamGraphicRemainingHours {
                               undef;
 
       $hfcg->{$i}{beam2}    = $beam2cont eq 'pvForecast'          ? $val1  :
+                              $beam2cont eq 'pvForecastLimited'   ? $val11 :
                               $beam2cont eq 'pvReal'              ? $val2  :
                               $beam2cont eq 'gridconsumption'     ? $val3  :
                               $beam2cont eq 'consumptionForecast' ? $val4  :
@@ -41152,7 +41158,8 @@ to ensure that the system configuration is correct.
             <tr><td> <b>feedincome</b>          </td><td>Remuneration for feeding into the grid. The currency is defined in the setupMeterDev, key feedprice.   </td></tr>
             <tr><td> <b>gridconsumption</b>     </td><td>Energy purchase from the public grid                                                                   </td></tr>
             <tr><td> <b>gridfeedin</b>          </td><td>Feed into the public grid                                                                              </td></tr>
-            <tr><td> <b>pvForecast</b>          </td><td>predicted PV generation (default for graphicBeam2Content)                                              </td></tr>
+            <tr><td> <b>pvForecast</b>          </td><td>PV forecast (default for graphicBeam2Content)                                                          </td></tr>
+            <tr><td> <b>pvForecastLimited</b>   </td><td>PV forecast taking into account the set feed-in limit (attribute `plantControl->feedinPowerLimit`)     </td></tr>
             <tr><td> <b>pvReal</b>              </td><td>real PV generation (default for graphicBeam1Content)                                                   </td></tr>
          </table>
          </ul>
@@ -44306,7 +44313,8 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>feedincome</b>          </td><td>Vergütung für die Netzeinspeisung. Die Währung ist im setupMeterDev, Schlüssel feedprice, definiert.         </td></tr>
             <tr><td> <b>gridconsumption</b>     </td><td>Energiebezug aus dem öffentlichen Netz                                                                       </td></tr>
             <tr><td> <b>gridfeedin</b>          </td><td>Einspeisung in das öffentliche Netz                                                                          </td></tr>
-            <tr><td> <b>pvForecast</b>          </td><td>prognostizierte PV-Erzeugung (default für graphicBeam2Content)                                               </td></tr>
+            <tr><td> <b>pvForecast</b>          </td><td>PV-Prognose (default für graphicBeam2Content)                                                                </td></tr>
+            <tr><td> <b>pvForecastLimited</b>   </td><td>PV-Prognose mit Berücksichtigung der gesetzten Einspeisebegrenzung (Attribut plantControl->feedinPowerLimit) </td></tr>       
             <tr><td> <b>pvReal</b>              </td><td>reale PV-Erzeugung (default für graphicBeam1Content)                                                         </td></tr>
          </table>
          </ul>
