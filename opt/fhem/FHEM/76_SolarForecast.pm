@@ -71,7 +71,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.3"  => "30.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
+  "2.9.3"  => "31.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
                            "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ".
                            "_calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex ".
                            "neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours ".
