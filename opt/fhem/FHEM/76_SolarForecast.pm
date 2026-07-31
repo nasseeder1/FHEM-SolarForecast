@@ -23438,7 +23438,8 @@ sub _beamGraphicFirstHour {
   my $val7 = CachedHistoryVal ($name, $day_str, $time_str, 'gfeedin', 0);
 
   my %beam_val = (
-      pvForecast          => __pvHistOrFeedlim ($name, $day_str, $time_str), 
+      #pvForecast          => __pvHistOrFeedlim ($name, $day_str, $time_str),
+      pvForecast          => CachedHistoryVal ($name, $day_str, $time_str, 'pvfc',  0),      
       pvReal              => CachedHistoryVal  ($name, $day_str, $time_str, 'pvrl',  0),
       gridconsumption     => $val3,
       consumptionForecast => CachedHistoryVal ($name, $day_str, $time_str, 'confc', 0),
@@ -23592,7 +23593,8 @@ sub _beamGraphicRemainingHours {
               $hfcg->{$i}{sunaz}   = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'sunaz',     '-');
               $hfcg->{$i}{don}     = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'DoN',         0);
 
-              $val1 = __pvHistOrFeedlim ($name, $ds, $hfcg->{$i}{time_str});
+              #$val1 = __pvHistOrFeedlim ($name, $ds, $hfcg->{$i}{time_str});
+              $val1 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'pvfc',  0);
               $val2 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'pvrl',  0);
               $val3 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'gcons', 0);
               $val4 = CachedHistoryVal  ($name, $ds, $hfcg->{$i}{time_str}, 'confc', 0);
@@ -23648,7 +23650,8 @@ sub _beamGraphicRemainingHours {
           $hfcg->{$i}{don}     = NexthoursVal ($name, 'NextHour'.$nh, 'DoN',         0);
           my $stt              = NexthoursVal ($name, 'NextHour'.$nh, 'starttime',  '');
 
-          $val1 = __pvNextOrFeedlim ($name, 'NextHour'.$nh); 
+          #$val1 = __pvNextOrFeedlim ($name, 'NextHour'.$nh);
+          $val1 = NexthoursVal      ($name, 'NextHour'.$nh, 'pvfc',  0);        
           $val4 = NexthoursVal      ($name, 'NextHour'.$nh, 'confc', 0);
 
           ## Batterien Selektionshash anreichern
