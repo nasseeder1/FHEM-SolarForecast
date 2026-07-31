@@ -23553,6 +23553,7 @@ sub _beamGraphicRemainingHours {
   my $hourstyle = $paref->{hourstyle};
   my $beam1cont = $paref->{beam1cont};
   my $beam2cont = $paref->{beam2cont};
+  my $lang      = $paref->{lang};
   my $kw        = $paref->{kw};
 
   my ($val1, $val2, $val3, $val4, $val5, $val6, $val7, $val8, $val9, $val10, $val11);
