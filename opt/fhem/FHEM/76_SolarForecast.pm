@@ -12434,7 +12434,7 @@ sub _addDynAttr {
       push @deva, "ctrlNextHoursSoCForecastReadings:multiple-strict,$hod";
   }
 
-  $gbc .= 'consumption,consumptionForecast,energycosts,feedincome,gridconsumption,gridfeedin,pvForecast,pvReal';
+  $gbc .= 'consumption,consumptionForecast,energycosts,feedincome,gridconsumption,gridfeedin,pvForecast,pvForecastLimited,pvReal';
 
   for my $n (1..6) {
       push @deva, "graphicBeam${n}Content:$gbc";
@@ -23438,7 +23438,7 @@ sub _beamGraphicFirstHour {
   my $val7 = CachedHistoryVal ($name, $day_str, $time_str, 'gfeedin', 0);
 
   my %beam_val = (
-      #pvForecast          => __pvHistOrFeedlim ($name, $day_str, $time_str),
+      #pvForecastLimited  => __pvHistOrFeedlim ($name, $day_str, $time_str),
       pvForecast          => CachedHistoryVal ($name, $day_str, $time_str, 'pvfc',  0),      
       pvReal              => CachedHistoryVal  ($name, $day_str, $time_str, 'pvrl',  0),
       gridconsumption     => $val3,
@@ -23486,6 +23486,7 @@ sub _beamGraphicFirstHour {
 
   my %beam_txt = (
       pvForecast          => $htitles{pvgenefc}{$lang}." ($kw)",
+      pvForecastLimited   => $htitles{pvgenefc}{$lang}." ($kw)",
       pvReal              => $htitles{pvgenerl}{$lang}." ($kw)",
       gridconsumption     => $htitles{enppubgd}{$lang}." ($kw)",
       consumptionForecast => $htitles{enconsfc}{$lang}." ($kw)",
@@ -23523,7 +23524,7 @@ sub _beamGraphicFirstHour {
   }
 
   # --- Differenz berechnen
-  my %roundable = map { $_ => 1 } qw(pvForecast pvReal consumptionForecast consumption);
+  my %roundable = map { $_ => 1 } qw(pvForecast pvForecastLimited pvReal consumptionForecast consumption);
 
   $hfcg->{0}{diff} = round1($hfcg->{0}{beam1} - $hfcg->{0}{beam2});
 
@@ -23716,7 +23717,7 @@ sub _beamGraphicRemainingHours {
 
       $hfcg->{$i}{beam1} //= 0;
       $hfcg->{$i}{beam2} //= 0;
-      my %roundable        = map { $_ => 1 } qw(pvForecast pvReal consumptionForecast consumption);
+      my %roundable        = map { $_ => 1 } qw(pvForecast pvForecastLimited pvReal consumptionForecast consumption);
       my @beams            = ($beam1cont, $beam2cont);
       $hfcg->{$i}{diff}    = round1 ($hfcg->{$i}{beam1} - $hfcg->{$i}{beam2});
       $hfcg->{$i}{diff}    = round0 ($hfcg->{$i}{diff}) if($kw eq 'Wh' && grep { $roundable{$_} } @beams);
