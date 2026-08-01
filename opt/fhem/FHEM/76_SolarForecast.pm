@@ -1064,6 +1064,8 @@ my %hqtxt = (                                                                   
               DE => qq{Autokorrektur:}                                                                                      },
   atomrs => { EN => qq{Automatic resumed},
               DE => qq{Automatik fortgesetzt}                                                                               },
+  manrst => { EN => qq{Automatic resumed after a cycle}, 
+              DE => qq{Automatik nach Rundlauf fortgesetzt}                                                                 },
   plrdct => { EN => qq{Reduction:},
               DE => qq{Abregelung:}                                                                                         },
   plntck => { EN => qq{Plant Configurationcheck Information},
@@ -19209,7 +19211,7 @@ sub ___setConsumerSwitchingState {
       delete $paref->{lastAutoOnTs};
 
       $state = qq{Consumer '$calias' switched on (continued)};
-      $data{$name}{consumers}{$c}{lastOwnSwitchCmd} = $t;                           # eigener Schaltbefehl bestätigt
+      $data{$name}{consumers}{$c}{lastOwnSwitchCmd} = $t;                               # eigener Schaltbefehl bestätigt
       $dowri = 1;
   }
   elsif (isConsumerPhysOff ($name, $c) && $simpCstat eq 'interrupting') {
@@ -19222,24 +19224,42 @@ sub ___setConsumerSwitchingState {
       delete $paref->{lastAutoOffTs};
 
       $state = qq{Consumer '$calias' switched off (interrupted)};
-      $data{$name}{consumers}{$c}{lastOwnSwitchCmd} = $t;                           # eigener Schaltbefehl bestätigt
+      $data{$name}{consumers}{$c}{lastOwnSwitchCmd} = $t;                               # eigener Schaltbefehl bestätigt
       $dowri = 1;
   }
   elsif ($oldpsw eq 'off' && isConsumerPhysOn ($name, $c) && ($t - $lastOwnSwitch > BLINDTIME)){
+      my $flag = ConsumerVal ($name, $c, 'manualInterruptFlag', '');
+
+      if ($flag eq 'on') {                                                              # Rundlauf komplett: Baseline war ein, jetzt wieder ein (WaMa-Fall)
+          delete $data{$name}{consumers}{$c}{manualInterruptFlag};
+          $data{$name}{consumers}{$c}{autoResumeHint}    = encode ('utf8', $hqtxt{manrst}{$paref->{lang}});
+          $data{$name}{consumers}{$c}{autoResumeHintTTL} = 2;
+      }
+      else {
+          $data{$name}{consumers}{$c}{manualInterruptFlag} = 'off';                     # Beginn einer manuellen Aktivierung (Baseline: aus)
+      }
+
       $paref->{supplement} = "$hqtxt{wexso}{$paref->{lang}}";
-
       ___setConsumerPlanningState ($paref);
-
       delete $paref->{supplement};
 
       $state = qq{Consumer '$calias' was switched on externally};
       $dowri = 1;
   }
   elsif ($oldpsw eq 'on' && isConsumerPhysOff ($name, $c) && ($t - $lastOwnSwitch > BLINDTIME)) {
+      my $flag = ConsumerVal ($name, $c, 'manualInterruptFlag', '');
+
+      if ($flag eq 'off') {                                                             # Rundlauf komplett: Baseline war aus, jetzt wieder aus
+          delete $data{$name}{consumers}{$c}{manualInterruptFlag};
+          $data{$name}{consumers}{$c}{autoResumeHint}    = encode ('utf8', $hqtxt{manrst}{$paref->{lang}});
+          $data{$name}{consumers}{$c}{autoResumeHintTTL} = 2;
+      }
+      else {
+          $data{$name}{consumers}{$c}{manualInterruptFlag} = 'on';                      # Beginn einer manuellen Unterbrechung (Baseline: ein)
+      }
+
       $paref->{supplement} = "$hqtxt{wexso}{$paref->{lang}}";
-
       ___setConsumerPlanningState ($paref);
-
       delete $paref->{supplement};
 
       $state = qq{Consumer '$calias' was switched off externally};
@@ -19248,7 +19268,7 @@ sub ___setConsumerSwitchingState {
 
   if ($dowri) {
       if (!$fscss) {
-          $data{$name}{current}{consumerCacheDirty} = 1;                            # Cache File Consumer schreiben
+          $data{$name}{current}{consumerCacheDirty} = 1;                                # Cache File Consumer schreiben
       }
 
       Log3 ($name, 3, "$name - $state");
