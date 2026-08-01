@@ -28,6 +28,6 @@
 4|SV|1 
 4|DE|Ab 28.07. ca. 08:15 Uhr wird die Version 2.9.2 ausgeliefert. Wichtige Informationen zu dieser Version beinhaltet dieser <html><a href='https://forum.fhem.de/index.php?msg=1367076' target='_blank'>Beitrag</a></html>. Er enthält auch ein im FHEM-Repo noch fehlendes Icon zum Download. 
 4|EN|Version 2.9.2 will be released starting July 28 at approximately 8:15 a.m. Important information about this version can be found in this <html><a href=‘https://forum.fhem.de/index.php?msg=1367076’ target=‘_blank’>post</a></html>. It also includes an icon for download that is not yet available in the FHEM repository.
-5|SV|1 
+5|SV|2 
 5|DE|Ab 02.08. ca. 08:15 Uhr wird die Version 2.9.3 ausgeliefert. Sie enthält auch einen Kompatibilitätsfix für ältere Perl Versionen. Mehr Infos zur Version in diesem <html><a href='https://forum.fhem.de/index.php?msg=1367361' target='_blank'>Beitrag</a></html>. 
 5|EN|Version 2.9.3 will be released starting August 2 at approximately 8:15 a.m. It also includes a compatibility fix for older versions of Perl. For more information about this version, see this <html><a href=‘https://forum.fhem.de/index.php?msg=1367361’ target=‘_blank’>post</a></html>.
