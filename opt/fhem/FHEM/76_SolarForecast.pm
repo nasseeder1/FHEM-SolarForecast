@@ -72,7 +72,8 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.4"  => "01.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ",
+  "2.9.4"  => "01.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
+                           "Post-Icon für Schweregrad '2' geändert ",
   "2.9.3"  => "31.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
                            "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ".
                            "_calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex ".
@@ -627,7 +628,7 @@ my $allwidgets = 'icon|sortable|uzsu|knob|noArg|time|text|slider|multiple|select
 my %svicons = (                                                               # Schweregrad Icons Mitteilungssystem
   '0' => 'message_mail@grey',                                                 # Standard Mitteilungs-Icon 0 - keine Mitteilung
   '1' => 'message_mail_open@darkorange',                                      # Standard Mitteilungs-Icon 1 - Mitteilung
-  '2' => 'message_attention@darkorange',                                      # Standard Mitteilungs-Icon 2 - Warnung
+  '2' => 'message_mail_open@red',                                             # Standard Mitteilungs-Icon 2 - Warnung
   '3' => 'message_attention@red',                                             # Standard Mitteilungs-Icon 3 - Fehler / Problem
 );
 
@@ -17732,6 +17733,7 @@ sub __getAutomaticState {
       my $calias = ConsumerVal ($name, $c, 'alias', $cname);
       Log3 ($name, 3, qq{$name - consumer "$c" - Automatic mode switched to '}.($auto ? 'on' : 'off')."' (alias=$calias)");
   }
+  
   ___resyncPlanStateOnAutoResume ($paref) if(!$oldauto && $auto);                       # Statussynch nur bei Flanke Automatik AUS -> EIN
 
 return;

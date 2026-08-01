@@ -5,6 +5,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 ## [Unreleased]
 
 - Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters
+- Post-Icon für Schweregrad '2' geändert
 
 
 ## [v2.9.3]
