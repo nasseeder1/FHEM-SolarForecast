@@ -4,6 +4,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 ## [Unreleased]
 
+- Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters
+
 
 ## [v2.9.3]
 01.08.2026 Rev. 31533
