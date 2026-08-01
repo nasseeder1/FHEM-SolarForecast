@@ -5,7 +5,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 ## [Unreleased]
 
 
-## [v2.9.3] - 01.08.2026
+## [v2.9.3]
+01.08.2026 Rev. xxx
 
 - Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten
 - Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod
@@ -18,7 +19,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
   * neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours -> wird in Balkengrafik mit Fallback auf 'pvfc' verwendet 
 
 
-## [v2.9.2] - 27.07.2026
+## [v2.9.2]
+27.07.2026 Rev. 31518
 
 - Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate
 - neuer Schlüssel consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons, schaltet die Dynamik entsprechend Verbrauchsstatus ab
@@ -39,7 +41,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
   * neue Funktion checkDevRdCond <br>
   * use feature 'state' gesetzt und Code Rework <br>
 
-## [v2.9.1] - 19.07.2026
+## [v2.9.1]
+19.07.2026 Rev. 31499
 
 - neuer FEATURE BLOCKS semantics_heatpump_nopv (Beseitigung Gap in heatpump-Profilen ohne pv)
 - neuer Befehl "set .. reset aiData setValue ...". Damit können aiRawdata-Werte gezielt korrigiert werden.
