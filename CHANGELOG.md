@@ -16,7 +16,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 - <b>Intern:</b> 
   * _calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex 
-  * neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours -> wird in Balkengrafik mit Fallback auf 'pvfc' verwendet 
+  * neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours -> wird in Balkengrafik mit Fallback auf 'pvfc' verwendet
+  * Kompatibilitätsfix feature 'state' für ältere Perl Versionen  
 
 
 ## [v2.9.2]
