@@ -4,15 +4,18 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 ## [Unreleased]
 
+
+## [v2.9.3] - 01.08.2026
+
 - Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten
 - Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod
 - Implementierung einer sequentiellen Energiebilanz-Simulation der PV-Prognose in Abhängigkeit der PV Raw-Prognose, der Verbrauchsprognose, dem eingestellten FeedIn-Limit und der Batterie Ladungsprognose.
   Dadurch wird die Unterstützung einer Nulleinspeisung bzw. eines gesetzten Einspeiselimits in der PV Prognose realisiert.
 - neue Auswahl pvForecastLimited im Attribut 'graphicBeamXContent' zur Anzeige der PV-Prognose unter Berücksichtigung einer gesetzten Einspeiselimitierung im Attribut plantControl->feedinPowerLimit
 
-- <b>Intern:</b> <br>
-  * _calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex <br>
-  * neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours -> wird in Balkengrafik mit Fallback auf 'pvfc' verwendet <br>
+- <b>Intern:</b> 
+  * _calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex 
+  * neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours -> wird in Balkengrafik mit Fallback auf 'pvfc' verwendet 
 
 
 ## [v2.9.2] - 27.07.2026
