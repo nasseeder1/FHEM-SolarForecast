@@ -7187,7 +7187,8 @@ sub _getaiDecTree {                   ## no critic "not used"
 
   $arg              = trim ($arg);                                               # trim it
   my ($scom, $args) = split (" ", $arg, 2);                                      # in den Sub-Befehl und Befehlsargumente splitten
-
+  $args           //= '';
+  
   my $ret;
   my $hash = $defs{$name};
 
@@ -40703,7 +40704,7 @@ to ensure that the system configuration is correct.
             <tr><td>                       </td><td>                                                                                                                                                        </td></tr>
             <tr><td> <b>auto</b>           </td><td>Value: <b>&lt;Reading&gt;</b> - A reading in the load device that enables or disables the load (optional)                                               </td></tr>
             <tr><td>                       </td><td>If the key switchdev is given, the reading is set and evaluated in this device.                                                                         </td></tr>
-            <tr><td>                       </td><td>Reading value = 1 - switching enabled (default), 0: switching blocked                                                                                   </td></tr>
+            <tr><td>                       </td><td>Reading value = 1 - switching enabled (default), 0 - switching blocked                                                                                  </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                        </td></tr>
             <tr><td> <b>etotal</b>         </td><td>Total energy consumed by the appliance (optional).                                                                                                      </td></tr>
             <tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;unit&gt;[:&lt;threshold&gt]</b> - Consumer reading and unit (Wh/kWh)                                                             </td></tr>
@@ -43856,7 +43857,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>auto</b>           </td><td>Wert: <b>&lt;Reading&gt;</b> - Reading im Verbraucherdevice welches das Schalten des Verbrauchers freigibt bzw. blockiert (optional)               </td></tr>
             <tr><td>                       </td><td>Ist der Schlüssel switchdev angegeben, wird das Reading in diesem Device gesetzt und ausgewertet.                                                  </td></tr>
-            <tr><td>                       </td><td>Readingwert = 1 - Schalten freigegeben (default),  0: Schalten blockiert                                                                           </td></tr>
+            <tr><td>                       </td><td>Readingwert = 1 - Schalten freigegeben (default),  0 - Schalten blockiert                                                                          </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>etotal</b>         </td><td>Gesamte verbrauchte Energie des Verbrauchers (optional).                                                                                           </td></tr>
             <tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;Einheit&gt;[:&lt;Schwellenwert&gt]</b> - Reading des Verbrauchers und Einheit (Wh/kWh)                                      </td></tr>
