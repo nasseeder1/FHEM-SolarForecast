@@ -9,7 +9,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
   * es wird immer das Icon für die Severity der letzten/aktuellsten Mitteilung angezeigt und nicht mehr die höchste 
     Severity aller vorhandenen Mitteilungen
   * Post-Icon für Schweregrad '2' geändert
-- Attribute graphicBeamXContent können systemisch in graphicHeaderOwnspec integriert werden  
+- die Attribute graphicBeamXContent können fehlerfrei in den graphicHeaderOwnspec-Bereich integriert werden  
   (Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert)
   
 - <b>Intern:</b> 
