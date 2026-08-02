@@ -17820,7 +17820,7 @@ sub ___resyncPlanStateOnAutoResume {
   
   delete $data{$name}{consumers}{$c}{manualInterruptFlag};                                          # Fall 1 - Automatik AUS->EIN-Flanke hat Vorrang vor evtl. noch offenem Fall-2-Tracking (symmetrische Wiederherstellung ohne Automatik-Toggle)
 
-  debugLog ($paref, 'consumerPlanning', qq{consumer "$c" - Automatic OFF->ON detected, plan state resynchronized from "$pstate" ($simpCstat) to "$newlabel", physoffon=} . ($physon ? 'on' : 'off'));
+  debugLog ($paref, "consumerSwitching${c}", qq{consumer "$c" - Automatic OFF->ON detected, plan state resynchronized from "$pstate" ($simpCstat) to "$newlabel", physoffon=} . ($physon ? 'on' : 'off'));
 
   Log3 ($name, 3, qq{$name - consumer "$c" - Automatic reactivated, scheduling status resynchronized ($newlabel)});
 
