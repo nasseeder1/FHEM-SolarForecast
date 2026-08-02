@@ -11,6 +11,9 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 - Attribute graphicBeamXContent können systemisch in graphicHeaderOwnspec integriert werden  
   (Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert)
   
+- <b>Intern:</b> 
+  * Debug consumerSwitchingXX erweitert
+  
 
 ## [v2.9.3]
 01.08.2026 Rev. 31533

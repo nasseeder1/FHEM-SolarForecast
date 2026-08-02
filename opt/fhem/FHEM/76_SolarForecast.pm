@@ -17467,6 +17467,8 @@ sub _manageConsumerData {
               delete $data{$name}{consumers}{$c}{autoResumeHintTTL};                                            # TTL abgelaufen -> beide Keys entfernen
           }
       }
+      
+      debugLog ($paref, "consumerSwitching${c}", qq{consumer "$c" - Reading supplement: $supplmnt \n});
 
       my ($iilt,$rlt) = isInLocktime    ($paref);                                                               # Sperrzeit Status ermitteln
       my $cplmode     = getConsumerMode ($name, $c);                                                            # Planungsmode 'can' oder 'must'
@@ -18944,7 +18946,7 @@ sub ___switchConsumerOn {
       && $isInTime) {                                                                               # Verbraucher Start ist geplant && Startzeit überschritten
       my $enabybatprio = ___enableSwitchByBatPrioCharge ($paref);                                   # Vorrangladung Batterie ?
 
-      debugLog ($paref, "consumerSwitching${c}", qq{Consumer switch enable by battery state: $enabybatprio});
+      debugLog ($paref, "consumerSwitching${c}", qq{consumer "$c" - Consumer switch enable by battery state: $enabybatprio});
 
       if ($cplmode eq 'can' && !$enabybatprio) {                                                    # Batterieladung - keine Verbraucher "Einschalten" Freigabe
           $paref->{ps} = "priority charging battery";
@@ -19466,7 +19468,7 @@ sub __getCyclesAndRuntime {
 
       Log3 ($name, 1, qq{$name DEBUG> consumer "$c" - cycleDayNum: }.ConsumerVal ($name, $c, 'cycleDayNum', 0));
       Log3 ($name, 1, qq{$name DEBUG> consumer "$c" - last cycle start time: $cst});
-      Log3 ($name, 1, qq{$name DEBUG> consumer "$c" - last cycle end time: $son \n});
+      Log3 ($name, 1, qq{$name DEBUG> consumer "$c" - last cycle end time: $son});
   }
 
   ## History schreiben
