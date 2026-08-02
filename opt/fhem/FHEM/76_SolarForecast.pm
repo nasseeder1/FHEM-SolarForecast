@@ -72,8 +72,9 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.4"  => "01.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
-                           "Post-Icon für Schweregrad '2' geändert ",
+  "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
+                           "Post-Icon für Schweregrad '2' geändert ".
+                           "Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt ",
   "2.9.3"  => "31.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
                            "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ".
                            "_calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex ".
@@ -26380,9 +26381,10 @@ sub fillupMessageSystem {
   my $midx = max ($midx1, $midx2);
 
   if ($midx && ($data{$name}{messages}{999999}{RD} // 0) != 1) {                                # RD = Read-Bit (undef -> Messages nicht gelesen)
-      my @aidx   = map { $_ } (1..$midx);                                                       # größte vorhandene Severity finden ...
-      my @values = map { $data{$name}{messages}{$_}{SV} } @aidx;
-      $max_sv    = max(@values);
+      #my @aidx   = map { $_ } (1..$midx);                                                       # größte vorhandene Severity finden ...
+      #y @values = map { $data{$name}{messages}{$_}{SV} } @aidx;
+      #$max_sv    = max(@values);
+      $max_sv    = $data{$name}{messages}{$midx}{SV};                                           # der Schweregrad der letzten Meldung
   }
 
   my $max_icon = $svicons{$max_sv};                                                             # ... und das dazugehörige Icon

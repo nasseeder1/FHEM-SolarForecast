@@ -6,6 +6,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 - Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters
 - Post-Icon für Schweregrad '2' geändert
+- Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt
 
 
 ## [v2.9.3]
