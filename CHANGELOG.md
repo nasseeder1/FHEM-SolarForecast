@@ -4,7 +4,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 ## [Unreleased]
 
-- Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters
+- Resync Consumer Schaltstatus bei einer AUS->EIN Flanke des Automatikmodus, unabhängig ob der vorherige Schaltzustand des 
+  Consumers vor einer manuellen Änderung des Schaltzustands wiederhergestellt wurde
 - Mitteilungssystem: 
   * es wird immer das Icon für die Severity der letzten/aktuellsten Mitteilung angezeigt und nicht mehr die höchste 
     Severity aller vorhandenen Mitteilungen
