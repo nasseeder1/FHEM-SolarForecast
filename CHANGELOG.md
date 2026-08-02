@@ -6,8 +6,11 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 - Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters
 - Post-Icon für Schweregrad '2' geändert
-- Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt
-
+- Mitteilungssystem: es wird immer das Icon für die Severity der letzten/aktuellsten Mitteilung angezeigt und nicht mehr 
+  die höchste Severity aller vorhandenen Mitteilungen
+- Attribute graphicBeamXContent können systemisch in graphicHeaderOwnspec integriert werden  
+  (Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert)
+  
 
 ## [v2.9.3]
 01.08.2026 Rev. 31533

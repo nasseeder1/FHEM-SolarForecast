@@ -73,7 +73,7 @@ use MIME::Base64;
 # Versions History intern
 my %vNotesIntern = (
   "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
-                           "Post-Icon für Schweregrad '2' geändert ".
+                           "Post-Icon für Schweregrad '2' geändert, Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert ".
                            "Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt ",
   "2.9.3"  => "31.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
                            "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ".
@@ -12388,7 +12388,7 @@ sub _addDynAttr {
   ## Attributhüllen entfernen
   #############################
   my @deva = split " ", $modules{$type}{AttrList};
-  my $atd  = 'setupWeatherDev|setupRadiationAPI|graphicBeam*Content|ctrlNextHoursSoCForecastReadings';
+  my $atd  = 'setupWeatherDev|setupRadiationAPI|graphicBeam\d+Content|ctrlNextHoursSoCForecastReadings';   # --- !Regex, kein Glob – Ziffern im Attributnamen brauchen \d+!
   @deva    = grep {!/$atd/} @deva;
 
   ## Attr setupWeatherDevX / setupRadiationAPI zur Laufzeit hinzufügen
@@ -12434,6 +12434,8 @@ sub _addDynAttr {
   }
 
   $hash->{".AttrList"} = join " ", @deva;
+  
+  $hash->{HELPER}{DYNATTRDONE} = 1;                                 # unabhängig vom Minuten-Throttle -> "wurde mind. 1x befüllt"
 
 return;
 }
@@ -22786,6 +22788,9 @@ sub __createOwnSpec {
   my $hdrDetail = $paref->{hdrDetail};
   my $pah       = $paref->{pah};                                                       # 1 wenn durch pageAsHtml abgerufen
 
+  my $hash = $defs{$name};
+  _addDynAttr ($hash) if(!$hash->{HELPER}{DYNATTRDONE});                               # vor ersten runTask-Durchlauf rendern falls noch nicht passiert!
+
   my $vinr = 4;                                                                        # Spezifikationen in einer Zeile
   my $spec = AttrVal    ($name, 'graphicHeaderOwnspec', '');
   my $uatr = CurrentVal ($name, 'energyUnit', 'Wh');
@@ -22796,6 +22801,8 @@ sub __createOwnSpec {
   my $allsets  = ' '.FW_widgetOverride ($name, getAllSets ($name),  'set').' ';
   my $allattrs = ' '.FW_widgetOverride ($name, getAllAttr ($name), 'attr').' ';        # Leerzeichen wichtig für Regexvergleich
 
+  #debugLog ($paref, 'graphic', "ownSpec - allattrs: ".($allattrs =~ /graphicBeam1Content/ ? 'ENTHALTEN' : 'FEHLT')."\n".$allattrs);
+  
   my @fields = split (/\s+/sx, $spec);
 
   my (@props, @cats, @vals);                                                           # @props - Eigenschaften, @cats - Kategorien, @vals - Label:Werte Paare
