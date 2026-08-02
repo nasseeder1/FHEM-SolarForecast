@@ -18706,6 +18706,7 @@ sub __setConsRcmdState {
   my $name  = $paref->{name};
   my $c     = $paref->{consumer};
   my $debug = $paref->{debug};
+  my $cname = $paref->{cname};
 
   my $hash       = $defs{$name};
   my $nompower   = ConsumerVal ($name, $c, 'power',     0);                               # Consumer nominale Leistungsaufnahme (W)
@@ -18729,6 +18730,7 @@ sub __setConsRcmdState {
       my $spser  = ref $splref eq 'ARRAY' ? join ' ', @{$splref} : undef;
 
       Log3 ($name, 1, qq{$name DEBUG> ############### consumerSwitching consumer "$c" ###############});
+      Log3 ($name, 1, qq{$name DEBUG> consumer "$c" - Device name: $cname});
       Log3 ($name, 1, qq{$name DEBUG> consumer "$c" - ConsumptionRecommended calc method: $method, surplus: }.
                         (defined $surplus ? $surplus : 'undef'));
       Log3 ($name, 1, qq{$name DEBUG> consumer "$c" - method base: $spser}) if($method =~ /average|median/xs);
