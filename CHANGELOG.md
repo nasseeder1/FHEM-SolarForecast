@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 ## [Unreleased]
-xx.xx.2026 Rev. xxxxx
+03.08.2026 Rev. xxxxx
 
 - Resync Consumer Schaltstatus bei einer AUS->EIN Flanke des Automatikmodus, unabhängig ob der vorherige Schaltzustand des 
   Consumers vor einer manuellen Änderung des Schaltzustands wiederhergestellt wurde
