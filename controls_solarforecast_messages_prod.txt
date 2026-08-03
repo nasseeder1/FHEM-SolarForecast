@@ -32,5 +32,5 @@
 5|DE|Ab 02.08. ca. 08:15 Uhr wird die Version 2.9.3 ausgeliefert. Sie enthält auch einen Kompatibilitätsfix für ältere Perl Versionen. Mehr Infos zur Version in diesem <html><a href='https://forum.fhem.de/index.php?msg=1367361' target='_blank'>Beitrag</a></html>. 
 5|EN|Version 2.9.3 will be released starting August 2 at approximately 8:15 a.m. It also includes a compatibility fix for older versions of Perl. For more information about this version, see this <html><a href=‘https://forum.fhem.de/index.php?msg=1367361’ target=‘_blank’>post</a></html>.
 6|SV|1
-6|DE|Ab 04.08. ca. 08:15 Uhr wird die Version 2.9.4 ausgeliefert. Infos zur Version findest in diesem <html><a href='https://forum.fhem.de/index.php?msg=1367449' target='_blank'>Beitrag</a></html>. 
+6|DE|Ab 04.08. ca. 08:15 Uhr wird die Version 2.9.4 ausgeliefert. Infos zur Version findest du in diesem <html><a href='https://forum.fhem.de/index.php?msg=1367449' target='_blank'>Beitrag</a></html>. 
 6|EN|Version 2.9.4 will be released starting August 4 at approximately 8:15 a.m. You can find information about this version in this <html><a href=‘https://forum.fhem.de/index.php?msg=1367449’ target=‘_blank’>post</a></html>.
