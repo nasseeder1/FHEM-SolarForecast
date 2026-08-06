@@ -28780,6 +28780,8 @@ sub aiFannConInfer {
       $forward_val    = round0 ($forward_val);
       
       if ($debug =~ /aiProcess/xs && $hod >= 19 && $hod <= 24) {
+          $hist_ref    = round2 ($hist_ref);
+          $blend_alpha = round2 ($blend_alpha);
           Log3 ($name, 1, "$name DEBUG> AI FANN '$fanntyp' forecast blend - hod: $hod -> prediction=$prediction, ".
                            "hist_ref=$hist_ref, blend_alpha=$blend_alpha, forward_val=$forward_val")
               if(askLogtime ($name, "conBlendLog_$hod", 3600));
