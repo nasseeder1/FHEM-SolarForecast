@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31518 2026-07-27 19:43:25Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31539 2026-08-03 19:18:05Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -72,6 +72,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.9.5"  => "05.08.2026  kleinere Patches ",
   "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
                            "Post-Icon für Schweregrad '2' geändert, Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert ".
                            "Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt ".
@@ -28777,6 +28778,12 @@ sub aiFannConInfer {
                       +      $blend_alpha  * $hist_ref;
 
       $forward_val    = round0 ($forward_val);
+      
+      if ($debug =~ /aiProcess/xs && $hod >= 19 && $hod <= 24) {
+          Log3 ($name, 1, "$name DEBUG> AI FANN '$fanntyp' forecast blend - hod: $hod -> prediction=$prediction, ".
+                           "hist_ref=$hist_ref, blend_alpha=$blend_alpha, forward_val=$forward_val")
+              if(askLogtime ($name, "conBlendLog_$hod", 3600));
+      }
 
       push @flat_targets,     $forward_val;                                                 # V 2.6.10 statt direkt $prediction
       push @temp_norm_values, $temp_norm;                                                   # wichtig: Temperaturreihe auch erweitern
@@ -31024,6 +31031,7 @@ sub _aiFannApplyBiasCorrection {
       }
       else {
           $bias_zone = 3;                                                                       # --- Zone 3: Rote Zone (Baseline erkannt, aber die Modellqualität ist zu schlecht, um eine additive Bias-Korrektur zuzulassen)
+                                                                                                # keine zusätzliche additive Feinkorrektur (Drift-Korrektur bleibt davon unberührt und aktiv)
       }
   }
   elsif ($is_baseline && $cal_addon) {
@@ -31031,7 +31039,8 @@ sub _aiFannApplyBiasCorrection {
   }
 
   if ($cal_addon) { $bias_zone .= '+OSL' }                                                      # Anwendung OLS = Ordinary Least Squares = Methode der kleinsten Quadrate
-
+  
+  $res         = max (0, $res);         
   my $corr_val = $res - $val_predict;
 
 return ($res, $corr_val, $bias_zone, $drift_zone);

@@ -5,6 +5,8 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 ## [Unreleased]
 xx.xx.2026 Rev. xxxxx
 
+- kleinere Patches
+
 
 
 ## [v2.9.4]
