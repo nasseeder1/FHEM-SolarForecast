@@ -6,6 +6,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 xx.xx.2026 Rev. xxxxx
 
 - kleinere Patches
+- BEV Batteriedaten auch bei nicht aktivierten BEV-Consumer gespeichert
 
 
 

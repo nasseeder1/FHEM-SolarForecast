@@ -72,7 +72,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.5"  => "05.08.2026  kleinere Patches ",
+  "2.9.5"  => "07.08.2026  kleinere Patches, __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ",
   "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
                            "Post-Icon für Schweregrad '2' geändert, Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert ".
                            "Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt ".
@@ -17394,7 +17394,7 @@ sub _manageConsumerData {
 
       $paref->{cactive} = $cactive;
 
-      __saveBEVvalues ($paref);                                                     # BEV Consumer (vor __savePowerAndEnergy) auslesen
+      __saveBEVBatteryValues ($paref);                                              # BEV Consumer (vor __savePowerAndEnergy) auslesen
 
       my $pcurr = __savePowerAndEnergy ($paref);                                    # aktuelle Leistung und Energieverbrauch auslesen + speichern
 
@@ -17552,7 +17552,7 @@ return $cactive;
 ################################################################
 #               BEV auslesen
 ################################################################
-sub __saveBEVvalues {
+sub __saveBEVBatteryValues {
   my $paref   = shift;
   my $name    = $paref->{name};
   my $chour   = $paref->{chour};
@@ -17563,7 +17563,7 @@ sub __saveBEVvalues {
   my $ctype   = $paref->{ctype};
   my $cactive = $paref->{cactive};
 
-  return if($ctype ne 'bev' || !$cactive);                                                              # kein BEV oder Consumer nicht aktiviert
+  return if($ctype ne 'bev');                                                                           # kein BEV
 
   my $hod = sprintf "%02d", ($chour + 1);
 
