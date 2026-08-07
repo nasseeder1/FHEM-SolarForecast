@@ -19626,7 +19626,7 @@ sub __hpConsumerOpmode {
 
       if ($chour == $lchkhour) {
           my $wsecs  = CircularVal ($name, 99, $key, 0);
-          $wsecs    += $delta * $modulation / 100 if $s eq $opmode;                         # nur der aktive Status akkumuliert gewichtete Zeit
+          $wsecs    += $delta * $modulation / 100 if($s eq $opmode);                        # nur der aktive Status akkumuliert gewichtete Zeit
           $data{$name}{circular}{99}{$key} = $wsecs;
       }
       else {
