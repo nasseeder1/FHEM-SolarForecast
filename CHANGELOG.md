@@ -7,6 +7,7 @@ xx.xx.2026 Rev. xxxxx
 
 - kleinere Patches
 - BEV Batteriedaten auch bei nicht aktivierten BEV-Consumer gespeichert
+- Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse
 
 
 
