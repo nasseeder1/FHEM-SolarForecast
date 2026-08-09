@@ -28481,7 +28481,7 @@ sub aiFannConInfer {
   my $hash = $defs{$name};
   my ($msg, $presence, $comftemp);
 
-  debugLog ($paref, 'aiData', "AI FANN - Start checking consumption values (further output depends on the content and time of the last log entry)");
+  #debugLog ($paref, 'aiData', "AI FANN - Start checking consumption values (further output depends on the content and time of the last log entry)");
   
   $data{$name}{current}{$fanntyp.'NNGetResultState'} = 'ok';
 
