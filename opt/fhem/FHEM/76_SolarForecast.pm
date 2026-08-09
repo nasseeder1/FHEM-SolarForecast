@@ -72,8 +72,9 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.5"  => "08.08.2026  kleinere Patches, __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
-                           "Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse ",
+  "2.9.5"  => "09.08.2026  kleinere Patches, __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
+                           "Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse ".
+                           "neuer Debug Modus aiData_long ",
   "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
                            "Post-Icon für Schweregrad '2' geändert, Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert ".
                            "Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt ".
@@ -510,6 +511,7 @@ my $messagefile    = MSGFILEPROD;
 my @dd = qw( aiProcess
              aiProcess_long
              aiData
+             aiData_long
              apiCall
              apiProcess
              batteryManagement
@@ -28783,7 +28785,7 @@ sub aiFannConInfer {
 
       $forward_val    = round0 ($forward_val);
       
-      if ($debug =~ /aiProcess/xs && $hod >= 19 && $hod <= 24) {
+      if ($debug =~ /aiData_long/xs && $hod >= 19 && $hod <= 24) {
           $hist_ref    = round2 ($hist_ref);
           $blend_alpha = round2 ($blend_alpha);
           Log3 ($name, 1, "$name DEBUG> AI FANN '$fanntyp' forecast blend - hod: $hod -> prediction=$prediction, ".
@@ -28821,7 +28823,9 @@ sub aiFannConInfer {
 
       if ($debug =~ /aiData/xs) {
           my $dthr = (split ':', $starttime, 2)[0];
-          Log3 ($name, 1, "$name DEBUG> AI FANN con fc - $dthr, hod: $hod -> AI=$denorm_val, legacy=$legacyconfc, final: $confc_final Wh (alpha=$alpha, tot_corr=$tc Wh, bias/drift zone=$bias_zone/$drift_zone)");
+          Log3 ($name, 1, "$name DEBUG> AI FANN con fc - $dthr, hod: $hod -> AI=$denorm_val, legacy=$legacyconfc, ".
+                          "final: $confc_final Wh (alpha=$alpha, tot_corr=$tc Wh, bias/drift zone=$bias_zone/$drift_zone)")
+               if(askLogtime ($name, "confcLog_$hod", 1800));
       }
 
       # Daten speichern
@@ -41092,6 +41096,7 @@ to ensure that the system configuration is correct.
             <tr><td> <b>aiProcess</b>            </td><td>Data enrichment and training process for AI support                              </td></tr>
             <tr><td> <b>aiProcess_long</b>       </td><td>like aiProcess with extended output                                              </td></tr>
             <tr><td> <b>aiData</b>               </td><td>Data use AI in the forecasting process                                           </td></tr>
+            <tr><td> <b>aiData_long</b>          </td><td>like aiData with extended output                                                 </td></tr>
             <tr><td> <b>apiCall</b>              </td><td>Retrieval API interface without data output                                      </td></tr>
             <tr><td> <b>apiProcess</b>           </td><td>API data retrieval and processing                                                </td></tr>
             <tr><td> <b>batteryManagement</b>    </td><td>Battery management control values (SoC)                                          </td></tr>
@@ -44247,6 +44252,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>aiProcess</b>            </td><td>Datenanreicherung und Trainingsprozess der KI Unterstützung                      </td></tr>
             <tr><td> <b>aiProcess_long</b>       </td><td>wie aiProcess mit erweiterten Ausgaben                                           </td></tr>
             <tr><td> <b>aiData</b>               </td><td>Datennutzung KI im Prognoseprozess                                               </td></tr>
+            <tr><td> <b>aiData_long</b>          </td><td>wie aiData mit erweiterten Ausgaben                                              </td></tr>
             <tr><td> <b>apiCall</b>              </td><td>Abruf API Schnittstelle ohne Datenausgabe                                        </td></tr>
             <tr><td> <b>apiProcess</b>           </td><td>Abruf und Verarbeitung von API Daten                                             </td></tr>
             <tr><td> <b>batteryManagement</b>    </td><td>Steuerungswerte des Batterie Managements (SoC)                                   </td></tr>
