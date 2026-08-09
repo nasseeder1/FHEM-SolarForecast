@@ -40304,7 +40304,7 @@ to ensure that the system configuration is correct.
             <tr><td> <b>con</b>             </td><td>real energy consumption (Wh) of the house                                                                                </td></tr>
             <tr><td> <b>conprice</b>        </td><td>Price for the purchase of one kWh. The currency of the price is defined in the setupMeterDev.                            </td></tr>
             <tr><td> <b>csmXX_&lt;mode&gt;_points</b> </td><td>weighted operating points of load XX in &lt;mode&gt; for each hour                                             </td></tr>
-            <tr><td>                        </td><td>&lt;mode&gt; can be: off heating defrost hotwater cooling pool poolheating                                               </td></tr>
+            <tr><td>                        </td><td>&lt;mode&gt; can be: off heating defrost hotwater cooling pool poolheating prio auto total                               </td></tr>
             <tr><td> <b>csmtXX</b>          </td><td>total energy consumption (Wh) by ConsumerXX at the start of the hour                                                     </td></tr>
             <tr><td> <b>csmeXX</b>          </td><td>Energy consumption (Wh) of ConsumerXX in the hour of the day (hour 99 = daily energy consumption)                        </td></tr>
             <tr><td> <b>cyclescsmXX</b>     </td><td>Number of active cycles of ConsumerXX of the day                                                                         </td></tr>
@@ -43458,7 +43458,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>con</b>             </td><td>realer Energieverbrauch (Wh) des Hauses                                                                </td></tr>
             <tr><td> <b>conprice</b>        </td><td>Preis für den Bezug einer kWh. Die Einheit des Preises ist im setupMeterDev definiert.                 </td></tr>
             <tr><td> <b>csmXX_&lt;mode&gt;_points</b> </td><td>gewichtete Betriebspunkte des Verbrauchers XX im Modus &lt;mode&gt; für die jeweilige Stunde </td></tr>
-            <tr><td>                        </td><td>&lt;mode&gt; kann sein: off heating defrost hotwater cooling pool poolheating                          </td></tr>
+            <tr><td>                        </td><td>&lt;mode&gt; kann sein: off heating defrost hotwater cooling pool poolheating prio auto total          </td></tr>
             <tr><td> <b>csmtXX</b>          </td><td>Energieverbrauch total (Wh) von ConsumerXX zum Beginn der Stunde                                       </td></tr>
             <tr><td> <b>csmeXX</b>          </td><td>Energieverbrauch (Wh) von ConsumerXX in der Stunde des Tages (Stunde 99 = Tagesenergieverbrauch)       </td></tr>
             <tr><td> <b>cyclescsmXX</b>     </td><td>Anzahl aktive Zyklen von ConsumerXX des Tages                                                          </td></tr>
