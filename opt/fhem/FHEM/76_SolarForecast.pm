@@ -33795,10 +33795,9 @@ sub _listDataPoolCircular {
           push @bevModes, 'total';
           my ($hpwsec, $bevsec);
 
+          # --- accum_csm wseconds (WP Opmode gewichtete Sekunden)
           for my $cn (1..MAXCONSUMER) {
               $cn        = sprintf "%02d", $cn;
-              
-              # --- accum_csm wseconds (WP Opmode gewichtete Sekunden)
               my $kcount = 0;
               my $cnwsec;
               
@@ -33816,12 +33815,14 @@ sub _listDataPoolCircular {
               next if !$cnwsec;
               
               $hpwsec .= "\n      " if($hpwsec);
-              $hpwsec .= $cnwsec;
-              
-              
-              # --- accum_csm wseconds (BEV Opmode gewichtete Sekunden)
-              $kcount = 0;
-              $cnwsec = undef;
+              $hpwsec .= $cnwsec;  
+          }    
+          
+          # --- accum_csm wseconds (BEV Opmode gewichtete Sekunden)
+          for my $cn (1..MAXCONSUMER) {
+              $cn        = sprintf "%02d", $cn;
+              my $kcount = 0;
+              my $cnwsec;
 
               for my $bm (@bevModes) {
                   my $key = "accum_csm${cn}_${bm}_wseconds";
@@ -33899,6 +33900,7 @@ sub _listDataPoolCircular {
           $sq .= "      conNNRuntimeTrain: $nnrtt, conNNTrainLastFinishTs: $nntlfts \n";
           $sq .= "      last_transfer: $ltransfer, accum_presence_seconds: $accum_secs \n";
           $sq .= "      $hpwsec\n"  if($hpwsec);
+          $sq .= "      $bevsec\n"  if($bevsec);
           $sq .= "      $rcmdsec\n" if($rcmdsec);
           $sq .= "      attrInvChangedTs: $aicts \n";
       }
