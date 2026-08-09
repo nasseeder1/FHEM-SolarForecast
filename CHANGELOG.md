@@ -13,7 +13,8 @@ xx.xx.2026 Rev. xxxxx
 
 - <b>Intern:</b> 
   * neue Konstante BEVOPMODES
-  * _aiFannBevConsumerAggregate: BEV Modes eingefügt
+  * _aiFannBevConsumerAggregate: um BEV Modes erweitert
+  * neue Funktion __bevConsumerOpmode
   * neue pvHistory Schlüssel:  "csm${c}_other_points", "csm${c}_prio_points", "csm${c}_auto_points"
   * neue pvCircular Schlüssel: $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"}
                                $data{$name}{circular}{99}{"accum_csm${c}_prio_wseconds"}
