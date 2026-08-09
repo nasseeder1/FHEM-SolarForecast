@@ -1844,7 +1844,8 @@ my %hfspvh = (
       $hfspvh{'etotali'.$in}{fpar}     = undef;
   }
 
-  my @hpopm = split /\|/, HPOPMODES;
+  my @hpopm  = split /\|/, HPOPMODES;
+  my @bevopm = split /\|/, BEVOPMODES;
 
   for my $cn (1..MAXCONSUMER) {
       $cn = sprintf "%02d", $cn;
@@ -1901,6 +1902,20 @@ my %hfspvh = (
       $hfspvh{'bevcsmPwr'.$cn}{storname} = 'bevcsmPwr'.$cn;
       $hfspvh{'bevcsmPwr'.$cn}{validkey} = undef;
       $hfspvh{'bevcsmPwr'.$cn}{fpar}     = undef;
+      
+      # --- bev OpMode-Keys
+      for my $bo (@bevopm) {
+          $hfspvh{"csm${cn}_${bo}_points"}{fn}       = \&_saveHistP2;
+          $hfspvh{"csm${cn}_${bo}_points"}{storname} = "csm${cn}_${bo}_points";
+          $hfspvh{"csm${cn}_${bo}_points"}{validkey} = undef;
+          $hfspvh{"csm${cn}_${bo}_points"}{fpar}     = undef;
+      }
+      
+      # --- bev 'other'-OpMode-Key
+      $hfspvh{"csm${cn}_other_points"}{fn}       = \&_saveHistP2;
+      $hfspvh{"csm${cn}_other_points"}{storname} = "csm${cn}_other_points";
+      $hfspvh{"csm${cn}_other_points"}{validkey} = undef;
+      $hfspvh{"csm${cn}_other_points"}{fpar}     = undef;
   }
 
   for my $pn (1..MAXPRODUCER) {
@@ -17425,8 +17440,9 @@ sub _manageConsumerData {
       __getCyclesAndRuntime   ($paref);                                             # Verbraucher - Laufzeit, Tagesstarts und Aktivminuten pro Stunde ermitteln
       __reviewSwitchTime      ($paref);                                             # Planungsdaten überprüfen und ggf. neu planen
       __remainConsumerTime    ($paref);                                             # Restlaufzeit Verbraucher ermitteln
-      __hpConsumerOpmode      ($paref);                                             # Operation Mode von WP-Verbrauchern behandeln
-
+      __hpConsumerOpmode      ($paref);                                             # WP Operation Modes behandeln
+      __bevConsumerOpmode     ($paref);                                             # BEV Operation Modes behandeln
+      
       # --- Durchschnittsverbrauch / Betriebszeit ermitteln + speichern
       ###################################################################
       my $consumerco = 0;
@@ -19641,6 +19657,121 @@ sub __hpConsumerOpmode {
 
       writeToHistory ( { paref => $paref, key => "csm${c}_${s}_points", val => $points, day => $day, hour => $hod } );
   }
+
+return;
+}
+
+################################################################
+#            BEV Ladeprioritäts-Modus (Punktesystem)
+#
+#  points += delta_sekunden / 60   (keine Modulation wie bei WP)
+#
+#  other_points = total_points_elapsed - prio_points - auto_points
+#  -> 'other' ist keine eigene Reading-Zuordnung, sondern der
+#     Rest der bereits verstrichenen Stundenzeit, der weder
+#     'prio' noch 'auto' zugeordnet werden konnte 
+#     (z.B. unbekannter Reading-Wert, Boost-/Manuell-Modus, 
+#     transiente Fehler).
+#
+#  Bei fehlender opmode-Konfiguration (Altinstallation ohne
+#  dieses Feature) wird stattdessen anhand des bereits in der
+#  pvHistory stehenden csme-Werts der Stunde entschieden:
+#    csme == 0  -> nichts geladen        -> prio=auto=other=0
+#    csme >  0  -> geladen, Modus unbekannt -> other=60
+################################################################
+sub __bevConsumerOpmode {
+  my $paref = shift;
+  my $name  = $paref->{name};
+  my $ctype = $paref->{ctype};
+  my $c     = $paref->{consumer};
+  my $t     = $paref->{t};
+  my $day   = $paref->{day};
+  my $chour = $paref->{chour};
+
+  return if($ctype ne 'bev');                                                               # Verarbeitung nur für BEV
+
+  my $hod      = sprintf "%02d", ($chour + 1);
+  my $om       = ConsumerVal ($name, $c, 'opmode', ' : ');                                  # Consumer Operation Mode
+  my @bevModes = split /\|/, BEVOPMODES;                                                    # prio|auto
+
+  my $last_check = CircularVal ($name, 99, 'last_transfer', $t);
+  my $delta      = $t - $last_check;
+  my $dt         = timestringsFromOffset ($name, $last_check, 0);
+  my $lchkhour   = $dt->{hour};
+
+  # --- opmode Device prüfen
+  my ($dvo, $rdo) = split ':', $om;
+  my ($err)       = isDeviceValid ( { name => $name, obj => $dvo, method => 'string' } );
+
+  if ($err) {                                                                               # opmode nicht konfiguriert -> Fallback über csme der laufenden Stunde
+      my $csme = HistoryVal ($name, $day, $hod, "csme$c", 0);
+
+      for my $mode (@bevModes) {
+          $data{$name}{circular}{99}{"accum_csm${c}_${mode}_wseconds"} = 0;                 # kein Reading -> keine Modus-Zuordnung möglich
+          writeToHistory ( { paref => $paref, key => "csm${c}_${mode}_points", val => 0, day => $day, hour => $hod } );
+      }
+
+      $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"} = 0;
+
+      my $other_points = $csme > 0 ? 60 : 0;                                                # geladen, aber Modus unbekannt -> voller Rest, sonst 0
+      writeToHistory ( { paref => $paref, key => "csm${c}_other_points", val => $other_points, day => $day, hour => $hod } );
+
+      debugLog ($paref, 'collectData', "BEV opmode - consumer >$c< - opmode not configured, fallback via csme=$csme -> other=$other_points");
+      return;
+  }
+
+  my $opmode = ReadingsVal ($dvo, $rdo, '');
+
+  if (!grep { $_ eq $opmode } @bevModes) {
+      $opmode = '';                                                                         # unbekannter/leerer Wert -> weder prio noch auto -> fließt in "other"
+  }
+
+  $data{$name}{current}{"csm${c}_active_opmode"} = $opmode;                                 # aktiver Opmode
+
+  debugLog ($paref, 'collectData_long', "collect BEV-opmode data - hour=$chour, last check hour=$lchkhour, delta=$delta, opmode=$dvo:$rdo -> $opmode");
+
+  # --- Gesamt-verstrichene Zeit dieser Stunde (unabhängig vom Modus)
+  my $total_wsecs;
+
+  if ($chour == $lchkhour) {
+      $total_wsecs  = CircularVal ($name, 99, "accum_csm${c}_total_wseconds", 0);
+      $total_wsecs += $delta;
+      $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"} = $total_wsecs;
+  }
+  else {
+      $total_wsecs = 0;
+      $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"} = 0;                       # neue Stunde -> Reset
+  }
+
+  # --- Akkumulation gewichteter Sekunden je Modus (reine Zeit, keine Modulation)
+  my ($prio_points, $auto_points) = (0, 0);
+
+  for my $mode (@bevModes) {
+      my $key = "accum_csm${c}_${mode}_wseconds";
+
+      if ($chour == $lchkhour) {
+          my $wsecs  = CircularVal ($name, 99, $key, 0);
+          $wsecs    += $delta if($mode eq $opmode);                                         # nur der aktive Status akkumuliert Zeit
+          $data{$name}{circular}{99}{$key} = $wsecs;
+      }
+      else {
+          $data{$name}{circular}{99}{$key} = 0;                                             # neue Stunde -> Reset
+      }
+
+      my $wsecs    = $data{$name}{circular}{99}{$key};
+      my $points   = $wsecs ? sprintf ("%.1f", $wsecs / 60) : 0;
+      $prio_points = $points if($mode eq 'prio');
+      $auto_points = $points if($mode eq 'auto');
+
+      writeToHistory ( { paref => $paref, key => "csm${c}_${mode}_points", val => $points, day => $day, hour => $hod } );
+  }
+
+  # --- "other" als Rest der bislang verstrichenen Stundenzeit
+  my $total_points = $total_wsecs ? sprintf ("%.1f", $total_wsecs / 60) : 0;
+  my $other_points = $total_points - $prio_points - $auto_points;
+  $other_points    = 0 if $other_points < 0;                                                # Rundungsschutz (sprintf-Rundung beider Summanden)
+
+  writeToHistory ( { paref => $paref, key => "csm${c}_other_points", val => $other_points, day => $day, hour => $hod } );
 
 return;
 }
@@ -28864,66 +28995,6 @@ return;
 #  zweiten EVs im selben Haushalt kompensiert/verwaesserrt.
 #  Rueckgabewert ist die rohe Aggregation, NICHT netzwerkfertig
 #  normiert -> dafuer _aiFannNormBevSocDeficit im Hauptloop.
-###############################################################
-sub _aiFannBevConsumerAggregate {
-  my ($rec) = @_;                                                                       # Stundendatensatz Referenz
-
-  my @ids = $rec->{bevcsm} ? (split /\s*,\s*/, $rec->{bevcsm}) : ();                    # alle definierten BEV Consumer als Array
-
-  my ($load, $n_active, $n_reporting, $deficit_sum, $n_batcap)    = (0, 0, 0, 0, 0);
-  my ($energy_remaining_sum, $charge_intensity_sum, $n_intensity) = (0, 0, 0);
-
-  for my $id (@ids) {
-      my $e       = $rec->{"csme$id"};                                                  # Energieverbrauch des BEV in der Stunde
-      my $soc     = $rec->{"bevcsmSoC$id"};                                             # SoC des BEV in der Stunde
-      my $tsoc    = $rec->{"bevcsmTargSoC$id"};                                         # Ziel-SoC
-      my $batcap  = $rec->{"bevcsmBatCap$id"};
-      my $pwr     = $rec->{"bevcsmPwr$id"};
-      my $minutes = $rec->{"minutescsm$id"};
-
-      if (defined $e && $e > 0) {
-          $load += $e;
-          $n_active++;
-      }
-
-      if (defined $minutes) {                                                           # Ladeintensität: wie viel der Stunde wurde geladen
-          $charge_intensity_sum += clampValue ($minutes / 60, 0, 1);
-          $n_intensity++;
-      }
-
-      next if !defined $soc || !defined $tsoc;                                          # keine Telemetrie diese Stunde -> ignorieren
-
-      $n_reporting++;
-
-      my $deficit_pct = clampValue (($tsoc - $soc) / 100, 0, 1);
-      $deficit_sum   += $deficit_pct;                                                   # Floor pro EV, siehe Kommentar oben
-
-      if (defined $batcap && $batcap > 0) {                                             # Absolute verbleibende Lademenge wenn BatCap bekannt
-          $energy_remaining_sum += $deficit_pct * $batcap;
-          $n_batcap++;
-      }
-  }
-
-  my $n = scalar @ids;                                                                  # Anzahl BEV-Consumer
-
-  return {
-      active           => $n_active ? 1 : 0,
-      load             => $load,                                                        # später zu normieren
-      n_active_ratio   => $n           ? ($n_active             / $n)           : 0,
-      soc_deficit      => $n_reporting ? ($deficit_sum          / $n_reporting) : 0,    # Wert jetzt unabhängig vom Ladekontext -> ständige Aufzeichnung SOC auch wenn BEV nicht zuHause
-      energy_remaining => $n_batcap    ? ($energy_remaining_sum / $n_batcap)    : 0,    # später zu normieren
-      charge_intensity => $n_intensity ? ($charge_intensity_sum / $n_intensity) : 0,
-  };
-}
-
-###############################################################
-#  Aggregiert BEV-Rohdaten eines Stundendatensatzes (rec)
-#  soc_deficit: pro EV auf 0..1 geflooret BEVOR die Mittelung
-#  über mehrere EVs erfolgt, damit ein bereits volles EV (Defizit
-#  rechnerisch negativ) nicht das reale Ladebeduerfnis eines
-#  zweiten EVs im selben Haushalt kompensiert/verwaesserrt.
-#  Rueckgabewert ist die rohe Aggregation, NICHT netzwerkfertig
-#  normiert -> dafuer _aiFannNormBevSocDeficit im Hauptloop.
 #
 #  prio_frac/auto_frac/other_frac: Opmode-Punkte über alle BEV-
 #  Consumer gepoolt (analog zu HP-Opmode-Aggregation), Bezugs-
@@ -28995,6 +29066,53 @@ sub _aiFannBevConsumerAggregate {
                               ? $mode_totals{$mode} / $mode_total_points
                               : 0;
   }
+
+return \%result;
+}
+
+################################################################
+#  Aggregiert HP Opmode Punkte über alle WP-Consumer eines
+#  Datensatzes zu normierten Modusfraktionen (0..1).
+#  Gibt immer einen vollständigen Hash zurück (0-Defaults).
+################################################################
+sub _aiFannHpOpmodeAggregate {
+  my $rec = shift;
+
+  my @modes        = split /\|/, HPOPMODES;
+  my %totals       = map { $_ => 0 } @modes;
+  my $total_points = 0;
+  my %result;
+
+  $result{active_frac} = 0;                                                     # Initialisieren für Early Return
+  for my $mode (@modes) {
+      next if $mode eq 'off';
+      $result{"${mode}_frac"} = 0;
+  }
+
+  my @ids = $rec->{hpcsm} ? (split /\s*,\s*/, $rec->{hpcsm}) : ();              # alle definierten WP Consumer als Array
+
+  return \%result if !scalar @ids;                                              # leerer Hash wenn keine WP definiert
+
+  for my $cn (@ids) {
+      my $c = sprintf "%02d", $cn;
+
+      for my $mode (@modes) {
+          next if $mode eq 'off';
+          my $pts         = $rec->{"csm${c}_${mode}_points"} // 0;
+          $totals{$mode} += $pts;
+          $total_points  += $pts;
+      }
+  }
+
+  for my $mode (@modes) {
+      next if $mode eq 'off';
+      $result{"${mode}_frac"} = $total_points > 0
+                              ? $totals{$mode} / $total_points                  # Anteil des Modus (0..1)
+                              : 0;
+  }
+
+  $result{active_frac} = $total_points / 60;                                    # Aktivitätsgrad der Stunde (0..1, max=60 Punkte)
+  $result{active_frac} = 1 if $result{active_frac} > 1;                         # Clamp gegen Rundungsfehler
 
 return \%result;
 }
@@ -33670,29 +33788,56 @@ sub _listDataPoolCircular {
           my $ltransfer   = CircularVal ($name, $idx, 'last_transfer',            '-');
           my $accum_secs  = CircularVal ($name, $idx, 'accum_presence_seconds',   '-');
 
-          # --- accum_csm wseconds (WP Opmode gewichtete Sekunden)
+          
           my @hpStates = split /\|/, HPOPMODES;
-          my $hpwsec;
+          my @bevModes = split /\|/, BEVOPMODES;
+          
+          push @bevModes, 'total';
+          my ($hpwsec, $bevsec);
 
           for my $cn (1..MAXCONSUMER) {
               $cn        = sprintf "%02d", $cn;
+              
+              # --- accum_csm wseconds (WP Opmode gewichtete Sekunden)
               my $kcount = 0;
               my $cnwsec;
-
+              
               for my $s (@hpStates) {
                   my $key = "accum_csm${cn}_${s}_wseconds";
                   my $val = CircularVal ($name, $idx, $key, undef);
                   next if !defined $val;
 
-                  $cnwsec  .= ', '       if( $cnwsec && $kcount % 4 != 0);
-                  $cnwsec  .= "\n      " if( $cnwsec && $kcount % 4 == 0);
+                  $cnwsec  .= ', '       if($cnwsec && $kcount % 4 != 0);
+                  $cnwsec  .= "\n      " if($cnwsec && $kcount % 4 == 0);
                   $cnwsec  .= "${key}: $val";
                   $kcount++;
               }
 
               next if !$cnwsec;
+              
               $hpwsec .= "\n      " if($hpwsec);
               $hpwsec .= $cnwsec;
+              
+              
+              # --- accum_csm wseconds (BEV Opmode gewichtete Sekunden)
+              $kcount = 0;
+              $cnwsec = undef;
+
+              for my $bm (@bevModes) {
+                  my $key = "accum_csm${cn}_${bm}_wseconds";
+                  my $val = CircularVal ($name, $idx, $key, undef);
+                  next if !defined $val;
+
+                  $cnwsec  .= ', '       if($cnwsec && $kcount % 4 != 0);
+                  $cnwsec  .= "\n      " if($cnwsec && $kcount % 4 == 0);
+                  $cnwsec  .= "${key}: $val";
+                  $kcount++;
+              }
+
+              next if !$cnwsec;
+              
+              $bevsec .= "\n      " if($bevsec);
+              $bevsec .= $cnwsec;
           }
 
           # --- accum_csm rcmd_seconds (ConsumptionRecommended gewichtete Sekunden)
