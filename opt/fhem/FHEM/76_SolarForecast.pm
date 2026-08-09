@@ -324,6 +324,7 @@ use constant {
 
   BATSOCCHGDAY    => 5,                                                             # Batterie: prozentuale SoC Anpassung pro Tag
   BEAMWIDTH       => 20,                                                            # default Balkenbreite
+  BEVOPMODES      => 'prio|auto',                                                   # BEV Lademodes, Modus 'other' wird mit nicht zugeordneten Wert im Code ergänzt
   BEVTGTSOC       => 80,                                                            # default Ziel-SoC für E-Auto Batterieladung
   BHEIGHTLEVEL    => 200,                                                           # default Multiplikator zur Festlegung der maximalen Balkenhöhe
   B1COLDEF        => 'FFAC63',                                                      # default Farbe Beam 1
@@ -28915,49 +28916,85 @@ sub _aiFannBevConsumerAggregate {
   };
 }
 
-################################################################
-#  Aggregiert HP Opmode Punkte über alle WP-Consumer eines
-#  Datensatzes zu normierten Modusfraktionen (0..1).
-#  Gibt immer einen vollständigen Hash zurück (0-Defaults).
-################################################################
-sub _aiFannHpOpmodeAggregate {
-  my $rec = shift;
+###############################################################
+#  Aggregiert BEV-Rohdaten eines Stundendatensatzes (rec)
+#  soc_deficit: pro EV auf 0..1 geflooret BEVOR die Mittelung
+#  über mehrere EVs erfolgt, damit ein bereits volles EV (Defizit
+#  rechnerisch negativ) nicht das reale Ladebeduerfnis eines
+#  zweiten EVs im selben Haushalt kompensiert/verwaesserrt.
+#  Rueckgabewert ist die rohe Aggregation, NICHT netzwerkfertig
+#  normiert -> dafuer _aiFannNormBevSocDeficit im Hauptloop.
+#
+#  prio_frac/auto_frac/other_frac: Opmode-Punkte über alle BEV-
+#  Consumer gepoolt (analog zu HP-Opmode-Aggregation), Bezugs-
+#  größe ist die Summe aller Modus-Punkte im Datensatz.
+###############################################################
+sub _aiFannBevConsumerAggregate {
+  my ($rec) = @_;                                                                       # Stundendatensatz Referenz
+  
+  my @ids   = $rec->{bevcsm} ? (split /\s*,\s*/, $rec->{bevcsm}) : ();                  # alle definierten BEV Consumer als Array
+  my @modes = split /\|/, BEVOPMODES;                                                   # prio|auto
+  
+  push @modes, 'other';
 
-  my @modes        = split /\|/, HPOPMODES;
-  my %totals       = map { $_ => 0 } @modes;
-  my $total_points = 0;
-  my %result;
+  my ($load, $n_active, $n_reporting, $deficit_sum, $n_batcap)    = (0, 0, 0, 0, 0);
+  my ($energy_remaining_sum, $charge_intensity_sum, $n_intensity) = (0, 0, 0);
+  
+  my %mode_totals       = map { $_ => 0 } @modes;
+  my $mode_total_points = 0;
 
-  $result{active_frac} = 0;                                                     # Initialisieren für Early Return
-  for my $mode (@modes) {
-      next if $mode eq 'off';
-      $result{"${mode}_frac"} = 0;
-  }
+  for my $id (@ids) {
+      my $e       = $rec->{"csme$id"};                                                  # Energieverbrauch des BEV in der Stunde
+      my $soc     = $rec->{"bevcsmSoC$id"};                                             # SoC des BEV in der Stunde
+      my $tsoc    = $rec->{"bevcsmTargSoC$id"};                                         # Ziel-SoC
+      my $batcap  = $rec->{"bevcsmBatCap$id"};
+      my $pwr     = $rec->{"bevcsmPwr$id"};
+      my $minutes = $rec->{"minutescsm$id"};
 
-  my @ids = $rec->{hpcsm} ? (split /\s*,\s*/, $rec->{hpcsm}) : ();              # alle definierten WP Consumer als Array
+      if (defined $e && $e > 0) {
+          $load += $e;
+          $n_active++;
+      }
+      if (defined $minutes) {                                                           # Ladeintensität: wie viel der Stunde wurde geladen
+          $charge_intensity_sum += clampValue ($minutes / 60, 0, 1);
+          $n_intensity++;
+      }
 
-  return \%result if !scalar @ids;                                              # leerer Hash wenn keine WP definiert
+      for my $mode (@modes) {                                                           # Opmode-Punkte poolen
+          my $pts = $rec->{"csm${id}_${mode}_points"} // 0;
+          $mode_totals{$mode} += $pts;
+          $mode_total_points  += $pts;
+      }
 
-  for my $cn (@ids) {
-      my $c = sprintf "%02d", $cn;
-
-      for my $mode (@modes) {
-          next if $mode eq 'off';
-          my $pts         = $rec->{"csm${c}_${mode}_points"} // 0;
-          $totals{$mode} += $pts;
-          $total_points  += $pts;
+      next if !defined $soc || !defined $tsoc;                                          # keine Telemetrie diese Stunde -> ignorieren
+      
+      $n_reporting++;
+      
+      my $deficit_pct = clampValue (($tsoc - $soc) / 100, 0, 1);
+      $deficit_sum   += $deficit_pct;                                                   # Floor pro EV, siehe Kommentar oben
+      
+      if (defined $batcap && $batcap > 0) {                                             # Absolute verbleibende Lademenge wenn BatCap bekannt
+          $energy_remaining_sum += $deficit_pct * $batcap;
+          $n_batcap++;
       }
   }
 
-  for my $mode (@modes) {
-      next if $mode eq 'off';
-      $result{"${mode}_frac"} = $total_points > 0
-                              ? $totals{$mode} / $total_points                  # Anteil des Modus (0..1)
+  my $n = scalar @ids;                                                                  # Anzahl BEV-Consumer
+
+  my %result = (
+      active           => $n_active ? 1 : 0,
+      load             => $load,                                                        # später zu normieren
+      n_active_ratio   => $n           ? ($n_active             / $n)           : 0,
+      soc_deficit      => $n_reporting ? ($deficit_sum          / $n_reporting) : 0,    # Wert jetzt unabhängig vom Ladekontext -> ständige Aufzeichnung SOC auch wenn BEV nicht zuHause
+      energy_remaining => $n_batcap    ? ($energy_remaining_sum / $n_batcap)    : 0,    # später zu normieren
+      charge_intensity => $n_intensity ? ($charge_intensity_sum / $n_intensity) : 0,
+  );
+
+  for my $mode (@modes) {                                                               # BEV Mode Punkte in Ergebnis einfügen
+      $result{"${mode}_frac"} = $mode_total_points > 0
+                              ? $mode_totals{$mode} / $mode_total_points
                               : 0;
   }
-
-  $result{active_frac} = $total_points / 60;                                    # Aktivitätsgrad der Stunde (0..1, max=60 Punkte)
-  $result{active_frac} = 1 if $result{active_frac} > 1;                         # Clamp gegen Rundungsfehler
 
 return \%result;
 }

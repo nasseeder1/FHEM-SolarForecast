@@ -10,7 +10,8 @@ xx.xx.2026 Rev. xxxxx
 - Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse
 - neuer Debug Modus aiData_long
 
-
+- <b>Intern:</b> 
+  * _aiFannBevConsumerAggregate: BEV Modes eingefügt
 
 ## [v2.9.4]
 03.08.2026 Rev. 31539
