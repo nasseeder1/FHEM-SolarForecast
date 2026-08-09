@@ -14365,7 +14365,7 @@ sub _transferAPIRadiationValues {
           $sunaz  = HistoryVal ($name, $wtday, $hod, 'sunaz',  undef);
 
           if (!defined $sunalt || !defined $sunaz) {                                                        # Fallback Berechnung
-              Log3 ($name, 1, "$name - sunPos2 darf nicht vorkommen!! - pvHist fd: $fd, hod_1: $hod");
+              Log3 ($name, 1, "$name - sunPos2 must not occur!! - pvHist fd: $fd, hod_1: $hod");
               __calcSunPosition ($paref);
               $sunalt = HistoryVal ($name, $wtday, $hod, 'sunalt', undef);
               $sunaz  = HistoryVal ($name, $wtday, $hod, 'sunaz',  undef);
@@ -14376,7 +14376,7 @@ sub _transferAPIRadiationValues {
           $sunaz  = NexthoursVal ($name, $nhtstr, 'sunaz',  0);
 
           if (!defined $sunalt || !defined $sunaz) {
-              Log3 ($name, 1, "$name - sunPos2 darf nicht vorkommen!! - Nexthours fd: $fd, hod_1: $hod");
+              Log3 ($name, 1, "$name - sunPos2 must not occur!! - Nexthours fd: $fd, hod_1: $hod");
               __calcSunPosition ($paref);
               $sunalt = NexthoursVal ($name, $nhtstr, 'sunalt', 0);
               $sunaz  = NexthoursVal ($name, $nhtstr, 'sunaz',  0);
@@ -14428,7 +14428,7 @@ sub _transferAPIRadiationValues {
 
       }
       else {
-          debugLog ($paref, 'aiData', $msg) if(askLogtime ($name, $msg, 5));
+          debugLog ($paref, 'aiData', $msg) if(askLogtime ($name, $msg, 1233));
       }
 
       if ($useai) {
@@ -14438,8 +14438,9 @@ sub _transferAPIRadiationValues {
           delete $data{$name}{nexthours}{$nhtstr}{pvaifc};
           $data{$name}{nexthours}{$nhtstr}{aihit} = 0;
           $pvfc = $pvapifc;
-
-          debugLog ($paref, 'aiData', "use PV from API (no AI or AI result tolerance overflow) -> hod: $hod, Rad1h: ".(defined $rad1h ? $rad1h : '-').", pvfc: $pvfc Wh");
+          
+          my $out = "use PV from API (no AI or AI result tolerance overflow) -> hod: $hod, Rad1h: ".(defined $rad1h ? $rad1h : '-').", pvfc: $pvfc Wh";
+          debugLog ($paref, 'aiData', $out) if(askLogtime ($name, $out, 1233));
       }
 
       $data{$name}{nexthours}{$nhtstr}{pvapifc}    = $pvapifc;                                          # durch API gelieferte PV Forecast mit Korrekturfaktor
@@ -28348,7 +28349,7 @@ sub aiFannConInfer {
   my $hash = $defs{$name};
   my ($msg, $presence, $comftemp);
 
-  debugLog ($paref, 'aiData', "AI FANN - Start checking consumption values (further output depends on content and time of the last log entry)");
+  debugLog ($paref, 'aiData', "AI FANN - Start checking consumption values (further output depends on the content and time of the last log entry)");
   
   $data{$name}{current}{$fanntyp.'NNGetResultState'} = 'ok';
 
@@ -28456,7 +28457,7 @@ sub aiFannConInfer {
       }
   }
 
-  debugLog ($paref, 'aiData', "AI FANN - using profile: $profile") if(askLogtime ($name, "Infer_$profile", 1800));
+  debugLog ($paref, 'aiData', "AI FANN - using profile: $profile") if(askLogtime ($name, "Infer_$profile", 1223));
 
   # Rohdaten in Reihenfolge extrahieren und vorbereiten
   #######################################################
@@ -28512,7 +28513,7 @@ sub aiFannConInfer {
            && defined $isday) {
 
              debugLog ($paref, 'aiData', "AI FANN - Record $nhstr skipped: data needed are incomplete or legacyconfc < 0")
-                        if(askLogtime ($name, "Infer_$nhstr", 1800));
+                        if(askLogtime ($name, "Infer_$nhstr", 1223));
              
              next;
       }
@@ -28795,7 +28796,7 @@ sub aiFannConInfer {
           
           Log3 ($name, 1, "$name DEBUG> AI FANN '$fanntyp' forecast blend - hod: $hod -> prediction=$prediction, ".
                            "hist_ref=$hist_ref, blend_alpha=$blend_alpha, forward_val=$forward_val")
-              if(askLogtime ($name, "conBlendLog_$hod", 1800));
+              if(askLogtime ($name, "conBlendLog_$hod", 1223));
       }
 
       push @flat_targets,     $forward_val;                                                 # V 2.6.10 statt direkt $prediction
@@ -28830,7 +28831,7 @@ sub aiFannConInfer {
           my $dthr = (split ':', $starttime, 2)[0];
           $msg     = "AI FANN con fc - $dthr, hod: $hod -> AI=$denorm_val, legacy=$legacyconfc, ".
                      "final: $confc_final Wh (alpha=$alpha, tot_corr=$tc Wh, bias/drift zone=$bias_zone/$drift_zone)";
-          Log3 ($name, 1, "$name DEBUG> $msg") if(askLogtime ($name, "${dthr}_$hod", 1800));
+          Log3 ($name, 1, "$name DEBUG> $msg") if(askLogtime ($name, "${dthr}_$hod", 1813));
       }
 
       # Daten speichern
@@ -32653,7 +32654,7 @@ sub aiGetResult {
 
   my $hash = $defs{$name};
 
-  return 'AI usage for PV forecast is not prepared' if(!isPrepared4AI ($hash, 'full'));
+  return 'AI::DecisionTree usage for PV forecast is not prepared' if(!isPrepared4AI ($hash, 'full'));
 
   my $objref = AiDetreeVal ($hash, 'aitrained', '');
   return 'AI trained object is missed or not an ARRAY' if(ref $objref ne 'ARRAY');
@@ -32663,7 +32664,7 @@ sub aiGetResult {
 
   my $cst = [gettimeofday];                                                         # Startzeit
 
-  debugLog ($paref, 'aiData', "Start AI result check for hod: $hod") if(askLogtime ($name, "${nhtstr}_$hod", 1800));
+  debugLog ($paref, 'aiData', "Start AI::DecisionsTree result check for hod: $hod") if(askLogtime ($name, "${nhtstr}_$hod", 1800));
 
   my $wcc    = NexthoursVal ($hash, $nhtstr, 'wcc',       0);
   my $wid    = NexthoursVal ($name, $nhtstr, 'weatherid', 0);
@@ -32704,7 +32705,7 @@ sub aiGetResult {
                    return $@;
                  };
 
-      debugLog ($paref, 'aiData', "got AI result from Tree number $tn: $res") if(defined $res && askLogtime ($name, "${nhtstr}_$hod", 1800));
+      debugLog ($paref, 'aiData', "got AI::DecisionTree result from Tree number $tn: $res") if(defined $res && askLogtime ($name, "${nhtstr}_$hod", 1800));
   }
 
   my $tprnum = scalar @total_prediction;
