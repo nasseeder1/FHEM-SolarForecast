@@ -14439,8 +14439,8 @@ sub _transferAPIRadiationValues {
           $data{$name}{nexthours}{$nhtstr}{aihit} = 0;
           $pvfc = $pvapifc;
           
-          my $out = "use PV from API (no AI or AI result tolerance overflow) -> hod: $hod, Rad1h: ".(defined $rad1h ? $rad1h : '-').", pvfc: $pvfc Wh";
-          debugLog ($paref, 'aiData', $out) if(askLogtime ($name, $out, 1233));
+          my $out = "use PV from API (no AI or AI result tolerance overflow) -> day=$wtday, hod=$hod, Rad1h=".(defined $rad1h ? $rad1h : '-').", pvfc=$pvfc Wh";
+          debugLog ($paref, 'aiData', $out) if(askLogtime ($name, "PVfromAPI_${wtday}_$hod", 1233));
       }
 
       $data{$name}{nexthours}{$nhtstr}{pvapifc}    = $pvapifc;                                          # durch API gelieferte PV Forecast mit Korrekturfaktor
