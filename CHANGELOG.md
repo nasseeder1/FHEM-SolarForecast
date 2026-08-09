@@ -5,11 +5,12 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 ## [Unreleased]
 xx.xx.2026 Rev. xxxxx
 
-- kleinere Patches
 - BEV Batteriedaten auch bei nicht aktivierten BEV-Consumer gespeichert
 - Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse
 - neuer Debug Modus aiData_long
+- Verringerung der Log Frequenz bei Debug aiData und aiData_long
 - List pvCircular, pvHistory um BEV accum_csmXX_<mode>_wseconds bzw. BEV csmXX_<mode>_points erweitert
+- weitere kleinere Patches
 
 - <b>Intern:</b> 
   * neue Konstante BEVOPMODES
