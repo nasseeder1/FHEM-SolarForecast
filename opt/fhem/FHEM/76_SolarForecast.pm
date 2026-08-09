@@ -33170,6 +33170,9 @@ sub _listDataPoolPvHist {
   my ($sq, $h, $hexp);
   my $export   = q{};
   my @hpStates = split /\|/, HPOPMODES;
+  my @bevModes = split /\|/, BEVOPMODES;
+  
+  push @bevModes, 'other';
 
   if ( $arg =~ /=/ ) { $arg =~ s/,(?=[A-Za-z_][A-Za-z0-9_]*=)/ /g; }
   else               { $arg =~ s/,/ /g; }
@@ -33283,8 +33286,13 @@ sub _listDataPoolPvHist {
                   $entry{$fkey} = HistoryVal ($name, $day, $key, $fkey, undef);
               }
 
-              for my $s (@hpStates) {                                                                   # + WP Opmode-Minuten je Status (nur Stundensätze, kein calc99)
-                  my $fkey = "csm${cf}_${s}_points";
+              for my $s (@hpStates) {                                                                   # + WP Opmode-Punkte je Status (nur Stundensätze, kein calc99)
+                  my $fkey      = "csm${cf}_${s}_points";
+                  $entry{$fkey} = HistoryVal ($name, $day, $key, $fkey, undef);
+              }
+              
+              for my $bm (@bevModes) {                                                                  # + BEV Opmode-Punkte je Status (nur Stundensätze, kein calc99)
+                  my $fkey      = "csm${cf}_${bm}_points";
                   $entry{$fkey} = HistoryVal ($name, $day, $key, $fkey, undef);
               }
 
@@ -33379,6 +33387,10 @@ sub _listDataPoolPvHist {
 
                   for my $s (@hpStates) {                                                               # + WP Opmode-Minuten je Status
                       $csvmap{"csm${cf}_${s}_points"} = "Csm${cf}" . ucfirst ($s) . "Points";
+                  }
+                  
+                  for my $bm (@bevModes) {                                                                  # + BEV Opmode-Punkte je Status (nur Stundensätze, kein calc99)
+                      $csvmap{"csm${cf}_${bm}_points"} = "Csm${cf}" . ucfirst ($bm) . "Points";
                   }
               }
 
@@ -33500,7 +33512,7 @@ sub _listDataPoolPvHist {
           # UND im Sammelblock oben in der Consumer-Schleife per HistoryVal ergänzen.
           for my $c (1..MAXCONSUMER) {
               my $cf = sprintf "%02d", $c;
-              my (@cfields, @hpfields);
+              my (@cfields, @hpfields, @bevfields);
 
               if ($key eq '99') {                                                                           # Tageswerte: Zyklen, Energie, BEV-Daten
                   @cfields = map { "${_}${cf}" }
@@ -33512,7 +33524,8 @@ sub _listDataPoolPvHist {
                               qw (csmt csme minutescsm rcmdcsm exconfc bevcsmSoC
                                   bevcsmTargSoC bevcsmBatCap bevcsmPwr);
 
-                  @hpfields = map { "csm${cf}_${_}_points" } @hpStates;                                     # WP Opmode-Minuten, separat behandelt
+                  @hpfields  = map { "csm${cf}_${_}_points" } @hpStates;                                    # WP Opmode-Punkte, separat behandelt
+                  @bevfields = map { "csm${cf}_${_}_points" } @bevModes;                                    # BEV Opmode-Punkte je Modus
               }
 
               my @show = grep { defined $entry{$_} && $entry{$_} ne '' && $entry{$_} ne '-' } @cfields;
@@ -33537,6 +33550,15 @@ sub _listDataPoolPvHist {
                           $ret .= join(', ', map { "$_: $entry{$_}" } @line2);
                           $ret .= "\n            ";
                       }
+                  }
+              }
+              
+              if (@bevfields) {
+                  my @bevshow = grep { defined $entry{$_} && $entry{$_} ne '' && $entry{$_} ne '-' } @bevfields;
+
+                  if (@bevshow) {                                                                           # nur bei BEV-Consumer überhaupt befüllt
+                      $ret .= join (', ', map { "$_: $entry{$_}" } @bevshow);
+                      $ret .= "\n            ";
                   }
               }
           }
