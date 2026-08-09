@@ -11,6 +11,7 @@ xx.xx.2026 Rev. xxxxx
 - neuer Debug Modus aiData_long
 
 - <b>Intern:</b> 
+  * neue Konstante BEVOPMODES
   * _aiFannBevConsumerAggregate: BEV Modes eingefügt
 
 ## [v2.9.4]
