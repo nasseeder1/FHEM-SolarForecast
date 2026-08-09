@@ -28348,7 +28348,8 @@ sub aiFannConInfer {
   my $hash = $defs{$name};
   my ($msg, $presence, $comftemp);
 
-  debugLog ($paref, 'aiData', "Start AI FANN consumption result check");
+  debugLog ($paref, 'aiData', "AI FANN - Start checking consumption values (further output depends on content and time of the last log entry)");
+  
   $data{$name}{current}{$fanntyp.'NNGetResultState'} = 'ok';
 
   my $pv_max_limit = _pvMaxLimit ($name);
@@ -28356,6 +28357,7 @@ sub aiFannConInfer {
   if (!$pv_max_limit) {
       $msg = 'no peak output is provided by the PV system';
       $data{$name}{current}{$fanntyp.'NNGetResultState'} = $msg;
+      
       debugLog ($paref, 'aiData', "AI FANN - consumption prediction aborted: No peak output is provided by the PV system");
 
       return $msg;
@@ -28454,7 +28456,7 @@ sub aiFannConInfer {
       }
   }
 
-  debugLog ($paref, 'aiData', "AI FANN - using profile: $profile");
+  debugLog ($paref, 'aiData', "AI FANN - using profile: $profile") if(askLogtime ($name, "Infer_$profile", 1800));
 
   # Rohdaten in Reihenfolge extrahieren und vorbereiten
   #######################################################
@@ -28509,7 +28511,9 @@ sub aiFannConInfer {
            && defined $temp
            && defined $isday) {
 
-             debugLog ($paref, 'aiData', "AI FANN - Record $nhstr skipped: data needed are incomplete or legacyconfc < 0");
+             debugLog ($paref, 'aiData', "AI FANN - Record $nhstr skipped: data needed are incomplete or legacyconfc < 0")
+                        if(askLogtime ($name, "Infer_$nhstr", 1800));
+             
              next;
       }
 
@@ -28788,9 +28792,10 @@ sub aiFannConInfer {
       if ($debug =~ /aiData_long/xs && $hod >= 19 && $hod <= 24) {
           $hist_ref    = round2 ($hist_ref);
           $blend_alpha = round2 ($blend_alpha);
+          
           Log3 ($name, 1, "$name DEBUG> AI FANN '$fanntyp' forecast blend - hod: $hod -> prediction=$prediction, ".
                            "hist_ref=$hist_ref, blend_alpha=$blend_alpha, forward_val=$forward_val")
-              if(askLogtime ($name, "conBlendLog_$hod", 3600));
+              if(askLogtime ($name, "conBlendLog_$hod", 1800));
       }
 
       push @flat_targets,     $forward_val;                                                 # V 2.6.10 statt direkt $prediction
@@ -28823,9 +28828,9 @@ sub aiFannConInfer {
 
       if ($debug =~ /aiData/xs) {
           my $dthr = (split ':', $starttime, 2)[0];
-          Log3 ($name, 1, "$name DEBUG> AI FANN con fc - $dthr, hod: $hod -> AI=$denorm_val, legacy=$legacyconfc, ".
-                          "final: $confc_final Wh (alpha=$alpha, tot_corr=$tc Wh, bias/drift zone=$bias_zone/$drift_zone)")
-               if(askLogtime ($name, "confcLog_$hod", 1800));
+          $msg     = "AI FANN con fc - $dthr, hod: $hod -> AI=$denorm_val, legacy=$legacyconfc, ".
+                     "final: $confc_final Wh (alpha=$alpha, tot_corr=$tc Wh, bias/drift zone=$bias_zone/$drift_zone)";
+          Log3 ($name, 1, "$name DEBUG> $msg") if(askLogtime ($name, "${dthr}_$hod", 1800));
       }
 
       # Daten speichern
@@ -32658,7 +32663,7 @@ sub aiGetResult {
 
   my $cst = [gettimeofday];                                                         # Startzeit
 
-  debugLog ($paref, 'aiData', "Start AI result check for hod: $hod");
+  debugLog ($paref, 'aiData', "Start AI result check for hod: $hod") if(askLogtime ($name, "${nhtstr}_$hod", 1800));
 
   my $wcc    = NexthoursVal ($hash, $nhtstr, 'wcc',       0);
   my $wid    = NexthoursVal ($name, $nhtstr, 'weatherid', 0);
@@ -32699,7 +32704,7 @@ sub aiGetResult {
                    return $@;
                  };
 
-      debugLog ($paref, 'aiData', "got AI result from Tree number $tn: $res") if(defined $res);
+      debugLog ($paref, 'aiData', "got AI result from Tree number $tn: $res") if(defined $res && askLogtime ($name, "${nhtstr}_$hod", 1800));
   }
 
   my $tprnum = scalar @total_prediction;
@@ -32707,7 +32712,9 @@ sub aiGetResult {
   if ($tprnum) {
       my $avg_prediction = round0 (avgArray (\@total_prediction, $tprnum));
 
-      debugLog ($paref, 'aiData', qq{AI accurate result found: pvaifc: $avg_prediction (hod: $hod, sunaz: $sunaz, sunalt: $sabin, Rad1h: $rad1h, wcc: $wcc, rr1c: $rr1c, temp: $tbin)});
+      debugLog ($paref, 'aiData', qq{AI accurate result found: pvaifc: $avg_prediction (hod: $hod, sunaz: $sunaz, sunalt: $sabin, Rad1h: $rad1h, wcc: $wcc, rr1c: $rr1c, temp: $tbin)})
+               if(askLogtime ($name, "${nhtstr}_$hod", 1800));
+               
       return ('accurate', $avg_prediction);
   }
 
