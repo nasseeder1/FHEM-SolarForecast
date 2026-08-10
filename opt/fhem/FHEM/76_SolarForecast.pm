@@ -7601,7 +7601,7 @@ INTRO_EN
 
   my $rating  = encode('utf8', ($lang eq 'DE' ? 'Bewertungsüberblick' : 'Rating overview'))."\n";
      $rating .= '- '.$hqtxt{treval}{$lang}.": $retrqal ($retrres)\n";
-     $rating .= '- '.$hqtxt{dpreal}{$lang}.": $dpr_hint\n";
+     $rating .= '- '.$hqtxt{dpreal}{$lang}.": ".(encode('utf8', $dpr_hint))."\n";
      $rating .= '- '.$hqtxt{lrnbeh}{$lang}.": ".(encode('utf8', $epoch_label))." ($epoch_rel_pct % ".$hqtxt{utiopc}{$lang}.")\n";
      $rating .= '- '.$hqtxt{nserat}{$lang}.": ".(encode('utf8', $display_noiselvl))." ($nslvl)\n";
      $rating .= '- '.$hqtxt{drfrat}{$lang}.": ".(encode('utf8', $display_driftflag))."\n";
@@ -7919,7 +7919,7 @@ sub __getaiFannState {            ## no critic "not used"
                      : "(".$hqtxt{hcause}{$lang}.": ".(encode('utf8', $display_reason)).")";
 
   my $rating_content = "<b>".$hqtxt{treval}{$lang}.":</b> $modampel ($retrres)\n";
-  $rating_content   .= "<b>".$hqtxt{dpreal}{$lang}.":</b> $dpr_ampel ($dpr_hint)\n";
+  $rating_content   .= "<b>".$hqtxt{dpreal}{$lang}.":</b> $dpr_ampel (".encode('utf8', $dpr_hint).")\n";    
   $rating_content   .= "<b>".$hqtxt{lrnbeh}{$lang}.":</b> $epoch_ampel ".(encode('utf8', $epoch_label))." ($epoch_rel_pct % ".$hqtxt{utiopc}{$lang}.") \n";
   $rating_content   .= "<b>".$hqtxt{setins}{$lang}.":</b> ".(encode('utf8', $epoch_hints))."\n" if($epoch_hints);
   $rating_content   .= "<b>".$hqtxt{nserat}{$lang}.":</b> ".(encode('utf8', $display_noiselvl))." ($nslvl)\n";
