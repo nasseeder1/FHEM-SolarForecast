@@ -14,6 +14,7 @@ xx.xx.2026 Rev. xxxxx
 - weitere kleinere Patches
 
 - <b>Intern:</b> 
+  * __consumerIdentityFp: opmode aus @fpkeys entfernt
   * neue Konstante BEVOPMODES
   * _aiFannBevConsumerAggregate: um BEV Modes erweitert
   * neue Funktion __bevConsumerOpmode

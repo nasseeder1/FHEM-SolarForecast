@@ -9044,7 +9044,10 @@ sub _attrconsumer {                      ## no critic "not used"
       opmode          => { comp => '.*',                                                  must => 0, act => 1 },
       opmodeIcons     => { comp => '.*',                                                  must => 0, act => 1 },
       modulation      => { comp => '(?:[A-Za-z0-9_.äöüÄÖÜß]+:[A-Za-z0-9_.äöüÄÖÜß]+|100)', must => 0, act => 1 },
-
+      
+      # --- nur für bev / heatpump (musts in __attrKeyAction checken)
+      opmode          => { comp => '.*',                                                  must => 0, act => 1 },
+      
       # --- nur für bev (musts in __attrKeyAction checken)
       batCap          => { comp => '(?:\d+$|(?!\d+(?:\.\d+)?:)[^:]+:(?:k?Wh))',  must => 0, act => 1 },
       currSoC         => { comp => '(.*)',                                       must => 0, act => 1 },
@@ -9139,7 +9142,7 @@ sub __consumerIdentityFp {
   $oldh     //= {};
   $oldcodev //= '';
 
-  my @fpkeys = qw(type switchdev opmode);
+  my @fpkeys = qw(type switchdev);
 
   $delreq = 1 if $codev ne $oldcodev;
 
@@ -10745,7 +10748,7 @@ sub __attrKeyAction {
           if ($akey eq 'reductionState') {
               my $rdcinfo = CurrentVal ($name, 'reductionState', '');
 
-              $err = checkDevRdCond ($name, $akey, $rdcinfo, 1, 0, 1);                              # mit Device-Check, Code check
+              ($err) = checkDevRdCond ($name, $akey, $rdcinfo, 1, 0, 1);                            # mit Device-Check, Code check
 
               if ($err) {
                   delete $data{$name}{current}{$akey};
@@ -10762,17 +10765,17 @@ sub __attrKeyAction {
           %devRdgKeys     = map { $_ => 1 } qw(outsideTemp windSpeed)           unless %devRdgKeys;         # Device + Reading, Code optional
 
           if ($devCodeKeys{$akey}) {
-              $err = checkDevRdCond ($name, $akey, $akeyval, 1, 0, 1);                              # mit Device-Check, Code check
+              ($err) = checkDevRdCond ($name, $akey, $akeyval, 1, 0, 1);                            # mit Device-Check, Code check
               return $err if $err;
           }
 
           if ($devRdgCodeKeys{$akey}) {
-              $err = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 1);                              # mit Device-Check, Reading check, Code check
+              ($err) = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 1);                            # mit Device-Check, Reading check, Code check
               return $err if $err;
           }
 
           if ($devRdgKeys{$akey}) {
-              $err = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 0);                              # mit Device-Check, Reading check
+              ($err) = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 0);                            # mit Device-Check, Reading check
               return $err if $err;
           }
       }
@@ -10859,6 +10862,16 @@ sub __attrKeyAction {
           }
 
           # --- Negativtest: diese Schlüssel dürfen nur bei bestimmten type vorkommen
+          if ($akeyval ne 'heatpump' && $akeyval ne 'bev') {                                            # Exklusivschlüssel heatpump
+              my @dont = qw(opmode);
+              my $chk  = 0;
+
+              for my $k (@dont) {
+                  $chk = 1 if(exists $pphash->{$k});
+                  return qq{The key '$k' isn't allowed for consumer type=$akeyval.} if($chk);
+              }
+          }
+          
           if ($akeyval ne 'bev') {                                                                      # Exklusivschlüssel bev
               my @dont = qw(batCap currSoC targetSoC evid timeOfDeparture);
               my $chk  = 0;
@@ -10870,7 +10883,7 @@ sub __attrKeyAction {
           }
 
           if ($akeyval ne 'heatpump') {                                                                 # Exklusivschlüssel heatpump
-              my @dont = qw(opmode opmodeIcons modulation);
+              my @dont = qw(opmodeIcons modulation);
               my $chk  = 0;
 
               for my $k (@dont) {
@@ -10926,20 +10939,24 @@ sub __attrKeyAction {
       elsif ($akey eq 'opmode' || $akey eq 'modulation') {
           if ($akeyval =~ /.*:.*/xs) {
               if ($akey eq 'opmode') {
-                  my ($dv, $rd) = split ':', $akeyval;
-                  ($err)        = isDeviceValid ( { name => $name, obj => $dv, method => 'string' } );
+                  ($err, my $dv, my $rd) = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 0);            # mit Device-Check, Reading check
                   return $err if($err);
 
                   my $opmode = ReadingsVal ($dv, $rd, '');
-                  my $poom   = HPOPMODES;
+                  my $poom   = '';
+                  
+                  $poom = $pphash->{type} eq 'heatpump' 
+                        ? HPOPMODES 
+                        : $pphash->{type} eq 'bev'
+                        ? '.*'                                                                          # BEV opmode sind nicht fix
+                        : '';
 
                   if ($opmode !~ /^(?:$poom)$/xs) {
                       return "The reading '$rd' of device '$dv' is invalid or does not contain a valid $akey";
                   }
               }
               elsif ($akey eq 'modulation') {
-                  my ($dv, $rd) = split ':', $akeyval;
-                  ($err)        = isDeviceValid ( { name => $name, obj => $dv, method => 'string' } );
+                  ($err, my $dv, my $rd) = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 0);            # mit Device-Check, Reading check
                   return $err if($err);
 
                   my $modulation = ReadingsVal ($dv, $rd, '');
@@ -37559,7 +37576,7 @@ sub checkDevRdCond {
       }
   }
 
-return;
+return ($err, $dev, $rdg, $code);
 }
 
 ################################################################
@@ -41169,6 +41186,13 @@ to ensure that the system configuration is correct.
 			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
 			<tr><td> <b>etotal</b>         </td><td>The key is a required field using the syntax specified above. The value is the total amount of charging energy consumed.                           </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>opmode</b>         </td><td>Defines a &lt;Device&gt;:&lt;Reading&gt; combination that returns the current charging mode (optional).                                            </td></tr>
+            <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b>                                                                                                      </td></tr>
+            <tr><td>                       </td><td>The following modes are evaluated: <b>prio auto</b>                                                                                                </td></tr>
+            <tr><td>                       </td><td><b>prio</b> - Any excess PV power is used to charge the BEV before being stored in the home battery                                                </td></tr>
+            <tr><td>                       </td><td><b>auto</b> - BEV charging is treated on an equal footing with home storage systems and other loads                                                </td></tr>
+            <tr><td>                       </td><td>All other values are internally assigned to the 'other' charging mode.                                                                             </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>pcurr</b>          </td><td>The key is a required field using the syntax specified above. The value is the current charging power.                                             </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>power</b>          </td><td>Maximum charging power of the vehicle or wallbox using the syntax defined above.                                                                   </td></tr>
@@ -44323,6 +44347,13 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
 			<tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;Einheit&gt;</b> - Reading welches die Kapazität liefert und die Einheit der Wertes (Wh, kWh)                                </td></tr>
 			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
 			<tr><td> <b>etotal</b>         </td><td>Der Schlüssel ist eine Pflichtangabe mit der oben angegebenen Syntax. Der Wert ist die gesamte verbrauchte Ladeenergie.                            </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>opmode</b>         </td><td>definiert eine &lt;Device&gt;:&lt;Reading&gt; Kombination welche den aktuellen Lademodus liefert (optionale Angabe).                               </td></tr>
+            <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b>                                                                                                      </td></tr>
+            <tr><td>                       </td><td>Ausgewertet werden folgende Modi: <b>prio auto</b>                                                                                                 </td></tr>
+            <tr><td>                       </td><td><b>prio</b> - vorhandener PV-Überschuss wird mit Priorität vor dem Hausspeicher zum Laden des BEV verwendet                                        </td></tr>
+            <tr><td>                       </td><td><b>auto</b> - BEV Laden ist mit dem Hausspeicher und sonstigen Verbrauchern gleichberechtigt                                                       </td></tr>
+            <tr><td>                       </td><td>Alle anderen Werte werden intern dem Lademodus 'other' zugeordnet.                                                                                 </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>pcurr</b>          </td><td>Der Schlüssel ist eine Pflichtangabe mit der oben angegebenen Syntax. Der Wert ist die aktuelle Ladeleistung.                                      </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
