@@ -2585,6 +2585,19 @@ bev_base => sub {
 },
 
 # --------------------------------------------------------
+# Semantik: BEV Ladeprioritäts-Modus (Punktesystem)
+# Alle Werte sind Lag1 (Vorstunde)
+# --------------------------------------------------------
+bev_opmode => sub {
+    my ($f) = @_;
+    return [
+        $f->{bev_prio_frac_lag1},                                       # Anteil PV-Prio-Laden Vorstunde
+        $f->{bev_auto_frac_lag1},                                       # Anteil Auto/Überschuss-Laden Vorstunde
+        $f->{bev_other_frac_lag1},                                      # Anteil unklassifiziertes/manuelles Laden Vorstunde
+    ];
+},
+
+# --------------------------------------------------------
 # Semantik: BEV + PV-gesteuertes Lademanagement
 # --------------------------------------------------------
 bev_pv_smart_charge => sub {
@@ -2593,6 +2606,8 @@ bev_pv_smart_charge => sub {
         softplus($f->{pv_norm} * $f->{bev_active_lag1}),                # Ladefortsetzung bei PV-Überschuss
         softplus($f->{pv_norm} * $f->{bev_soc_deficit_lag1_norm}),      # PV-Überschuss trifft offenen Ladebedarf
         softplus($f->{pv_drop} * $f->{bev_active_lag1}),                # Lastabwurf bei PV-Einbruch während Ladung
+        
+        softplus($f->{pv_norm} * $f->{bev_prio_frac_lag1}),             # NEU: PV-Überschuss trifft tatsächlichen Prio-Lademodus (spezifischer als bev_active_lag1)
     ];
 },
 
@@ -26930,6 +26945,7 @@ sub aiFannConDataLoad {
   my (@presence_values, @holiday_values);
   my (@bev_active_values, @bev_load_values, @bev_n_active_values, @bev_soc_deficit_norm_values);
   my (@bev_energy_remaining_values, @bev_charge_intensity_values);
+  my (@bev_prio_frac_values, @bev_auto_frac_values, @bev_other_frac_values);
   my (@hp_heating_frac_values, @hp_defrost_frac_values, @hp_hotwater_frac_values, @hp_cooling_frac_values,
       @hp_pool_frac_values, @hp_poolheating_frac_values, @hp_eco_frac_values, @hp_active_frac_values);
   my @cycle_csme_values;
@@ -27136,6 +27152,10 @@ sub aiFannConDataLoad {
       push @bev_soc_deficit_norm_values, $bev_soc_deficit_norm;
       push @bev_energy_remaining_values, $bev_sig->{energy_remaining};
       push @bev_charge_intensity_values, $bev_sig->{charge_intensity};
+      
+      push @bev_prio_frac_values,        $bev_sig->{prio_frac};                           
+      push @bev_auto_frac_values,        $bev_sig->{auto_frac};                           
+      push @bev_other_frac_values,       $bev_sig->{other_frac};
 
       push @hp_heating_frac_values,      $hp_sig->{heating_frac};
       push @hp_defrost_frac_values,      $hp_sig->{defrost_frac};
@@ -27219,6 +27239,10 @@ sub aiFannConDataLoad {
                                              bev_soc_deficit_norm_series       => \@bev_soc_deficit_norm_values,
                                              bev_energy_remaining_norm_series  => $bev_energy_remaining_norm,
                                              bev_charge_intensity_series       => \@bev_charge_intensity_values,
+
+                                             bev_prio_frac_series              => \@bev_prio_frac_values,       
+                                             bev_auto_frac_series              => \@bev_auto_frac_values,       
+                                             bev_other_frac_series             => \@bev_other_frac_values,      
 
                                              hp_heating_frac_series            => \@hp_heating_frac_values,
                                              hp_defrost_frac_series            => \@hp_defrost_frac_values,
@@ -27409,6 +27433,10 @@ sub aiFannConDataLoad {
                          bev_soc_deficit_lag1_norm      => $lags->{bev_soc_deficit_lag1_norm},      # mittleres SoC-Defizit zum Ende der Vorstunde
                          bev_energy_remaining_lag1_norm => $lags->{bev_energy_remaining_lag1_norm}, # verbleibende Lademenge in Wh (kapazitätsgewichtet)
                          bev_charge_intensity_lag1      => $lags->{bev_charge_intensity_lag1},      # Anteil der Stunde mit aktivem Laden (0..1)
+
+                         bev_prio_frac_lag1             => $lags->{bev_prio_frac_lag1},             # Anteil PV-Prio-Laden Vorstunde
+                         bev_auto_frac_lag1             => $lags->{bev_auto_frac_lag1},             # Anteil Auto/Überschuss-Laden Vorstunde
+                         bev_other_frac_lag1            => $lags->{bev_other_frac_lag1},            # Anteil unklassifiziertes/manuelles Laden Vorstunde
                        }
                      );
 
@@ -28517,7 +28545,8 @@ sub aiFannConInfer {
                                                               );                                # $fanntyp + Temperaturen aus History lesen
 
   my ($bev_active_ref,           $bev_load_raw_ref,     $bev_n_active_ref,
-      $bev_soc_deficit_norm_ref, $energy_remaining_ref, $charge_intensity_ref) =
+      $bev_soc_deficit_norm_ref, $energy_remaining_ref, $charge_intensity_ref,
+      $bev_prio_frac_ref,        $bev_auto_frac_ref,    $bev_other_frac_ref) =
       _aiFannBevHistArray ( { name    => $name,
                               fanntyp => $fanntyp,
                               range   => $range,
@@ -28711,6 +28740,10 @@ sub aiFannConInfer {
                                              bev_energy_remaining_norm_series  => \@bev_energy_remaining_norm,
                                              bev_charge_intensity_series       => $charge_intensity_ref,
 
+                                             bev_prio_frac_series              => $bev_prio_frac_ref,         
+                                             bev_auto_frac_series              => $bev_auto_frac_ref,         
+                                             bev_other_frac_series             => $bev_other_frac_ref,        
+
                                              hp_heating_frac_series            => $hp_heating_ref,
                                              hp_defrost_frac_series            => $hp_defrost_ref,
                                              hp_hotwater_frac_series           => $hp_hotwater_ref,
@@ -28870,6 +28903,9 @@ sub aiFannConInfer {
                             bev_energy_remaining_lag1_norm => $lags->{bev_energy_remaining_lag1_norm},  # verbleibende Lademenge in Wh (kapazitätsgewichtet)
                             bev_charge_intensity_lag1      => $lags->{bev_charge_intensity_lag1},       # Anteil der Stunde mit aktivem Laden (0..1)
 
+                            bev_prio_frac_lag1             => $lags->{bev_prio_frac_lag1},              # Anteil PV-Prio-Laden Vorstunde
+                            bev_auto_frac_lag1             => $lags->{bev_auto_frac_lag1},              # Anteil Auto/Überschuss-Laden Vorstunde
+                            bev_other_frac_lag1            => $lags->{bev_other_frac_lag1},             # Anteil unklassifiziertes/manuelles Laden Vorstunde
                         }
                     );
 
@@ -28941,6 +28977,10 @@ sub aiFannConInfer {
       push @$bev_soc_deficit_norm_ref, 0;
       push @bev_energy_remaining_norm, 0;
       push @$charge_intensity_ref,     0;
+      
+      push @$bev_prio_frac_ref,        0;                                                   # Opmode-Zukunft unbekannt -> neutral
+      push @$bev_auto_frac_ref,        0;                                                   
+      push @$bev_other_frac_ref,       0;  
 
       push @cycle_csme_norm_hist,      0;                                                   # Consumer Energy, Zukunft unbekannt -> neutral
 
@@ -29289,6 +29329,9 @@ sub _aiFannBuildLagFeatures {
   my $bev_soc_deficit_norm_series      = $paref->{bev_soc_deficit_norm_series};
   my $bev_energy_remaining_norm_series = $paref->{bev_energy_remaining_norm_series};
   my $bev_charge_intensity_series      = $paref->{bev_charge_intensity_series};
+  my $bev_prio_frac_series             = $paref->{bev_prio_frac_series};              
+  my $bev_auto_frac_series             = $paref->{bev_auto_frac_series};              
+  my $bev_other_frac_series            = $paref->{bev_other_frac_series};
 
   # Sicherheitsprüfung: genug Historie vorhanden?
   my $len_con  = scalar @$con_series;
@@ -29457,6 +29500,11 @@ sub _aiFannBuildLagFeatures {
 
   my $bev_energy_remaining_lag1_norm = $bev_energy_remaining_norm_series->[$i - 1] // 0;
   my $bev_charge_intensity_lag1      = $bev_charge_intensity_series->[$i - 1]      // 0;
+  
+  my $bev_prio_frac_lag1             = $bev_prio_frac_series->[$i - 1]             // 0; 
+  my $bev_auto_frac_lag1             = $bev_auto_frac_series->[$i - 1]             // 0; 
+  my $bev_other_frac_lag1            = $bev_other_frac_series->[$i - 1]            // 0; 
+
 
   # ---------------------------------------------------------
   # WP Mode Lag1
@@ -29565,6 +29613,10 @@ sub _aiFannBuildLagFeatures {
       bev_soc_deficit_lag1_norm      => $bev_soc_deficit_lag1_norm,
       bev_energy_remaining_lag1_norm => $bev_energy_remaining_lag1_norm,
       bev_charge_intensity_lag1      => $bev_charge_intensity_lag1,
+      
+      bev_prio_frac_lag1             => $bev_prio_frac_lag1,                             
+      bev_auto_frac_lag1             => $bev_auto_frac_lag1,                             
+      bev_other_frac_lag1            => $bev_other_frac_lag1,  
   };
 }
 
@@ -29833,6 +29885,7 @@ sub _aiFannFeatureBuilder {
   # --------------------------------------------------------
   if ($flags->{bev}) {
       push @features, @{ $FEATURE_BLOCKS{bev_base}->($f) };
+      push @features, @{ $FEATURE_BLOCKS{bev_opmode}->($f) };
 
       if ($flags->{pv}) {
           push @features, @{ $FEATURE_BLOCKS{bev_pv_smart_charge}->($f) };
@@ -30730,7 +30783,9 @@ return $rethash;
 #  Filterkriterium: dieselbe Zeile muss par1 (='con') >= 0
 #  haben, damit der Index identisch zu @flat_targets bleibt.
 #
-#  Return: (\@active, \@load_raw, \@n_active, \@soc_deficit_norm)
+#  Return: (\@active, \@load_raw, \@n_active, \@soc_deficit_norm,
+#           \@energy_remaining, \@charge_intensity,
+#           \@prio_frac, \@auto_frac, \@other_frac)
 ######################################################################################
 sub _aiFannBevHistArray {
   my $paref   = shift;
@@ -30739,75 +30794,83 @@ sub _aiFannBevHistArray {
   my $limit   = $paref->{limit} // 200;
   my $range   = $paref->{range};
   my $fanntyp = $paref->{fanntyp};
-
+  
   my (@active, @load_raw, @n_active, @soc_deficit_norm, @energy_remaining, @charge_intensity);
-
-  return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity)
+  my (@prio_frac, @auto_frac, @other_frac);
+  
+  return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
+          \@prio_frac, \@auto_frac, \@other_frac)
       unless exists $data{$name}{pvhist};
-
+  
   # --- Cache-Objekt initialisieren ---
   my $hash  = $defs{$name};
   my $cache = $hash->{'.pvHistCache'} //= LRU_cache_create ('pvHistCache', 'pvHistory Cache', CACHEPVHMS);
-
+  
   # --- Zeitkontext über TS_OFFSET_CACHE (stabil & gecacht) ---
   my $dt   = timestringsFromOffset ($name, $t, 0);
   my $year = $dt->{year};
   my $mon  = $dt->{month};
   my $mday = $dt->{day};
   my $hour = $dt->{hour};
-
+  
   # --- Cache-Key generieren ---
   my $key = join '::', 'BEVHISTARR', $name, $year, $mon, $mday, $hour, $limit;          # Cache Key ID
-
+  
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
       return @$cached;                                                                  # (\@p1, \@p2, \@p3, \@p4, ....)
   }
-
+  
   # --- Kein Cache-Hit → Originalberechnung ---
   # --- identische Tagesreihenfolge wie getPvHistTargetArray ---
-  my $ph = $data{$name}{pvhist};
-
+  my $ph         = $data{$name}{pvhist};
   my @days_after = sort { $a <=> $b } grep { $_ >  $mday } keys %$ph;
   my @days_upto  = sort { $a <=> $b } grep { $_ <= $mday } keys %$ph;
-
+  
   for my $day (@days_after, @days_upto) {
       for my $hod (sort { $a <=> $b } keys %{ $ph->{$day} }) {
           next if $hod < 1 || $hod > 24;
           last if ($day == $mday && $hod == $hour + 1);
-
           my $rec = $ph->{$day}{$hod};
-
+          
           next unless defined $rec->{$fanntyp};                                             # identisches Filterkriterium wie getPvHistTargetArray
           next unless $rec->{$fanntyp} >= 0;
-
+          
           my $bev_sig          = _aiFannBevConsumerAggregate ($rec);
           my $soc_deficit_norm = _aiFannNormBevSocDeficit ($bev_sig->{soc_deficit}, $range);
-
+          
           push @active,           $bev_sig->{active};
           push @load_raw,         $bev_sig->{load};
           push @n_active,         $bev_sig->{n_active_ratio};
           push @soc_deficit_norm, $soc_deficit_norm;
           push @energy_remaining, $bev_sig->{energy_remaining};
           push @charge_intensity, $bev_sig->{charge_intensity};
+          push @prio_frac,        $bev_sig->{prio_frac};
+          push @auto_frac,        $bev_sig->{auto_frac};
+          push @other_frac,       $bev_sig->{other_frac};
       }
   }
-
+  
   # --- Limit anwenden (identisch zu getPvHistTargetArray) ---
   my $n   = scalar @active;
   my $min = $n < $limit ? $n : $limit;
-
+  
   @active           = @active          [-$min .. -1];
   @load_raw         = @load_raw        [-$min .. -1];
   @n_active         = @n_active        [-$min .. -1];
   @soc_deficit_norm = @soc_deficit_norm[-$min .. -1];
   @energy_remaining = @energy_remaining[-$min .. -1];
   @charge_intensity = @charge_intensity[-$min .. -1];
-
+  @prio_frac        = @prio_frac       [-$min .. -1];
+  @auto_frac        = @auto_frac       [-$min .. -1];
+  @other_frac       = @other_frac      [-$min .. -1];
+  
   # --- Ergebnis cachen ---
-  LRU_insert ($name, $cache, $key, [ \@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity ]);
+  LRU_insert ($name, $cache, $key, [ \@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
+                                     \@prio_frac, \@auto_frac, \@other_frac ]);
 
-return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity);
+return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
+        \@prio_frac, \@auto_frac, \@other_frac);
 }
 
 ######################################################################################
