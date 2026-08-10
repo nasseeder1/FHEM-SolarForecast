@@ -11656,8 +11656,12 @@ sub delConsumerFromMem {
   for my $ridx (sort keys %{ $data{$name}{aidectree}{airaw} // {} }) {          # Consumer aus AI Raw Data löschen
       my $row = $data{$name}{aidectree}{airaw}{$ridx};
 
-      my @ckeys = ("csme${c}", "bevcsmSoC${c}", "bevcsmTargSoC${c}", "exconfc${c}",
-                   "rcmdcsm${c}", "bevcsmBatCap${c}", "bevcsmPwr${c}");
+      my @ckeys = ("csme${c}",                "bevcsmSoC${c}",          "bevcsmTargSoC${c}", "exconfc${c}",
+                   "rcmdcsm${c}",             "bevcsmBatCap${c}",       "bevcsmPwr${c}",
+                   "csm${c}_prio_points",     "csm${c}_auto_points",    "csm${c}_other_points",
+                   "csm${c}_off_points",      "csm${c}_heating_points", "csm${c}_defrost_points", 
+                   "csm${c}_hotwater_points", "csm${c}_cooling_points", "csm${c}_pool_points"
+                   );
 
       next if !grep { defined $row->{$_} } @ckeys;                              # keiner der Keys vorhanden -> Zeile betrifft Consumer $c nicht
       delete @{$row}{@ckeys};                                                   # alle vorhandenen Keys in einem Rutsch entfernen
@@ -26685,6 +26689,9 @@ sub __aiAddRawData {
 
   my $hash     = $defs{$name};
   my @hpStates = split /\|/, HPOPMODES;
+  my @bevmodes = split /\|/, BEVOPMODES;                                                                # prio|auto
+  
+  push @bevmodes, 'other';
 
   delete $data{$name}{current}{aitrawstate};
 
@@ -26775,9 +26782,14 @@ sub __aiAddRawData {
               if (defined $rcmdcsm)  { $data{$name}{aidectree}{airaw}{$ridx}{'rcmdcsm'.$c}       = $rcmdcsm }
               if (defined $exconfc)  { $data{$name}{aidectree}{airaw}{$ridx}{'exconfc'.$c}       = $exconfc }
 
-              for my $s (@hpStates) {                                                                           # WP Opmode-Minuten je Status
+              for my $s (@hpStates) {                                                                           # WP Opmode-Punkte je Status
                   my $hppnt = HistoryVal ($name, $pvd, $hod, "csm${c}_${s}_points", undef);
                   if (defined $hppnt) { $data{$name}{aidectree}{airaw}{$ridx}{"csm${c}_${s}_points"} = $hppnt }
+              }
+      
+              for my $bm (@bevmodes) {                                                                          # BEV Opmode-Punkte je Modus
+                  my $bvpnt = HistoryVal ($name, $pvd, $hod, "csm${c}_${bm}_points", undef);
+                  if (defined $bvpnt) { $data{$name}{aidectree}{airaw}{$ridx}{"csm${c}_${bm}_points"} = $bvpnt }
               }
           }
 
