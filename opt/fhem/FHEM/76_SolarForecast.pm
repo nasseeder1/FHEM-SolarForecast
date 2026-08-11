@@ -72,9 +72,10 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.5"  => "09.08.2026  kleinere Patches, __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
+  "2.9.5"  => "11.08.2026  kleinere Patches, __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
                            "Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse ".
-                           "neuer Debug Modus aiData_long ",
+                           "neuer Debug Modus aiData_long ".
+                           "Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war ",
   "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
                            "Post-Icon für Schweregrad '2' geändert, Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert ".
                            "Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt ".
@@ -5660,7 +5661,7 @@ sub __VictronVRM_ApiResponseForecast {
   my $msg;
   my $hash = $defs{$name};
   my $t    = time;
-  my $sta  = [gettimeofday];                                                                                           # Start Response Verarbeitung
+  my $sta  = [gettimeofday];                                                                                                # Start Response Verarbeitung
 
   if ($err ne "") {
       $msg = 'Victron VRM API Forecast response: '.$err;
@@ -5668,12 +5669,12 @@ sub __VictronVRM_ApiResponseForecast {
       singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
       $data{$name}{statusapi}{VictronKi}{'?All'}{response_message} = $err;
-      $data{$name}{current}{runTimeLastAPIProc}                    = round4 (tv_interval($sta));                           # Verarbeitungszeit ermitteln
-      $data{$name}{current}{runTimeLastAPIAnswer}                  = round4 (tv_interval($stc) - tv_interval($sta));       # API Laufzeit ermitteln
+      $data{$name}{current}{runTimeLastAPIProc}                    = round4 (tv_interval($sta));                            # Verarbeitungszeit ermitteln
+      $data{$name}{current}{runTimeLastAPIAnswer}                  = round4 (tv_interval($stc) - tv_interval($sta));        # API Laufzeit ermitteln
 
       return;
   }
-  elsif ($myjson ne "") {                                                                                              # Evaluiere ob Daten im JSON-Format empfangen wurden
+  elsif ($myjson ne "") {                                                                                                   # Evaluiere ob Daten im JSON-Format empfangen wurden
       my ($success) = evaljson($hash, $myjson);
 
       if (!$success) {
@@ -5681,21 +5682,21 @@ sub __VictronVRM_ApiResponseForecast {
           Log3              ($name, 1, "$name - $msg");
           singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
-          $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                           # Verarbeitungszeit ermitteln
-          $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));       # API Laufzeit ermitteln
+          $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                         # Verarbeitungszeit ermitteln
+          $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                     # API Laufzeit ermitteln
 
           return;
       }
-
-      my $jdata = decode_json ($myjson);
-
+      
+      my $jdata = decode_json ($myjson);                                                                                    # Daten dekodieren
+      
       if (defined $jdata->{'error_code'}) {
           $msg = 'Victron VRM API Forecast response: '.$jdata->{'error_code'};
           Log3              ($name, 3, "$name - $msg");
           singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
-          $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                    # Verarbeitungszeit ermitteln
-          $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                # API Laufzeit ermitteln
+          $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                         # Verarbeitungszeit ermitteln
+          $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                     # API Laufzeit ermitteln
 
           $data{$name}{statusapi}{VictronKi}{'?All'}{response_message}        = $jdata->{'error_code'};
           $data{$name}{statusapi}{VictronKi}{'?All'}{lastretrieval_time}      = (timestampToTimestring ($name, $t, $lang))[3];  # letzte Abrufzeit
@@ -5709,6 +5710,14 @@ sub __VictronVRM_ApiResponseForecast {
           return;
       }
       else {
+          if (($paref->{authtype} // 'password') eq 'token') {                                                                      # Token-Access und kein! Fehler 
+              $data{$name}{statusapi}{VictronKi}{'?All'}{response_message}        = 'success';
+              $data{$name}{statusapi}{VictronKi}{'?All'}{idUser}                  = 'token access is used';
+              $data{$name}{statusapi}{VictronKi}{'?All'}{verification_mode}       = 'none';
+              $data{$name}{statusapi}{VictronKi}{'?All'}{lastretrieval_time}      = (timestampToTimestring ($name, $t, $lang))[3];  # letzte Abrufzeit
+              $data{$name}{statusapi}{VictronKi}{'?All'}{lastretrieval_timestamp} = $t;          
+          }
+          
           $data{$name}{statusapi}{VictronKi}{'?All'}{todayDoneAPIrequests} += 1;
           $data{$name}{statusapi}{VictronKi}{'?All'}{todayDoneAPIcalls}    += 1;
 
