@@ -1884,10 +1884,10 @@ my %hfspvh = (
       }
 
       # --- BEV Consumer-Keys
-      $hfspvh{'bevcsmSoC'.$cn}{fn}       = \&_saveHistP2;                       # BEV aktueller SoC
-      $hfspvh{'bevcsmSoC'.$cn}{storname} = 'bevcsmSoC'.$cn;
-      $hfspvh{'bevcsmSoC'.$cn}{validkey} = undef;
-      $hfspvh{'bevcsmSoC'.$cn}{fpar}     = undef;
+      $hfspvh{'bevcsmSoC'.$cn}{fn}           = \&_saveHistP2;                   # BEV aktueller SoC
+      $hfspvh{'bevcsmSoC'.$cn}{storname}     = 'bevcsmSoC'.$cn;
+      $hfspvh{'bevcsmSoC'.$cn}{validkey}     = undef;
+      $hfspvh{'bevcsmSoC'.$cn}{fpar}         = undef;
 
       $hfspvh{'bevcsmTargSoC'.$cn}{fn}       = \&_saveHistP2;                   # BEV Ziel-SoC
       $hfspvh{'bevcsmTargSoC'.$cn}{storname} = 'bevcsmTargSoC'.$cn;
@@ -1899,11 +1899,16 @@ my %hfspvh = (
       $hfspvh{'bevcsmBatCap'.$cn}{validkey}  = undef;
       $hfspvh{'bevcsmBatCap'.$cn}{fpar}      = undef;
 
-      $hfspvh{'bevcsmPwr'.$cn}{fn}       = \&_saveHistP2;                       # BEV aktuelle Ladeleistung
-      $hfspvh{'bevcsmPwr'.$cn}{storname} = 'bevcsmPwr'.$cn;
-      $hfspvh{'bevcsmPwr'.$cn}{validkey} = undef;
-      $hfspvh{'bevcsmPwr'.$cn}{fpar}     = undef;
-      
+      $hfspvh{'bevcsmPwr'.$cn}{fn}           = \&_saveHistP2;                   # BEV aktuelle Ladeleistung
+      $hfspvh{'bevcsmPwr'.$cn}{storname}     = 'bevcsmPwr'.$cn;
+      $hfspvh{'bevcsmPwr'.$cn}{validkey}     = undef;
+      $hfspvh{'bevcsmPwr'.$cn}{fpar}         = undef;
+ 
+      $hfspvh{'bevcsmPhases'.$cn}{fn}        = \&_saveHistP2;                   # BEV aktive Phasen
+      $hfspvh{'bevcsmPhases'.$cn}{storname}  = 'bevcsmPhases'.$cn;
+      $hfspvh{'bevcsmPhases'.$cn}{validkey}  = undef;
+      $hfspvh{'bevcsmPhases'.$cn}{fpar}      = undef; 
+
       # --- bev OpMode-Keys
       for my $bo (@bevopm) {
           $hfspvh{"csm${cn}_${bo}_points"}{fn}       = \&_saveHistP2;
@@ -19745,7 +19750,7 @@ sub __bevConsumerOpmode {
   return if($ctype ne 'bev');                                                               # Verarbeitung nur für BEV
 
   my $hod      = sprintf "%02d", ($chour + 1);
-  my $om       = ConsumerVal ($name, $c, 'opmode', ' : ');                                  # Consumer Operation Mode
+  my $om       = ConsumerVal ($name, $c, 'opmode', '');                                     # Consumer Operation Mode
   my @bevModes = split /\|/, BEVOPMODES;                                                    # prio|auto
 
   my $last_check = CircularVal ($name, 99, 'last_transfer', $t);
@@ -19756,25 +19761,29 @@ sub __bevConsumerOpmode {
 
   # --- Phasenanzahl (nur während aktivem Laden aussagekräftig)
   if ($cactive) {
-      my $ph          = ConsumerVal ($name, $c, 'phases', ' : ');
-      my ($dvp, $rdp) = split ':', $ph;
-      my ($perr)      = isDeviceValid ( { name => $name, obj => $dvp, method => 'string' } );
+      my $ph          = ConsumerVal ($name, $c, 'phases', '');
+      #my ($dvp, $rdp) = split ':', $ph;
+      #my ($perr)      = isDeviceValid ( { name => $name, obj => $dvp, method => 'string' } );
+      
+      my ($perr, $dvp, $rdp) = checkDevRdCond ($name, 'phases', $ph, 1, 0, 0);              # nur Device-Check
 
       if (!$perr) {
           my $phases = ReadingsNum ($dvp, $rdp, undef);
 
           if (defined $phases && isNumeric ($phases)) {
-              $phases = min (1, max (3, $phases));
+              $phases = clampValue ($phases, 1, 3);
               $phases = round0 ($phases);
               
-              #writeToHistory ( { paref => $paref, key => "bevcsmPhases$c", val => round0 ($phases), day => $day, hour => $hod } );
+              writeToHistory ( { paref => $paref, key => "bevcsmPhases$c", val => $phases, day => $day, hour => $hod } );
           }
       }
   }
   
   # --- opmode Device prüfen
-  my ($dvo, $rdo) = split ':', $om;
-  my ($err)       = isDeviceValid ( { name => $name, obj => $dvo, method => 'string' } );
+  #my ($dvo, $rdo) = split ':', $om;
+  #my ($err)       = isDeviceValid ( { name => $name, obj => $dvo, method => 'string' } );
+  
+  my ($err, $dvo, $rdo) = checkDevRdCond ($name, 'opmode', $om, 1, 0, 0);                   # nur Device-Check
 
   if ($err) {                                                                               # opmode nicht konfiguriert -> Fallback über csme der laufenden Stunde
       my $csme = HistoryVal ($name, $day, $hod, "csme$c", 0);
@@ -33410,7 +33419,7 @@ sub _listDataPoolPvHist {
               my $cf = sprintf "%02d", $c;
 
               for my $field (qw (cyclescsm csmt csme minutescsm hourscsme avgcycmntscsm
-                                bevcsmSoC bevcsmTargSoC bevcsmBatCap bevcsmPwr) ) {
+                                bevcsmSoC bevcsmTargSoC bevcsmBatCap bevcsmPwr bevcsmPhases) ) {
                   my $fkey      = "${field}${cf}";
                   $entry{$fkey} = HistoryVal ($name, $day, $key, $fkey, undef);
               }
@@ -33511,6 +33520,7 @@ sub _listDataPoolPvHist {
                   $csvmap{"bevcsmTargSoC${cf}"} = "BEVcsmTargSoC${cf}";
                   $csvmap{"bevcsmBatCap${cf}"}  = "BEVcsmBatCap${cf}";
                   $csvmap{"bevcsmPwr${cf}"}     = "BEVcsmPwr${cf}";
+                  $csvmap{"bevcsmPhases${cf}"}  = "BEVcsmPhases${cf}";
                   $csvmap{"rcmdcsm${cf}"}       = "RcmdCsm${cf}";
                   $csvmap{"exconfc${cf}"}       = "ExConFc${cf}";
 
@@ -33645,13 +33655,12 @@ sub _listDataPoolPvHist {
 
               if ($key eq '99') {                                                                           # Tageswerte: Zyklen, Energie, BEV-Daten
                   @cfields = map { "${_}${cf}" }
-                             qw (cyclescsm csmt csme hourscsme avgcycmntscsm
-                                bevcsmSoC bevcsmTargSoC bevcsmBatCap bevcsmPwr);
+                             qw (cyclescsm csmt csme hourscsme avgcycmntscsm);
               }
               else {                                                                                        # Stundenwerte: Energie, Minuten, BEV-Daten
                   @cfields  = map { "${_}${cf}" }
                               qw (csmt csme minutescsm rcmdcsm exconfc bevcsmSoC
-                                  bevcsmTargSoC bevcsmBatCap bevcsmPwr);
+                                  bevcsmTargSoC bevcsmBatCap bevcsmPwr bevcsmPhases);
 
                   @hpfields  = map { "csm${cf}_${_}_points" } @hpStates;                                    # WP Opmode-Punkte, separat behandelt
                   @bevfields = map { "csm${cf}_${_}_points" } @bevModes;                                    # BEV Opmode-Punkte je Modus
@@ -33660,8 +33669,17 @@ sub _listDataPoolPvHist {
               my @show = grep { defined $entry{$_} && $entry{$_} ne '' && $entry{$_} ne '-' } @cfields;
 
               if (@show) {
-                  $ret .= join(', ', map { "$_: $entry{$_}" } @show);
+                  my $mids   = int( (@show + 1) / 2 ); 
+                  my @line1s = @show[0 .. $mids-1];
+                  my @line2s = @show[$mids .. $#show];
+                      
+                  $ret .= join (', ', map { "$_: $entry{$_}" } @line1s);
                   $ret .= "\n            ";
+
+                  if (@line2s) {
+                      $ret .= join(', ', map { "$_: $entry{$_}" } @line2s);
+                      $ret .= "\n            ";
+                  }                  
               }
 
               if (@hpfields) {
@@ -37281,6 +37299,7 @@ sub isDeviceValid {
   my $name   = $paref->{name};
   my $obj    = $paref->{obj};
   my $method = $paref->{method} // 'reading';
+  my $dolog  = $paref->{dolog}  // 1;
 
   my $err = '';
   my $dev = '';
@@ -37311,7 +37330,7 @@ sub isDeviceValid {
       $err  = qq{The device '$dv' doesn't exist anymore! Delete or change the attribute '$obj'}  if(!$defs{$dv} && $method eq 'attr' && $obj =~ /consumer/);
   }
 
-  if ($err) {
+  if ($err && $dolog) {
       Log3 ($name, 1, "$name - ERROR - $err") if(askLogtime ($name, $err));
   }
 
@@ -37620,7 +37639,9 @@ sub checkDevRdCond {
       ($err) = isDeviceValid ( { name   => $name,               # prüft Device vorhanden
                                  obj    => $dev,
                                  method => 'string',
+                                 dolog  => 0,
                                } );
+                               
       return "$akey: $err" if $err;
   }
 
@@ -40463,6 +40484,7 @@ to ensure that the system configuration is correct.
             <tr><td> <b>batsetsocXX</b>     </td><td>Optimum SOC setpoint (%) of battery XX  for the day                                                                      </td></tr>
             <tr><td> <b>bevcsm</b>          </td><td>Consumer numbers of registered electric cars (BEV)                                                                       </td></tr>
             <tr><td> <b>bevcsmBatCapXX</b>  </td><td>nominal battery capacity (Wh) of the BEV consumer XX                                                                     </td></tr>
+            <tr><td> <b>bevcsmPhasesXX</b>  </td><td>Number of phases used by BEV consumer XX to charge the battery at the end of the hour                                    </td></tr>
             <tr><td> <b>bevcsmPwrXX</b>     </td><td>Charging power (W) of BEV consumer XX at the end of the hour                                                             </td></tr>
             <tr><td> <b>bevcsmSoCXX</b>     </td><td>current SOC (%) of the BEV consumer XX                                                                                   </td></tr>
             <tr><td> <b>bevcsmTargSoCXX</b> </td><td>Target SOC (%) set for BEV consumer XX                                                                                   </td></tr>
@@ -43624,6 +43646,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>batsetsocXX</b>     </td><td>optimaler SOC Sollwert (%) der Batterie XX für den Tag                                                 </td></tr>
             <tr><td> <b>bevcsm</b>          </td><td>Verbrauchernummern der registrierten E-Autos (BEV)                                                     </td></tr>
             <tr><td> <b>bevcsmBatCapXX</b>  </td><td>nominale Batteriekapazität (Wh) des BEV-Verbrauchers XX                                                </td></tr>
+            <tr><td> <b>bevcsmPhasesXX</b>  </td><td>Anzahl der vom BEV-Verbraucher XX genutzten Phasen zur Batterieladung am Ende der Stunde               </td></tr>
             <tr><td> <b>bevcsmPwrXX</b>     </td><td>Ladeleistung (W) des BEV-Verbrauchers XX am Ende der Stunde                                            </td></tr>
             <tr><td> <b>bevcsmSoCXX</b>     </td><td>aktueller SOC (%) des BEV-Verbrauchers XX                                                              </td></tr>
             <tr><td> <b>bevcsmTargSoCXX</b> </td><td>eingestellter Ziel-SOC (%) des BEV-Verbrauchers XX                                                     </td></tr>

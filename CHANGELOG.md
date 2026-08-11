@@ -10,7 +10,7 @@ xx.xx.2026 Rev. xxxxx
 - neuer Debug Modus aiData_long
 - Verringerung der Log Frequenz bei Debug aiData und aiData_long
 - List pvCircular, pvHistory um BEV accum_csmXX_<mode>_wseconds bzw. BEV csmXX_<mode>_points erweitert
-- Aktivierung BEV opmodes 'auto' und 'prio' -> Retraining bei Verwendung bev-Flag nötig!
+- vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' -> Retraining bei Verwendung bev-Flag nötig!
 - bev-Consumer für Aufzeichnung Phasen vorbereitet
 - Model VictronKiAPI: Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war
 - weitere kleinere Patches
@@ -19,12 +19,15 @@ xx.xx.2026 Rev. xxxxx
   * __consumerIdentityFp: opmode aus @fpkeys entfernt
   * neue Konstante BEVOPMODES
   * _aiFannBevConsumerAggregate: um BEV Modes erweitert
-  * _listDataPoolPvHist, _listDataPoolCircular, _listDataPoolAiRawData erweitert
+  * _listDataPoolPvHist, _listDataPoolCircular, _listDataPoolAiRawData um BEV-Opmode-Daten erweitert
   * neue Funktion __bevConsumerOpmode
   * neue pvHistory Schlüssel:  "csm${c}_other_points", "csm${c}_prio_points", "csm${c}_auto_points"
   * neue pvCircular Schlüssel: $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"}
                                $data{$name}{circular}{99}{"accum_csm${c}_prio_wseconds"}
                                $data{$name}{circular}{99}{"accum_csm${c}_auto_wseconds"}
+  * __bevConsumerOpmode: Punktesystem prio/auto/other mit cactive-Gating, korrektem Stundenwechsel-Reset, Fallback über csme für Altinstallationen, plus Phasenerfassung als reiner Snapshot
+  * Phasenanzahl bewusst nicht in die Feature-Pipeline eingebunden – reine Rohdatenerfassung für später							   
+						
 
 ## [v2.9.4]
 03.08.2026 Rev. 31539
