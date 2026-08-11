@@ -26816,7 +26816,8 @@ sub __aiAddRawData {
               my $evsoc    = HistoryVal ($name, $pvd, $hod, 'bevcsmSoC'.$c,     undef);                         # aktueller SOC (%) des BEV-Verbrauchers XX
               my $evtgtsoc = HistoryVal ($name, $pvd, $hod, 'bevcsmTargSoC'.$c, undef);                         # eingestellter Ziel-SOC (%) des BEV-Verbrauchers XX
               my $evbatcap = HistoryVal ($name, $pvd, $hod, 'bevcsmBatCap'.$c,  undef);                         # EV Batteriekapazität
-              my $evcurpwr = HistoryVal ($name, $pvd, $hod, 'bevcsmPwr'.$c,     undef);                         # EV aktuelle Ladeleistung
+              my $evcurpwr = HistoryVal ($name, $pvd, $hod, 'bevcsmPwr'.$c,     undef);                         # EV Ladeleistung am Ende der Stunde 
+              my $evphases = HistoryVal ($name, $pvd, $hod, 'bevcsmPhases'.$c,  undef);                         # EV genutzte Phasen am Ende der Stunde 
               my $rcmdcsm  = HistoryVal ($name, $pvd, $hod, 'rcmdcsm'.$c,       undef);                         # zeitgewichtete Nutzungsempfehlung für Verbraucher XX
               my $exconfc  = HistoryVal ($name, $pvd, $hod, 'exconfc'.$c,       undef);                         # Snapshot des Ausschluss-Flags zum Zeitpunkt der csme-Erfassung
 
@@ -26825,6 +26826,7 @@ sub __aiAddRawData {
               if (defined $evtgtsoc) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmTargSoC'.$c} = round0 ($evtgtsoc) }
               if (defined $evbatcap) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmBatCap'.$c}  = round0 ($evbatcap) }
               if (defined $evcurpwr) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmPwr'.$c}     = round0 ($evcurpwr) }
+              if (defined $evphases) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmPhases'.$c}  = $evphases }
               if (defined $rcmdcsm)  { $data{$name}{aidectree}{airaw}{$ridx}{'rcmdcsm'.$c}       = $rcmdcsm }
               if (defined $exconfc)  { $data{$name}{aidectree}{airaw}{$ridx}{'exconfc'.$c}       = $exconfc }
 
@@ -34380,7 +34382,8 @@ sub _listDataPoolAiRawData {
       my $hpcsm         = AiRawdataVal ($name, $idx, 'hpcsm',          '-');
       my $bevcsm        = AiRawdataVal ($name, $idx, 'bevcsm',         '-');
 
-      my ($csm, $hpm, $bvm, $csmrcm, $csmecfc);                                         
+      my ($csm, $hpm, $bvm, $csmrcm, $csmecfc);
+      my $csmCnt = 0;      
       my $hpmCnt = 0;
       my $bvmCnt = 0;                                                                   
       my $rcmCnt = 0;
@@ -34393,32 +34396,62 @@ sub _listDataPoolAiRawData {
           my $evtgtsoc = AiRawdataVal ($name, $idx, 'bevcsmTargSoC'.$c, undef);
           my $evbatcap = AiRawdataVal ($name, $idx, 'bevcsmBatCap'.$c,  undef);
           my $evcurpwr = AiRawdataVal ($name, $idx, 'bevcsmPwr'.$c,     undef);
+          my $evphases = AiRawdataVal ($name, $idx, 'bevcsmPhases'.$c,  undef);
           my $rcmdcsm  = AiRawdataVal ($name, $idx, 'rcmdcsm'.$c,       undef);
           my $exconfc  = AiRawdataVal ($name, $idx, 'exconfc'.$c,       undef);
 
           if (defined $csme) {
-              $csm .= ", " if($csm);
+              if ($csm) {
+                  $csm .= ($csmCnt % 6 == 0) ? "\n              " : ", ";               # alle 6 Einträge neue Zeile
+              }
+            
               $csm .= "csme${c}: $csme";
+              $csmCnt++;
           }
 
           if (defined $evsoc) {
-              $csm .= ", " if($csm);
+              if ($csm) {
+                  $csm .= ($csmCnt % 6 == 0) ? "\n              " : ", ";               # alle 6 Einträge neue Zeile
+              }
+             
               $csm .= "bevcsmSoC${c}: $evsoc";
+              $csmCnt++;
           }
 
           if (defined $evtgtsoc) {
-              $csm .= ", " if($csm);
+              if ($csm) {
+                  $csm .= ($csmCnt % 6 == 0) ? "\n              " : ", ";               # alle 6 Einträge neue Zeile
+              }
+            
               $csm .= "bevcsmTargSoC${c}: $evtgtsoc";
+              $csmCnt++;
           }
 
           if (defined $evbatcap) {
-              $csm .= ", " if($csm);
+              if ($csm) {
+                  $csm .= ($csmCnt % 6 == 0) ? "\n              " : ", ";               # alle 6 Einträge neue Zeile
+              }
+          
               $csm .= "bevcsmBatCap${c}: $evbatcap";
+              $csmCnt++;
           }
 
           if (defined $evcurpwr) {
-              $csm .= ", " if($csm);
+              if ($csm) {
+                  $csm .= ($csmCnt % 6 == 0) ? "\n              " : ", ";               # alle 6 Einträge neue Zeile
+              }
+          
               $csm .= "bevcsmPwr${c}: $evcurpwr";
+              $csmCnt++;
+          }
+          
+          if (defined $evphases) {
+              if ($csm) {
+                  $csm .= ($csmCnt % 6 == 0) ? "\n              " : ", ";               # alle 6 Einträge neue Zeile
+              }
+        
+              $csm .= "bevcsmPhases${c}: $evphases";
+              $csmCnt++;
           }
 
           if (defined $rcmdcsm) {
