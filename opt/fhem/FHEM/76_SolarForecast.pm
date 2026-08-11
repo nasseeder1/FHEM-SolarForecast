@@ -34280,9 +34280,11 @@ sub _listDataPoolAiRawData {
       return qq{The argument must be an integer!};
   }
 
-  my $h         = $data{$name}{aidectree}{airaw};
-  my $maxcnt    = keys %{$h};
-   my @hpStates = split /\|/, HPOPMODES;
+  my $h        = $data{$name}{aidectree}{airaw};
+  my $maxcnt   = keys %{$h};
+  my @hpStates = split /\|/, HPOPMODES;
+  my @bevmodes = split /\|/, BEVOPMODES;                                               # prio|auto
+  push @bevmodes, 'other';
 
   if (!$maxcnt) {
       return qq{aiRawData values cache is empty.};
@@ -34323,8 +34325,9 @@ sub _listDataPoolAiRawData {
       my $hpcsm         = AiRawdataVal ($name, $idx, 'hpcsm',          '-');
       my $bevcsm        = AiRawdataVal ($name, $idx, 'bevcsm',         '-');
 
-      my ($csm, $hpm, $csmrcm, $csmecfc);
+      my ($csm, $hpm, $bvm, $csmrcm, $csmecfc);                                         
       my $hpmCnt = 0;
+      my $bvmCnt = 0;                                                                   
       my $rcmCnt = 0;
       my $ecfCnt = 0;
 
@@ -34373,13 +34376,13 @@ sub _listDataPoolAiRawData {
 
           if (defined $exconfc) {
               if ($csmecfc) {
-                  $csmecfc .= ($ecfCnt % 10 == 0) ? "\n              " : ", ";           # alle X Einträge neue Zeile
+                  $csmecfc .= ($ecfCnt % 10 == 0) ? "\n              " : ", ";          # alle X Einträge neue Zeile
               }
               $csmecfc .= "exconfc${c}: $exconfc";
               $ecfCnt++;
           }
 
-          for my $s (@hpStates) {                                                       # WP Opmode-Minuten je Status
+          for my $s (@hpStates) {                                                       # WP Opmode-Punkte je Status
               my $hppnt = AiRawdataVal ($name, $idx, "csm${c}_${s}_points", undef);
               next if(!defined $hppnt);
 
@@ -34388,6 +34391,17 @@ sub _listDataPoolAiRawData {
               }
               $hpm .= "csm${c}_${s}_points: $hppnt";
               $hpmCnt++;
+          }
+          
+          for my $bm (@bevmodes) {                                                      # BEV Opmode-Punkte je Modus
+              my $bvpnt = AiRawdataVal ($name, $idx, "csm${c}_${bm}_points", undef);
+              next if(!defined $bvpnt);
+
+              if ($bvm) {
+                  $bvm .= ($bvmCnt % 6 == 0) ? "\n              " : ", ";               # alle 6 Einträge neue Zeile
+              }
+              $bvm .= "csm${c}_${bm}_points: $bvpnt";
+              $bvmCnt++;
           }
       }
 
@@ -34423,6 +34437,11 @@ sub _listDataPoolAiRawData {
       if (defined $hpm) {
           $sq .= "\n              ";
           $sq .= $hpm;
+      }
+      
+      if (defined $bvm) {                                                            
+          $sq .= "\n              ";
+          $sq .= $bvm;
       }
   }
 
