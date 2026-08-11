@@ -5652,11 +5652,12 @@ sub __VictronVRM_ApiResponseForecast {
   my $err    = shift;
   my $myjson = shift;
 
-  my $name   = $paref->{name};
-  my $caller = $paref->{caller};
-  my $stc    = $paref->{stc};
-  my $lang   = $paref->{lang};
-  my $debug  = $paref->{debug};
+  my $name     = $paref->{name};
+  my $caller   = $paref->{caller};
+  my $stc      = $paref->{stc};
+  my $authtype = $paref->{authtype} // 'password';
+  my $lang     = $paref->{lang};
+  my $debug    = $paref->{debug};
 
   my $msg;
   my $hash = $defs{$name};
@@ -5710,7 +5711,7 @@ sub __VictronVRM_ApiResponseForecast {
           return;
       }
       else {
-          if (($paref->{authtype} // 'password') eq 'token') {                                                                      # Token-Access und kein! Fehler 
+          if ($authtype eq 'token') {                                                                                       # Token-Access und kein! Fehler 
               $data{$name}{statusapi}{VictronKi}{'?All'}{response_message}        = 'success';
               $data{$name}{statusapi}{VictronKi}{'?All'}{idUser}                  = 'token access is used';
               $data{$name}{statusapi}{VictronKi}{'?All'}{verification_mode}       = 'none';
@@ -5792,7 +5793,7 @@ sub __VictronVRM_ApiResponseForecast {
   $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval  ($sta));                               # Verarbeitungszeit ermitteln
   $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval ($stc) - tv_interval ($sta));           # API Laufzeit ermitteln
 
-  if (($paref->{authtype} // 'password') ne 'token') {
+  if ($authtype ne 'token') {
       __VictronVRM_ApiRequestLogout ($paref);                                                               # nur bei Session-Login nötig
   }
 
