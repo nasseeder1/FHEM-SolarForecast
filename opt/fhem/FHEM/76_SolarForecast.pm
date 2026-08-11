@@ -31,7 +31,7 @@
 #########################################################################################################################
 use strict;
 use warnings;
-use feature 'state';
+use feature 'state'; 
 
 main::LoadModule ('Astro');                                                          # Astro Modul für Sonnenkennzahlen laden
 
