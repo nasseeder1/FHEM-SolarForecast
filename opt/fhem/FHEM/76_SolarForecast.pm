@@ -19726,13 +19726,14 @@ return;
 #    csme >  0  -> geladen, Modus unbekannt -> other=60
 ################################################################
 sub __bevConsumerOpmode {
-  my $paref = shift;
-  my $name  = $paref->{name};
-  my $ctype = $paref->{ctype};
-  my $c     = $paref->{consumer};
-  my $t     = $paref->{t};
-  my $day   = $paref->{day};
-  my $chour = $paref->{chour};
+  my $paref   = shift;
+  my $name    = $paref->{name};
+  my $ctype   = $paref->{ctype};
+  my $cactive = $paref->{cactive};
+  my $c       = $paref->{consumer};
+  my $t       = $paref->{t};
+  my $day     = $paref->{day};
+  my $chour   = $paref->{chour};
 
   return if($ctype ne 'bev');                                                               # Verarbeitung nur für BEV
 
@@ -37576,7 +37577,7 @@ sub naturalSort {
 sub checkDevRdCond {
   my $name     = shift;
   my $akey     = shift;
-  my $akeyval  = shift;
+  my $akeyval  = shift // '';
   my $checkdev = shift // 0;
   my $checkrdg = shift // 0;
   my $codereq  = shift // 0;
