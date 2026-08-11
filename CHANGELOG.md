@@ -11,6 +11,7 @@ xx.xx.2026 Rev. xxxxx
 - Verringerung der Log Frequenz bei Debug aiData und aiData_long
 - List pvCircular, pvHistory um BEV accum_csmXX_<mode>_wseconds bzw. BEV csmXX_<mode>_points erweitert
 - Aktivierung BEV opmodes 'auto' und 'prio' -> Retraining bei Verwendung bev-Flag nötig!
+- bev-Consumer für Aufzeichnung Phasen vorbereitet
 - Model VictronKiAPI: Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war
 - weitere kleinere Patches
 

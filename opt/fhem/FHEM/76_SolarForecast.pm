@@ -74,7 +74,7 @@ use MIME::Base64;
 my %vNotesIntern = (
   "2.9.5"  => "11.08.2026  kleinere Patches, __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
                            "Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse ".
-                           "neuer Debug Modus aiData_long ".
+                           "neuer Debug Modus aiData_long, bev-Consumer für Aufzeichnung Phasen vorbereitet ".
                            "Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war ",
   "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
                            "Post-Icon für Schweregrad '2' geändert, Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert ".
@@ -19711,12 +19711,15 @@ return;
 #            BEV Ladeprioritäts-Modus (Punktesystem)
 #
 #  points += delta_sekunden / 60   (keine Modulation wie bei WP)
+#  Zeitgutschrift NUR während cactive=1 (BEV angesteckt/aktiv) -
+#  "total_points_elapsed" misst also aktive Zeit, nicht reine
+#  Kalenderzeit der Stunde.
 #
 #  other_points = total_points_elapsed - prio_points - auto_points
 #  -> 'other' ist keine eigene Reading-Zuordnung, sondern der
-#     Rest der bereits verstrichenen Stundenzeit, der weder
-#     'prio' noch 'auto' zugeordnet werden konnte 
-#     (z.B. unbekannter Reading-Wert, Boost-/Manuell-Modus, 
+#     Rest der bereits gutgeschriebenen aktiven Zeit, der weder
+#     'prio' noch 'auto' zugeordnet werden konnte
+#     (z.B. unbekannter Reading-Wert, Boost-/Manuell-Modus,
 #     transiente Fehler).
 #
 #  Bei fehlender opmode-Konfiguration (Altinstallation ohne
@@ -19724,6 +19727,10 @@ return;
 #  pvHistory stehenden csme-Werts der Stunde entschieden:
 #    csme == 0  -> nichts geladen        -> prio=auto=other=0
 #    csme >  0  -> geladen, Modus unbekannt -> other=60
+#
+#  Phasenanzahl (bevcsmPhases$c) wird nur bei aktivem Laden
+#  geschrieben - sonst bleibt der letzte bekannte Wert in der 
+#  History stehen (kein Overwrite mit stale/0 bei Inaktivität).
 ################################################################
 sub __bevConsumerOpmode {
   my $paref   = shift;
@@ -19745,7 +19752,26 @@ sub __bevConsumerOpmode {
   my $delta      = $t - $last_check;
   my $dt         = timestringsFromOffset ($name, $last_check, 0);
   my $lchkhour   = $dt->{hour};
+  my $newhour    = ($chour != $lchkhour);                                                   # Stundenwechsel seit letztem Check
 
+  # --- Phasenanzahl (nur während aktivem Laden aussagekräftig)
+  if ($cactive) {
+      my $ph          = ConsumerVal ($name, $c, 'phases', ' : ');
+      my ($dvp, $rdp) = split ':', $ph;
+      my ($perr)      = isDeviceValid ( { name => $name, obj => $dvp, method => 'string' } );
+
+      if (!$perr) {
+          my $phases = ReadingsNum ($dvp, $rdp, undef);
+
+          if (defined $phases && isNumeric ($phases)) {
+              $phases = min (1, max (3, $phases));
+              $phases = round0 ($phases);
+              
+              #writeToHistory ( { paref => $paref, key => "bevcsmPhases$c", val => round0 ($phases), day => $day, hour => $hod } );
+          }
+      }
+  }
+  
   # --- opmode Device prüfen
   my ($dvo, $rdo) = split ':', $om;
   my ($err)       = isDeviceValid ( { name => $name, obj => $dvo, method => 'string' } );
@@ -19767,6 +19793,19 @@ sub __bevConsumerOpmode {
       return;
   }
 
+  # --- Stundenwechsel: Akkumulatoren IMMER zurücksetzen, unabhängig von cactive,
+  #     damit während einer inaktiven Phase keine veralteten Werte über eine
+  #     Stundengrenze hinweg in die nächste Stunde übernommen werden
+  if ($newhour) {
+      $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"} = 0;
+      $data{$name}{circular}{99}{"accum_csm${c}_${_}_wseconds"}  = 0 for (@bevModes);
+  }
+
+  if (!$cactive) {                                                                          # BEV nicht angesteckt/aktiv -> keine Zeitgutschrift diesen Tick
+      debugLog ($paref, 'collectData_long', "BEV opmode - consumer >$c< - not active, skip point crediting this tick");
+      return;
+  }
+
   my $opmode = ReadingsVal ($dvo, $rdo, '');
 
   if (!grep { $_ eq $opmode } @bevModes) {
@@ -19777,35 +19816,22 @@ sub __bevConsumerOpmode {
 
   debugLog ($paref, 'collectData_long', "collect BEV-opmode data - hour=$chour, last check hour=$lchkhour, delta=$delta, opmode=$dvo:$rdo -> $opmode");
 
-  # --- Gesamt-verstrichene Zeit dieser Stunde (unabhängig vom Modus)
-  my $total_wsecs;
-
-  if ($chour == $lchkhour) {
-      $total_wsecs  = CircularVal ($name, 99, "accum_csm${c}_total_wseconds", 0);
-      $total_wsecs += $delta;
-      $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"} = $total_wsecs;
-  }
-  else {
-      $total_wsecs = 0;
-      $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"} = 0;                       # neue Stunde -> Reset
-  }
+  # --- Gesamt-gutgeschriebene aktive Zeit dieser Stunde
+  my $total_wsecs  = CircularVal ($name, 99, "accum_csm${c}_total_wseconds", 0);
+  $total_wsecs    += $delta;
+  
+  $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"} = $total_wsecs;
 
   # --- Akkumulation gewichteter Sekunden je Modus (reine Zeit, keine Modulation)
   my ($prio_points, $auto_points) = (0, 0);
 
   for my $mode (@bevModes) {
-      my $key = "accum_csm${c}_${mode}_wseconds";
+      my $key   = "accum_csm${c}_${mode}_wseconds";
+      my $wsecs = CircularVal ($name, 99, $key, 0);
+      $wsecs   += $delta if($mode eq $opmode);                                              # nur der aktive Status akkumuliert Zeit
+      
+      $data{$name}{circular}{99}{$key} = $wsecs;
 
-      if ($chour == $lchkhour) {
-          my $wsecs  = CircularVal ($name, 99, $key, 0);
-          $wsecs    += $delta if($mode eq $opmode);                                         # nur der aktive Status akkumuliert Zeit
-          $data{$name}{circular}{99}{$key} = $wsecs;
-      }
-      else {
-          $data{$name}{circular}{99}{$key} = 0;                                             # neue Stunde -> Reset
-      }
-
-      my $wsecs    = $data{$name}{circular}{99}{$key};
       my $points   = $wsecs ? sprintf ("%.1f", $wsecs / 60) : 0;
       $prio_points = $points if($mode eq 'prio');
       $auto_points = $points if($mode eq 'auto');
@@ -19813,7 +19839,7 @@ sub __bevConsumerOpmode {
       writeToHistory ( { paref => $paref, key => "csm${c}_${mode}_points", val => $points, day => $day, hour => $hod } );
   }
 
-  # --- "other" als Rest der bislang verstrichenen Stundenzeit
+  # --- "other" als Rest der bislang gutgeschriebenen aktiven Zeit
   my $total_points = $total_wsecs ? sprintf ("%.1f", $total_wsecs / 60) : 0;
   my $other_points = $total_points - $prio_points - $auto_points;
   $other_points    = 0 if $other_points < 0;                                                # Rundungsschutz (sprintf-Rundung beider Summanden)
