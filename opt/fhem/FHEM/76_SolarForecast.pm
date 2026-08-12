@@ -9056,7 +9056,6 @@ sub _attrconsumer {                      ## no critic "not used"
       exclgroup       => { comp => '[1-9]\d*',                        must => 0, act => 0 },
 
       # --- nur für heatpump (musts in __attrKeyAction checken)
-      opmode          => { comp => '.*',                                                  must => 0, act => 1 },
       opmodeIcons     => { comp => '.*',                                                  must => 0, act => 1 },
       modulation      => { comp => '(?:[A-Za-z0-9_.äöüÄÖÜß]+:[A-Za-z0-9_.äöüÄÖÜß]+|100)', must => 0, act => 1 },
       
@@ -9069,6 +9068,7 @@ sub _attrconsumer {                      ## no critic "not used"
       targetSoC       => { comp => '(?:[0-9]|[1-9][0-9]|100|.+)',                must => 0, act => 1 },
       evid            => { comp => '(.*:.*)',                                    must => 0, act => 1 },
       timeOfDeparture => { comp => '.*',                                         must => 0, act => 1 },
+      phases          => { comp => '.*',                                         must => 0, act => 1 },
   };
 
   if ($cmd eq 'set') {
@@ -10770,6 +10770,17 @@ sub __attrKeyAction {
                   return $err;
               }
           }
+          
+          if ($akey eq 'phases') {
+              ($err, my $dv, my $rd) = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 0);            # mit Device-Check, Reading check
+              return $err if($err);
+
+              my $phases = ReadingsVal ($dv, $rd, '<empty>');
+
+              if (!isNumeric($phases) || $phases !~ /[1-3]/xs) {
+                  return "The reading '$rd' of device '$dv' is invalid or contain an invalid $akey value ($phases)";
+              }
+          }
 
           state %devCodeKeys;
           state %devRdgCodeKeys;
@@ -10888,7 +10899,7 @@ sub __attrKeyAction {
           }
           
           if ($akeyval ne 'bev') {                                                                      # Exklusivschlüssel bev
-              my @dont = qw(batCap currSoC targetSoC evid timeOfDeparture);
+              my @dont = qw(batCap currSoC targetSoC evid timeOfDeparture phases);
               my $chk  = 0;
 
               for my $k (@dont) {
@@ -10951,7 +10962,8 @@ sub __attrKeyAction {
               return "The mode '$akeyval' is not allowed!";
           }
       }
-      elsif ($akey eq 'opmode' || $akey eq 'modulation') {
+      
+      if ($akey eq 'opmode' || $akey eq 'modulation') {
           if ($akeyval =~ /.*:.*/xs) {
               if ($akey eq 'opmode') {
                   ($err, my $dv, my $rd) = checkDevRdCond ($name, $akey, $akeyval, 1, 1, 0);            # mit Device-Check, Reading check
@@ -10991,7 +11003,8 @@ sub __attrKeyAction {
               return "The value '$akey=$akeyval' is not valid. Please consider the commandref.";
           }
       }
-      elsif ($akey eq 'opmodeIcons') {
+      
+      if ($akey eq 'opmodeIcons') {
           my ($a, $hops) = parseParams ($akeyval, ',', '', '->');                   # ($text, $separator, $joiner, $keyvalueseparator)
           my $poom       = HPOPMODES;
           my @hpStates   = split /\|/, HPOPMODES;
@@ -11006,7 +11019,8 @@ sub __attrKeyAction {
               }
           }
       }
-      elsif ($akey =~ /^(?:batCap|currSoC|targetSoC)$/xs) {
+      
+      if ($akey =~ /^(?:batCap|currSoC|targetSoC)$/xs) {
           if (!isNumeric ($akeyval)) {
               my ($rdg, $unit) = split ':', $akeyval, 2;
               ($err)          = isDeviceValid ( { name => $name, obj => $adev, method => 'string' } );
@@ -11026,7 +11040,8 @@ sub __attrKeyAction {
               }
           }
       }
-      elsif ($akey eq 'evid') {
+      
+      if ($akey eq 'evid') {
           my ($rdg, $regex) = split ":", $akeyval, 2;
 
           $err = checkRegex ($regex);
@@ -13000,7 +13015,7 @@ sub _collectAllRegConsumers {
 
       # --- Löschen relevanter Schlüssel
       my @delkeys = qw (sunriseshift sunsetshift icon batCap currSoC opmodeIcons
-                        targetSoC evid timeOfDeparture opmode modulation);
+                        targetSoC evid timeOfDeparture opmode modulation phases);
       delete @{$data{$name}{consumers}{$c}}{@delkeys};
 
       # --- Neuanlage Consumer Hash-Werte
@@ -13053,12 +13068,15 @@ sub _collectAllRegConsumers {
       # --- nur für bev
       $data{$name}{consumers}{$c}{evid}              = $hc->{evid}         if(defined $hc->{evid});
       $data{$name}{consumers}{$c}{batCap}            = $hc->{batCap}       if(defined $hc->{batCap});
+      $data{$name}{consumers}{$c}{phases}            = $hc->{phases}       if(defined $hc->{phases});
       $data{$name}{consumers}{$c}{currSoC}           = $hc->{currSoC}      if(defined $hc->{currSoC});
       $data{$name}{consumers}{$c}{targetSoC}         = $hc->{targetSoC}    if(defined $hc->{targetSoC});    # optionale Angabe
       $data{$name}{consumers}{$c}{timeOfDeparture}   = q{}                 if(defined $hc->{bev});          # optionale Angabe
-
-      # --- nur für heatpump
+      
+      # --- für bev und heatpump
       $data{$name}{consumers}{$c}{opmode}            = $hc->{opmode}       if(defined $hc->{opmode});
+      
+      # --- nur für heatpump
       $data{$name}{consumers}{$c}{opmodeIcons}       = \%homi              if(scalar keys %homi);
       $data{$name}{consumers}{$c}{modulation}        = $hc->{modulation}   if(defined $hc->{modulation});
   }
@@ -19761,10 +19779,7 @@ sub __bevConsumerOpmode {
 
   # --- Phasenanzahl (nur während aktivem Laden aussagekräftig)
   if ($cactive) {
-      my $ph          = ConsumerVal ($name, $c, 'phases', '');
-      #my ($dvp, $rdp) = split ':', $ph;
-      #my ($perr)      = isDeviceValid ( { name => $name, obj => $dvp, method => 'string' } );
-      
+      my $ph                 = ConsumerVal    ($name, $c, 'phases', '');
       my ($perr, $dvp, $rdp) = checkDevRdCond ($name, 'phases', $ph, 1, 0, 0);              # nur Device-Check
 
       if (!$perr) {
@@ -19779,10 +19794,7 @@ sub __bevConsumerOpmode {
       }
   }
   
-  # --- opmode Device prüfen
-  #my ($dvo, $rdo) = split ':', $om;
-  #my ($err)       = isDeviceValid ( { name => $name, obj => $dvo, method => 'string' } );
-  
+  # --- opmode Device prüfen  
   my ($err, $dvo, $rdo) = checkDevRdCond ($name, 'opmode', $om, 1, 0, 0);                   # nur Device-Check
 
   if ($err) {                                                                               # opmode nicht konfiguriert -> Fallback über csme der laufenden Stunde
@@ -41309,12 +41321,15 @@ to ensure that the system configuration is correct.
 			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
 			<tr><td> <b>etotal</b>         </td><td>The key is a required field using the syntax specified above. The value is the total amount of charging energy consumed.                           </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-            <tr><td> <b>opmode</b>         </td><td>Defines a &lt;Device&gt;:&lt;Reading&gt; combination that returns the current charging mode (optional).                                            </td></tr>
+            <tr><td> <b>opmode</b>         </td><td>A &lt;Device&gt;:&lt;Reading&gt; combination that returns the current charging mode (optional).                                                    </td></tr>
             <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b>                                                                                                      </td></tr>
             <tr><td>                       </td><td>The following modes are evaluated: <b>prio auto</b>                                                                                                </td></tr>
             <tr><td>                       </td><td><b>prio</b> - Any excess PV power is used to charge the BEV before being stored in the home battery                                                </td></tr>
             <tr><td>                       </td><td><b>auto</b> - BEV charging is treated on an equal footing with home storage systems and other loads                                                </td></tr>
             <tr><td>                       </td><td>All other values are internally assigned to the 'other' charging mode.                                                                             </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>phases</b>         </td><td>A &lt;Device&gt;:&lt;Reading&gt; combination that returns the number of phases currently in use during charging (optional).                        </td></tr>
+            <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b> - accepted value range: Integers from 1 to 3                                                         </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>pcurr</b>          </td><td>The key is a required field using the syntax specified above. The value is the current charging power.                                             </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
@@ -41345,7 +41360,7 @@ to ensure that the system configuration is correct.
             <tr><td>                       </td><td><b>&lt;Device&gt;:&lt;Reading&gt;</b> - combination that returns the current modulation (<b>0..100</b>) as a percentage                            </td></tr>
             <tr><td>                       </td><td><b>100</b> - fixed modulation of 100% for non-modulating devices                                                                                   </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-            <tr><td> <b>opmode</b>         </td><td>defines a &lt;Device&gt;:&lt;Reading&gt; combination that provides the current operating mode (Required Information).                              </td></tr>
+            <tr><td> <b>opmode</b>         </td><td>A &lt;Device&gt;:&lt;Reading&gt; combination that provides the current operating mode (required Information).                                      </td></tr>
             <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b>                                                                                                      </td></tr>
             <tr><td>                       </td><td>The return value must be exactly one of the following: <b>off heating defrost hotwater cooling pool poolheating eco</b>                            </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
@@ -44472,7 +44487,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
 			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
 			<tr><td> <b>etotal</b>         </td><td>Der Schlüssel ist eine Pflichtangabe mit der oben angegebenen Syntax. Der Wert ist die gesamte verbrauchte Ladeenergie.                            </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-            <tr><td> <b>opmode</b>         </td><td>definiert eine &lt;Device&gt;:&lt;Reading&gt; Kombination welche den aktuellen Lademodus liefert (optionale Angabe).                               </td></tr>
+            <tr><td> <b>opmode</b>         </td><td>Eine &lt;Device&gt;:&lt;Reading&gt; Kombination, welche den aktuellen Lademodus liefert (optionale Angabe).                                        </td></tr>
             <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b>                                                                                                      </td></tr>
             <tr><td>                       </td><td>Ausgewertet werden folgende Modi: <b>prio auto</b>                                                                                                 </td></tr>
             <tr><td>                       </td><td><b>prio</b> - vorhandener PV-Überschuss wird mit Priorität vor dem Hausspeicher zum Laden des BEV verwendet                                        </td></tr>
@@ -44480,6 +44495,9 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                       </td><td>Alle anderen Werte werden intern dem Lademodus 'other' zugeordnet.                                                                                 </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>pcurr</b>          </td><td>Der Schlüssel ist eine Pflichtangabe mit der oben angegebenen Syntax. Der Wert ist die aktuelle Ladeleistung.                                      </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>phases</b>         </td><td>Eine &lt;Device&gt;:&lt;Reading&gt; Kombination, welche die Anzahl der aktuell verwendeten Phasen beim Laden liefert (optionale Angabe).           </td></tr>
+            <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b> - akzeptierter Wertebereich: Ganzzahl von 1 - 3                                                      </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>power</b>          </td><td>Maximale Ladeleistung des Fahrzeugs bzw. der Wallbox mit der oben definierten Syntax.                                                              </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
@@ -44508,7 +44526,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                       </td><td><b>&lt;Device&gt;:&lt;Reading&gt;</b> - Kombination welche die aktuelle Modulation (<b>0..100</b>) in % liefert                                    </td></tr>
             <tr><td>                       </td><td><b>100</b> - feste Modulation von 100% für nichtmodulierende Geräte                                                                                </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-            <tr><td> <b>opmode</b>         </td><td>definiert eine &lt;Device&gt;:&lt;Reading&gt; Kombination welche den aktuellen Betriebsmodus liefert (Pflichtangabe).                              </td></tr>
+            <tr><td> <b>opmode</b>         </td><td>Eine &lt;Device&gt;:&lt;Reading&gt; Kombination welche den aktuellen Betriebsmodus liefert (Pflichtangabe).                                        </td></tr>
             <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b>                                                                                                      </td></tr>
             <tr><td>                       </td><td>Die Rückgabe muß genau ein Wert der folgenden Auswahl sein: <b>off heating defrost hotwater cooling pool poolheating eco</b>                       </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
