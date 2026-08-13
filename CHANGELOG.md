@@ -15,6 +15,7 @@ xx.xx.2026 Rev. xxxxx
 - bev-Consumer: Aufzeichnung der zum Laden verwendete Anzahl Phasen – reine Rohdatenerfassung für später
 - neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten
 - ACHTUNG: Funktionsänderung storeReading ('<Readingname>', '<Wert>') -> storeReading ($name, '<Readingname>', '<Wert>')
+- Sun Position Caching integriert
 - Model VictronKiAPI: Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war
 - weitere kleinere Patches
 

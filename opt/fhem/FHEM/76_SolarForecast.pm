@@ -353,6 +353,7 @@ use constant {
   CACHETSOMS      => 4000,                                                          # max. Size TimestringsFromOffset Cache
   CACHEPVHMS      => 500,                                                           # max. Size pvHistory Cache
   CACHETSTSMPMS   => 2000,                                                          # max. Size timestringToTimestamp Cache
+  CACHESUNPOSMS   => 500,                                                           # max. Size Sonnenposition Cache
   CACHEMISS       => '__CACHE_MISS__',                                              # Sentinel-Pattern für Cache Miss
   CONSFCLDAYS     => 60,                                                            # die Stundenwerte der letzten CONSFCLDAYS Tage zur Kalkulation der Verbrauchvorhersage einbezogen
   CONDAYSLIDEMAX  => 30,                                                            # max. Anzahl der Arrayelemente im Register pvCircular -> con_all / gcons_a -> <Tag>
@@ -2796,13 +2797,15 @@ sub Define {
   my $name = $hash->{NAME};
   my $type = $hash->{TYPE};
 
-  $hash->{HELPER}{MODMETAABSENT} = 1 if($modMetaAbsent);                                                            # Modul Meta.pm nicht vorhanden
-
-  $hash->{'.tiltCache'}   = LRU_cache_create ('tiltedIrrCache',  'Tilted Irradiance Cache',     CACHETIRMS);        # Init LRU Tilted Irradiance Cache initialisieren
-  $hash->{'.tsCache'}     = LRU_cache_create ('tsCache',         'TimestringsFromOffset Cache', CACHETSOMS);        # Init LRU timestringsFromOffset Cache
-  $hash->{'.pvHistCache'} = LRU_cache_create ('pvHistCache',     'pvHistory Cache',             CACHEPVHMS);        # Init LRU pvHistory Cache
-  $hash->{'.tstrg2stamp'} = LRU_cache_create ('tstrg2TsmpCache', 'timestringToTimestamp Cache', CACHETSTSMPMS);     # Init LRU timestringToTimestamp Cache
-
+  $hash->{HELPER}{MODMETAABSENT} = 1 if($modMetaAbsent);                                                                  # Modul Meta.pm nicht vorhanden
+ 
+  $hash->{'.tiltCache'}        = LRU_cache_create ('tiltedIrrCache',   'Tilted Irradiance Cache',     CACHETIRMS);        # Init LRU Tilted Irradiance Cache initialisieren
+  $hash->{'.tsCache'}          = LRU_cache_create ('tsCache',          'TimestringsFromOffset Cache', CACHETSOMS);        # Init LRU timestringsFromOffset Cache
+  $hash->{'.pvHistCache'}      = LRU_cache_create ('pvHistCache',      'pvHistory Cache',             CACHEPVHMS);        # Init LRU pvHistory Cache
+  $hash->{'.tstrg2stamp'}      = LRU_cache_create ('tstrg2TsmpCache',  'timestringToTimestamp Cache', CACHETSTSMPMS);     # Init LRU timestringToTimestamp Cache
+  $hash->{'.sunposCache'}      = LRU_cache_create ('sunposCache',      'Sun position (Az/Alt) Cache', CACHESUNPOSMS);     # Init Sun Postion Cache
+  $hash->{'.sunaltProbeCache'} = LRU_cache_create ('sunaltProbeCache', 'Sun altitude probe Cache',    CACHESUNPOSMS);     # Init Sun altitude probe Cache
+          
   my $params = {
       hash        => $hash,
       name        => $name,
@@ -13685,27 +13688,22 @@ sub __calcSunPosition {
   my $num      = $paref->{num};
   my $nhtstr   = $paref->{nhtstr};
   my $is_today = $paref->{is_today};
-
+  
   my $hash    = $defs{$name};
-
   my $base_ts = timestringToTimestamp ($hash, $date.' '.$chour.':00:00');
   my $tstr    = (timestampToTimestring ($name, $base_ts + $num * 3600))[3];
 
   my ($dstr, $hh) = split /[ :]/, $tstr;
-  $tstr           = $dstr.' '.$hh.':30:00';                                                                 # Stundenmitte verwenden
+  $tstr           = $dstr.' '.$hh.':30:00';                                             # Stundenmitte verwenden
 
-  my ($az, $alt);
+  my ($az, $alt) = __getSunPosCached ($name, $tstr);
 
-  eval {                                                                                                    # statt Astro_Get geht auch FHEM::Astro::Get
-      $az  = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAz',  $tstr));
-      $alt = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $tstr));
-      1;
-  } or do {
-      my $err = "process error while reading sun position: $@";
+  unless (defined $az && defined $alt) {
+      my $err = "process error while reading sun position: $tstr";
       $paref->{state} = $err;
       Log3 ($name, 1, "$name - ERROR - $err");
-      return;                                                                                               # Abbruch weil WICHTIGE Daten fehlen
-  };
+      return;
+  }
 
   #--------------------------------------------------------------------
   # Korrektur für Randstunden (Sonnenauf-/-untergang):
@@ -13714,15 +13712,15 @@ sub __calcSunPosition {
   #--------------------------------------------------------------------
   if ($alt <= 0) {
       my @lit_mins;
-
+      
       for my $min (5, 15, 25, 35, 45, 55) {
           my $t_probe   = sprintf '%s %02d:%02d:00', $dstr, $hh, $min;
-          my $alt_probe = eval { FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $t_probe) } // -90;
-
+          my $alt_probe = __getSunAltCached ($name, $t_probe) // -90;
+          
           push @lit_mins, $min if($alt_probe > 0);
       }
 
-      if (@lit_mins) {                                                                                      # Mittelpunkt des beleuchteten Fensters [erstes .. letztes Treffer-Sample]
+      if (@lit_mins) {
           my $mid_min = int (($lit_mins[0] + $lit_mins[-1]) / 2 + 0.5);
           $tstr       = sprintf '%s %02d:%02d:00', $dstr, $hh, $mid_min;
 
@@ -13730,16 +13728,12 @@ sub __calcSunPosition {
               "Sun position corrected for twilight hour: hod=$hod, "
              ."lit_mins=[@lit_mins], effective_mid=$mid_min");
 
-          eval {
-              $az  = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAz',  $tstr));
-              $alt = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $tstr));
-              1;
-          } or do {
-              Log3 ($name, 2, "$name - WARNING - Could not get corrected sun position for $tstr");          # $az/$alt behalten die ursprünglichen :30-Werte (alt <= 0)
-          };                                                                                                # -> ___computeTiltedIrradianceCached gibt (0,0) zurück
+          my ($az2, $alt2) = __getSunPosCached ($name, $tstr);
+          
+          if (defined $az2 && defined $alt2) { ($az, $alt) = ($az2, $alt2); }
+          else { Log3 ($name, 2, "$name - WARNING - Could not get corrected sun position for $tstr"); }
       }
   }
-
 
   $data{$name}{nexthours}{$nhtstr}{sunaz}  = $az;
   $data{$name}{nexthours}{$nhtstr}{sunalt} = $alt;
@@ -13752,6 +13746,69 @@ sub __calcSunPosition {
   }
 
 return;
+}
+
+################################################################
+#  Sonnenposition (Az/Alt) gecacht ermitteln
+################################################################
+sub __getSunPosCached {
+  my ($name, $tstr) = @_;
+  my $hash  = $defs{$name};
+  
+  # --- Cache initialisieren ---
+  my $cache = $hash->{'.sunposCache'}
+          //= LRU_cache_create ('sunposCache', 'Sun position (Az/Alt) Cache', CACHESUNPOSMS);
+  
+  # --- Cache-Key generieren ---
+  my $key   = 'SUNPOS::'.$tstr;
+
+  if (defined (my $val = LRU_get ($name, $cache, $key))) {
+      my ($az, $alt) = split /\|/, $val;
+      
+      return ($az, $alt);
+  }
+
+  my ($az, $alt);
+  
+  eval {
+      $az  = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAz',  $tstr));
+      $alt = round2 (FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $tstr));
+      1;
+  } 
+  or do {
+      Log3 ($name, 1, "$name - ERROR - process error while reading sun position: $@");
+      return;
+  };
+
+  LRU_insert ($name, $cache, $key, "$az|$alt");
+  
+return ($az, $alt);
+}
+
+################################################################
+#  Sonnenhöhe (nur Alt) gecacht ermitteln - für Dämmerungs-Probe
+################################################################
+sub __getSunAltCached {
+  my ($name, $tstr) = @_;
+  my $hash  = $defs{$name};
+  
+  # --- Cache initialisieren ---
+  my $cache = $hash->{'.sunaltProbeCache'}
+          //= LRU_cache_create ('sunaltProbeCache', 'Sun altitude probe Cache', CACHESUNPOSMS);
+  
+  # --- Cache-Key generieren ---
+  my $key   = 'SUNALTP::'.$tstr;
+
+  if (defined (my $val = LRU_get ($name, $cache, $key))) {
+      return $val;
+  }
+
+  my $alt = eval { FHEM::Astro::Get (undef, 'global', 'text', 'SunAlt', $tstr) };
+  return if !defined $alt;
+
+  LRU_insert ($name, $cache, $key, $alt);
+  
+return $alt;
 }
 
 ################################################################
@@ -39537,6 +39594,8 @@ sub LRU_update_internals {
                 .tiltCache
                 .tsCache
                 .tstrg2stamp
+                .sunposCache
+                .sunaltProbeCache
                );
 
   for my $lru (@lrua) {
@@ -39554,10 +39613,12 @@ sub LRU_update_internals {
                  ? sprintf("%.2f", ($hits / ($hits + $misses)) * 100)
                  : 100;
 
-      my $cashname = $title =~ /tiltedIrrCache/xs  ? 'TILTED_IRR_Cache'
-                   : $title =~ /tsCache/xs         ? 'TS_OFFSET_Cache'
-                   : $title =~ /tstrg2TsmpCache/xs ? 'TSTR_TSMP_Cache'
-                   : $title =~ /pvHistCache/xs     ? 'PVH_Cache'
+      my $cashname = $title =~ /tiltedIrrCache/xs   ? 'TILTED_IRR_Cache'
+                   : $title =~ /tsCache/xs          ? 'TS_OFFSET_Cache'
+                   : $title =~ /tstrg2TsmpCache/xs  ? 'TSTR_TSMP_Cache'
+                   : $title =~ /pvHistCache/xs      ? 'PVH_Cache'
+                   : $title =~ /sunposCache/xs      ? 'SUNPOS_Cache'
+                   : $title =~ /sunaltProbeCache/xs ? 'SUNALTPROB_Cache'
                    : '';
 
       $msg .= "\n" if $msg;
