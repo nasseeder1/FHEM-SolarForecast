@@ -27,8 +27,10 @@ xx.xx.2026 Rev. xxxxx
 - <b>Intern:</b> 
   * __consumerIdentityFp: opmode aus @fpkeys entfernt
   * neue Konstante BEVOPMODES
+  * neue Funktion checkModVerBatch
   * _aiFannBevConsumerAggregate: um BEV Modes erweitert
   * _listDataPoolPvHist, _listDataPoolCircular, _listDataPoolAiRawData um BEV-Opmode-Daten erweitert
+  * Verwendung createReadingsFromArrayFast statt createReadingsFromArray
   * neue Funktion __bevConsumerOpmode
   * neue pvHistory Schlüssel:  "csm${c}_other_points", "csm${c}_prio_points", "csm${c}_auto_points"
   * neue pvCircular Schlüssel: $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"}
