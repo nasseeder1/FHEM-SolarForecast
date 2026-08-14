@@ -5,19 +5,24 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 ## [Unreleased]
 xx.xx.2026 Rev. xxxxx
 
-- BEV Batteriedaten werden auch bei nicht aktivierten BEV-Consumer gespeichert
-- Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse
-- neuer Debug Modus aiData_long
-- Verringerung der Log Frequenz bei Debug aiData und aiData_long
-- List pvCircular, pvHistory um BEV accum_csmXX_<mode>_wseconds bzw. BEV csmXX_<mode>_points erweitert
-- List pvHistory, aiRawData um Anzeige bevcsmPhasesXX erweitert
-- vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' -> ACHTUNG: Retraining bei Verwendung bev-Flag nötig!
-- bev-Consumer: Aufzeichnung der zum Laden verwendete Anzahl Phasen – reine Rohdatenerfassung für später
-- neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten
-- ACHTUNG: Funktionsänderung storeReading ('<Readingname>', '<Wert>') -> storeReading ($name, '<Readingname>', '<Wert>')
-- Sun Position Caching integriert
-- Model VictronKiAPI: Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war
-- weitere kleinere Patches
+- <b>Neu:</b>
+  * Ausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse im Log
+  * neuer Debug Modus aiData_long
+  * List pvCircular, pvHistory um BEV accum_csmXX_<mode>_wseconds bzw. BEV csmXX_<mode>_points erweitert
+  * List pvHistory, aiRawData um Anzeige bevcsmPhasesXX erweitert
+  * vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' -> ACHTUNG: Retraining bei Verwendung bev-Flag nötig!
+  * bev-Consumer: Aufzeichnung der zum Laden verwendete Anzahl Phasen – reine Rohdatenerfassung für später
+  * neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten
+  * Sun Position Caching integriert
+  
+- <b>Geändert:</b>
+  * BEV Batteriedaten werden auch bei nicht aktivierten BEV-Consumer gespeichert
+  * Verringerung der Log Frequenz bei Debug aiData und aiData_long
+  * ACHTUNG: Funktionsänderung storeReading ('<Readingname>', '<Wert>') -> storeReading ($name, '<Readingname>', '<Wert>')
+  * weitere kleinere Patches
+
+- <b>Fix:</b>
+  * Model VictronKiAPI: fehlender success-Status in Victron VRM API Forecast Response wenn vorher die Response fehlerhaft war
 
 - <b>Intern:</b> 
   * __consumerIdentityFp: opmode aus @fpkeys entfernt
