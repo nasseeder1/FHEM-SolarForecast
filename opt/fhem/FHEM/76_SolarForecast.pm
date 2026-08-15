@@ -26658,10 +26658,9 @@ return;
 #                    Abbruchroutine BlockingCall Timeout
 ####################################################################################################
 sub _abortGetMessageFile {
-  my $hash   = shift;
-  my $cause  = shift // "Timeout: process terminated";
-  my $name   = $hash->{NAME};
-  my $type   = $hash->{TYPE};
+  my $hash  = shift;
+  my $cause = shift // "Timeout: process terminated";
+  my $name  = $hash->{NAME};
 
   Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{GMFRUNNING}{fn} pid:$hash->{HELPER}{AIBLOCKRUNNING}{pid} aborted: $cause");
 
