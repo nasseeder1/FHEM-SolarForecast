@@ -1,2 +1,2 @@
 # FHEM-SolarForecast
-FHEM SolarForecast Project
+FHEM SolarForecast Modul
