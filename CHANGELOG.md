@@ -2,10 +2,42 @@
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
-## [Unreleased]
-xx.xx.2026 Rev. xxxxx
+## [v2.10.0]
+16.08.2026 Rev. 31573
 
+- <b>Neu:</b>
+  * Ausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse im Log
+  * neuer Debug Modus aiData_long
+  * List pvCircular, pvHistory um BEV accum_csmXX_<mode>_wseconds bzw. BEV csmXX_<mode>_points erweitert
+  * List pvHistory, aiRawData um Anzeige bevcsmPhasesXX erweitert
+  * vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' -> ACHTUNG: Retraining bei Verwendung bev-Flag nötig!
+  * bev-Consumer: Aufzeichnung der zum Laden verwendete Anzahl Phasen – reine Rohdatenerfassung für später
+  * neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten
+  * Sun Position Caching integriert
+  
+- <b>Geändert:</b>
+  * BEV Batteriedaten werden auch bei nicht aktivierten BEV-Consumer gespeichert
+  * Verringerung der Log Frequenz bei Debug aiData und aiData_long
+  * ACHTUNG: Funktionsänderung storeReading ('<Readingname>', '<Wert>') -> storeReading ($name, '<Readingname>', '<Wert>')
+  * weitere kleinere Patches
 
+- <b>Fix:</b>
+  * Model VictronKiAPI: fehlender success-Status in Victron VRM API Forecast Response wenn vorher die Response fehlerhaft war
+
+- <b>Intern:</b> 
+  * __consumerIdentityFp: opmode aus @fpkeys entfernt
+  * neue Konstante BEVOPMODES
+  * neue Funktion checkModVerBatch
+  * _aiFannBevConsumerAggregate: um BEV Modes erweitert
+  * _listDataPoolPvHist, _listDataPoolCircular, _listDataPoolAiRawData um BEV-Opmode-Daten erweitert
+  * Verwendung createReadingsFromArrayFast statt createReadingsFromArray
+  * neue Funktion __bevConsumerOpmode
+  * neue pvHistory Schlüssel:  "csm${c}_other_points", "csm${c}_prio_points", "csm${c}_auto_points"
+  * neue pvCircular Schlüssel: $data{$name}{circular}{99}{"accum_csm${c}_total_wseconds"}
+                               $data{$name}{circular}{99}{"accum_csm${c}_prio_wseconds"}
+                               $data{$name}{circular}{99}{"accum_csm${c}_auto_wseconds"}
+  * __bevConsumerOpmode: Punktesystem prio/auto/other mit cactive-Gating, korrektem Stundenwechsel-Reset, Fallback über csme für Altinstallationen, plus Phasenerfassung als reiner Snapshot				   
+						
 
 ## [v2.9.4]
 03.08.2026 Rev. 31539
