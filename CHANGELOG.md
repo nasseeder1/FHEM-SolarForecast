@@ -2,6 +2,14 @@
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
+## [vx.x.x]
+xx.xx.xxxx Rev.
+
+
+
+
+
+
 ## [v2.10.0]
 16.08.2026 Rev. 31573
 
