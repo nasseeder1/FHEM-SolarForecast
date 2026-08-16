@@ -72,10 +72,15 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.9.5"  => "11.08.2026  kleinere Patches, __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
+  "2.10.0" => "11.08.2026  __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
+                           "neuer Debug Modus aiData_long ".
+                           "vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' ".
                            "Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse ".
-                           "neuer Debug Modus aiData_long, bev-Consumer für Aufzeichnung Phasen vorbereitet ".
-                           "Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war ",
+                           "neuer Debug Modus aiData_long, bev-Consumer: Aufzeichnung der zum Laden verwendete Anzahl Phasen – reine Rohdatenerfassung für später ".
+                           "Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war ".
+                           "neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten ".
+                           "Sun Position Caching integriert ".
+                           "kleinere Patches ",
   "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
                            "Post-Icon für Schweregrad '2' geändert, Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert ".
                            "Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt ".

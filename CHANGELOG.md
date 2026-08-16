@@ -2,8 +2,8 @@
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
-## [Unreleased]
-xx.xx.2026 Rev. xxxxx
+## [v2.10.0]
+16.08.2026 Rev. 31573
 
 - <b>Neu:</b>
   * Ausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse im Log
