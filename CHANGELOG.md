@@ -5,7 +5,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 ## [vx.x.x]
 xx.xx.xxxx Rev.
 
-
+- writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075)
 
 
 

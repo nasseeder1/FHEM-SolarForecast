@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31539 2026-08-03 19:18:05Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31573 2026-08-16 13:45:25Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -72,6 +72,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.10.1" => "19.08.2026  writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075) ",
   "2.10.0" => "11.08.2026  __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
                            "neuer Debug Modus aiData_long ".
                            "vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' ".
@@ -12099,7 +12100,6 @@ sub writeCacheFile {
 
       $lw                 = gettimeofday();
       $hash->{LCACHEFILE} = "last write time: ".FmtTime($lw)." File: $file";
-      singleUpdateState ( {hash => $hash, state => "wrote cachefile $cachename successfully", evt => 1} );
 
       return;
   }
@@ -12118,7 +12118,6 @@ sub writeCacheFile {
 
       $lw                 = gettimeofday();
       $hash->{LCACHEFILE} = "last write time: ".FmtTime($lw)." File: $file";
-      singleUpdateState ( {hash => $hash, state => "wrote cachefile $cachename successfully", evt => 1} );
 
       return;
   }
@@ -12242,7 +12241,6 @@ sub writeCacheFile {
 
       $lw                 = gettimeofday();
       $hash->{LCACHEFILE} = "last write time: ".FmtTime($lw)." File: $file";
-      singleUpdateState ( {hash => $hash, state => "wrote cachefile $cachename successfully", evt => 1} );
 
       return ('', $nr, $na);
   }
@@ -12295,7 +12293,6 @@ sub writeCacheFile {
 
   $lw                 = gettimeofday();
   $hash->{LCACHEFILE} = "last write time: ".FmtTime($lw)." File: $file";
-  singleUpdateState ( {hash => $hash, state => "wrote cachefile $cachename successfully", evt => 1} );
 
 return;
 }
