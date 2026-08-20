@@ -73,7 +73,8 @@ use MIME::Base64;
 # Versions History intern
 my %vNotesIntern = (
   "2.10.1" => "20.08.2026  writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075) ".
-                           "weitere singleUpdateState in Getter entfernt ",
+                           "weitere singleUpdateState in Getter entfernt ".
+                           "isGhoValFormValid geändert: die Prüfung erfolgt nun zuverlässig bei Eingabe des graphicHeaderOwnspecValForm-Attributs ",
   "2.10.0" => "11.08.2026  __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
                            "neuer Debug Modus aiData_long ".
                            "vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' ".
