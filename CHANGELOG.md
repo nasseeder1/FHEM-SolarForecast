@@ -6,8 +6,10 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 xx.xx.xxxx Rev.
 
 - writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075)
+- weitere singleUpdateState in Getter entfernt
 
-
+- <b>Fix:</b>
+  * isGhoValFormValid geändert: die Prüfung erfolgt nun zuverlässig bei Eingabe des graphicHeaderOwnspecValForm-Attributs 
 
 
 ## [v2.10.0]
