@@ -2,8 +2,8 @@
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
-## [vx.x.x]
-xx.xx.xxxx Rev.
+## [v2.10.1]
+22.08.2026 Rev. 31587
 
 - writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075)
 - weitere singleUpdateState in Getter entfernt
