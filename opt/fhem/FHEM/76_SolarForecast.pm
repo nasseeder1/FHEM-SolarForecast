@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31573 2026-08-16 13:45:25Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31587 2026-08-22 20:11:53Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -72,6 +72,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.10.2" => "24.08.2026  userExit bzgl. zirkulären Referenzen gehärtet ",
   "2.10.1" => "20.08.2026  writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075) ".
                            "weitere singleUpdateState in Getter entfernt ".
                            "isGhoValFormValid geändert: die Prüfung erfolgt nun zuverlässig bei Eingabe des graphicHeaderOwnspecValForm-Attributs ",
@@ -38756,19 +38757,27 @@ sub userExit {
   my $uefn = AttrVal ($name, 'ctrlUserExitFn', '');
   return if(!$uefn);
 
-  $uefn =~ s/\s*#.*//g;                                             # Kommentare entfernen
-  $uefn =~ s/^\s+|\s+$//g;                                          # nur Anfang und Ende trimmen
+  $uefn =~ s/\s*#.*//g;                                                             # Kommentare entfernen
+  $uefn =~ s/^\s+|\s+$//g;                                                          # nur Anfang und Ende trimmen
   my $result;
 
-  if ($uefn =~ /^\{.*\}$/s) {                                       # unnamed Funktion direkt in ctrlUserExitFn mit {...}
-        my $coderef = eval "sub $uefn;";
+  if ($uefn =~ /^\{.*\}$/s) {
+        my $weak_hash = $hash;
+        weaken ($weak_hash);                                                        # Schwache Referenz für den Hash erstellen
+        
+        my $coderef = eval "sub { my \$hash = shift; $uefn }";                      # Code als Block kompilieren, der den Hash als Parameter erwartet
 
         if ($@) {
             Log3 ($name, 1, "$name - ERROR compiling userExitFn: $@");
         }
         elsif (ref $coderef eq 'CODE') {
-            eval { $result = $coderef->() };
+            eval { 
+                $result = $coderef->($weak_hash);
+            };
+            
             Log3 ($name, 1, "$name - ERROR executing userExitFn: $@") if($@);
+            
+            undef $coderef;                                                         # Coderef explizit freigeben
         }
         else {
             Log3 ($name, 1, "$name - no valid function block in ctrlUserExitFn");

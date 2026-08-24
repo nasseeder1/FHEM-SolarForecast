@@ -2,6 +2,13 @@
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
+## [unreleased]
+xx.xx.xxxx Rev. 
+
+- userExit bzgl. zirkulären Referenzen gehärtet 
+
+
+
 ## [v2.10.1]
 22.08.2026 Rev. 31587
 
