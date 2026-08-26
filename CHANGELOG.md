@@ -11,7 +11,6 @@ xx.xx.xxxx Rev.
   early-Zweig: hint5 und hint23 zusätzlich gated (Forum: https://forum.fhem.de/index.php?msg=1368313)
 
 
-
 ## [v2.10.1]
 22.08.2026 Rev. 31587
 
