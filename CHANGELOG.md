@@ -5,6 +5,19 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 ## [unreleased]
 xx.xx.xxxx Rev. 
 
+
+
+
+## [unreleased]
+xx.xx.xxxx Rev. 
+
+
+
+
+
+## [unreleased]
+xx.xx.xxxx Rev. 
+
 - userExit bzgl. zirkulären Referenzen gehärtet 
 - _aiFannAutoArchitecture: Warnung durch undefiniertes dataParamRatio beseitigt
 - _aiFannEpochDiagnostic: neuer hint29, very_early-Zweig: hint1 und hint26 zusaätzlich gated, 
