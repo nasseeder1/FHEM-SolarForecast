@@ -16,7 +16,7 @@ xx.xx.xxxx Rev.
 
 
 ## [v2.10.2]
-xx.xx.xxxx Rev. 
+30.08.2026 Rev. 31608
 
 - userExit bzgl. zirkulären Referenzen gehärtet 
 - potenzielle Speicherleaks geschlossen
