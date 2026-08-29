@@ -72,7 +72,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.2" => "26.08.2026  userExit bzgl. zirkulären Referenzen gehärtet ".
+  "2.10.2" => "29.08.2026  userExit bzgl. zirkulären Referenzen gehärtet, potenzielle Speicherleaks geschlossen ".
                            "_aiFannAutoArchitecture: Warnung durch undefiniertes dataParamRatio beseitigt ".
                            "_aiFannEpochDiagnostic: neuen hint29, very_early-Zweig: hint1 und hint26 zusaätzlich gated, early-Zweig: hint5 und hint23 zusätzlich gated ",
   "2.10.1" => "20.08.2026  writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075) ".
@@ -11580,11 +11580,45 @@ return;
 # saubere Schließen von Verbindungen oder das Entfernen von
 # internen Timern.
 ################################################################
+################################################################
+#  Entfernt alle InternalTimer dieses Devices - auch solche,
+#  deren ARG kein $hash, sondern ein anonymer Array-Ref
+#  ([$name, ...]) oder Hash-Ref ({hash => $hash, ...}) ist.
+#  RemoveInternalTimer($hash) matcht nur exakte Referenzgleichheit
+#  und erfasst diese Timer daher NICHT (z.B. centralTask,
+#  singleUpdateState, writeCacheFile mit [$name,...]-Aufruf).
+################################################################
+sub _removeAllTimers {
+  my $hash = shift;
+  my $name = $hash->{NAME};
+
+  for my $i (keys %main::intAt) {
+      my $entry = $main::intAt{$i};
+      my $fn    = $entry->{FN} // '';
+
+      next if($fn !~ /^FHEM::SolarForecast::/xs);                                                       # nur eigene Timer anfassen
+
+      my $arg   = $entry->{ARG};
+      my $match = 0;
+
+      $match = 1 if(ref $arg eq 'HASH'  && ( $arg == $hash || (defined $arg->{hash} && $arg->{hash} == $hash) ));
+      $match = 1 if(ref $arg eq 'ARRAY' && defined $arg->[0] && $arg->[0] eq $name);
+
+      delete $main::intAt{$i} if($match);
+  }
+
+return;
+}
+
 sub Undef {
  my $hash = shift;
  my $name = shift;
 
- RemoveInternalTimer($hash);
+ for my $blkkey (qw(AINNTRAIN_CON_BLOCKRUN AINNTRAIN_PV_BLOCKRUN AIBLOCKRUNNING GMFRUNNING)) {          # laufende BlockingCall Kindprozesse beenden, sonst Zombie-Prozess + Zugriff auf gelöschten $hash
+     BlockingKill ($hash->{HELPER}{$blkkey}) if(defined $hash->{HELPER}{$blkkey});
+ }
+
+ _removeAllTimers ($hash);                                                                              # entfernt auch Timer mit [$name,...]/{hash=>$hash,...} ARG, siehe oben
  delete $readyfnlist{$name};
 
 return;
@@ -13374,7 +13408,7 @@ sub _specialActivities {
           my $cutoff = $t - $ttl;
 
           for my $sh1 (keys %{ $data{$name}{log} }) {                                           # Logsperrhash bereinigen
-              delete $data{$name}{log}{$sh1} if($data{$name}{log}{$sh1}{ts} // 0 < $cutoff);
+              delete $data{$name}{log}{$sh1} if(($data{$name}{log}{$sh1}{ts} // 0) < $cutoff);
           }
 
           Log3 ($name, 4, "$name - Daily special tasks - Task 4 finished");
@@ -28710,6 +28744,7 @@ sub aiFannConAbortTrain {
   Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{$blkkey}{fn} pid:$hash->{HELPER}{$blkkey}{pid} aborted: $cause");
 
   delete $hash->{HELPER}{$blkkey};
+  delete $data{$name}{$fanntyp.'temp'};                                                        # verwaiste Trainingsversuche (inkl. FannBlob) des abgebrochenen Laufs verwerfen
 
   $data{$name}{current}{$fanntyp.'NNTrainstate'} = $cause;
 
