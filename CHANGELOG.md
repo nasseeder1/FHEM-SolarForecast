@@ -1,4 +1,4 @@
-# Changelog
+# Changelog SolarForecast
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 

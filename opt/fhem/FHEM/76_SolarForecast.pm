@@ -11580,6 +11580,20 @@ return;
 # saubere Schließen von Verbindungen oder das Entfernen von
 # internen Timern.
 ################################################################
+sub Undef {
+ my $hash = shift;
+ my $name = shift;
+
+ for my $blkkey (qw(AINNTRAIN_CON_BLOCKRUN AINNTRAIN_PV_BLOCKRUN AIBLOCKRUNNING GMFRUNNING)) {          # laufende BlockingCall Kindprozesse beenden, sonst Zombie-Prozess + Zugriff auf gelöschten $hash
+     BlockingKill ($hash->{HELPER}{$blkkey}) if(defined $hash->{HELPER}{$blkkey});
+ }
+
+ _removeAllTimers ($hash);                                                                              # entfernt auch Timer mit [$name,...]/{hash=>$hash,...} ARG, siehe oben
+ delete $readyfnlist{$name};
+
+return;
+}
+
 ################################################################
 #  Entfernt alle InternalTimer dieses Devices - auch solche,
 #  deren ARG kein $hash, sondern ein anonymer Array-Ref
@@ -11606,20 +11620,6 @@ sub _removeAllTimers {
 
       delete $main::intAt{$i} if($match);
   }
-
-return;
-}
-
-sub Undef {
- my $hash = shift;
- my $name = shift;
-
- for my $blkkey (qw(AINNTRAIN_CON_BLOCKRUN AINNTRAIN_PV_BLOCKRUN AIBLOCKRUNNING GMFRUNNING)) {          # laufende BlockingCall Kindprozesse beenden, sonst Zombie-Prozess + Zugriff auf gelöschten $hash
-     BlockingKill ($hash->{HELPER}{$blkkey}) if(defined $hash->{HELPER}{$blkkey});
- }
-
- _removeAllTimers ($hash);                                                                              # entfernt auch Timer mit [$name,...]/{hash=>$hash,...} ARG, siehe oben
- delete $readyfnlist{$name};
 
 return;
 }
