@@ -8,10 +8,14 @@ xx.xx.xxxx Rev.
 
 
 
-## [unreleased]
+## [v2.10.3]
 xx.xx.xxxx Rev. 
 
-
+- Fix: SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh
+       ___batClampValue snappte den prognostizierten SoC im Ladefall bedingungslos auf batoptsocwh,
+       wodurch bpinmax wirkungslos war und 100% SoC bereits nach wenigen Stunden prognostiziert
+       wurde. Im Ladefall (delta >= 0) wird nun nur noch auf [lowSocwh, batinstcap] begrenzt;
+       der Snap-up auf batoptsocwh bleibt ausschließlich dem Entladefall vorbehalten.
 
 
 

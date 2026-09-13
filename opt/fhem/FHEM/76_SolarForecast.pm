@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31587 2026-08-22 20:11:53Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31608 2026-08-29 22:38:59Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -72,6 +72,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.10.3" => "12.09.2026  Fix: SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh ",
   "2.10.2" => "29.08.2026  userExit bzgl. zirkulären Referenzen gehärtet, potenzielle Speicherleaks geschlossen ".
                            "_aiFannAutoArchitecture: Warnung durch undefiniertes dataParamRatio beseitigt ".
                            "_aiFannEpochDiagnostic: neuen hint29, very_early-Zweig: hint1 und hint26 zusaätzlich gated, early-Zweig: hint5 und hint23 zusätzlich gated ",
@@ -15668,6 +15669,39 @@ return;
 }
 
 ################################################################
+#                Parse setupEnvironment
+################################################################
+sub __parseAttrEnvironment {
+  my $name = shift;
+
+  my $env = AttrVal ($name, 'setupEnvironment', '');
+  return if(!$env);
+
+  my ($pa, $ph) = parseParams ($env);
+
+  my ($oustmpdev, $oustmprdg)             = split (':', $ph->{outsideTemp}, 2) if(defined $ph->{outsideTemp});
+  my ($winddev,     $windrdg)             = split (':', $ph->{windSpeed},   2) if(defined $ph->{windSpeed});
+  my ($presendev, $presenrdg, $presenrgx) = split (':', $ph->{presence},    3) if(defined $ph->{presence});
+  my ($gridstdev, $gridstrdg, $gridstrgx) = split (':', $ph->{gridStatus},  3) if(defined $ph->{gridStatus});
+
+
+  my $parsed = {
+      outsideTempDev  => $oustmpdev,
+      outsideTempRdg  => $oustmprdg,
+      windDev         => $winddev,
+      windRdg         => $windrdg,
+      presenceDev     => $presendev,
+      presenceRdg     => $presenrdg,
+      presenceRgx     => $presenrgx,
+      gridstdev       => $gridstdev,
+      gridstrdg       => $gridstrdg,
+      gridstrgx       => $gridstrgx,
+  };
+
+return $parsed;
+}
+
+################################################################
 #   Wochentage, Feiertage und Urlaubstage übertragen
 ################################################################  starttime
 sub _transferHolidayValues {
@@ -15952,39 +15986,6 @@ sub __parseAttrBatSoc {
       otpMargin    => $otpMargin,
       barrierSoc   => $barrierSoC,                                                        # SoC Barriere ab der eine Ladeleistungssteuerung aktiv sein soll
       barrierPar   => $barrierPar,                                                        # Aktionsparameter für Barriere Bereich
-  };
-
-return $parsed;
-}
-
-################################################################
-#                Parse setupEnvironment
-################################################################
-sub __parseAttrEnvironment {
-  my $name = shift;
-
-  my $env = AttrVal ($name, 'setupEnvironment', '');
-  return if(!$env);
-
-  my ($pa, $ph) = parseParams ($env);
-
-  my ($oustmpdev, $oustmprdg)             = split (':', $ph->{outsideTemp}, 2) if(defined $ph->{outsideTemp});
-  my ($winddev,     $windrdg)             = split (':', $ph->{windSpeed},   2) if(defined $ph->{windSpeed});
-  my ($presendev, $presenrdg, $presenrgx) = split (':', $ph->{presence},    3) if(defined $ph->{presence});
-  my ($gridstdev, $gridstrdg, $gridstrgx) = split (':', $ph->{gridStatus},  3) if(defined $ph->{gridStatus});
-
-
-  my $parsed = {
-      outsideTempDev  => $oustmpdev,
-      outsideTempRdg  => $oustmprdg,
-      windDev         => $winddev,
-      windRdg         => $windrdg,
-      presenceDev     => $presendev,
-      presenceRdg     => $presenrdg,
-      presenceRgx     => $presenrgx,
-      gridstdev       => $gridstdev,
-      gridstrdg       => $gridstrdg,
-      gridstrgx       => $gridstrgx,
   };
 
 return $parsed;
@@ -16443,7 +16444,16 @@ sub _batChargeMgmt {
           }
 
           my $socwh = $bs->{socwh} + $delta;
-          $socwh    = ___batClampValue ($socwh, $bs->{lowSocwh}, $bs->{batoptsocwh}, $bs->{batinstcap});
+
+          if ($delta >= 0) {                                                                    # Laden: kein Snap-up auf batoptsocwh, nur physikalische Grenzen
+              $socwh = $socwh < $bs->{lowSocwh}   ? $bs->{lowSocwh}   :
+                       $socwh > $bs->{batinstcap} ? $bs->{batinstcap} :
+                       $socwh;
+          }
+          else {                                                                                # Entladen: Snap-up auf batoptsocwh bleibt korrekt
+              $socwh = ___batClampValue ($socwh, $bs->{lowSocwh}, $bs->{batoptsocwh}, $bs->{batinstcap});
+          }    
+          
           $socwh    = round0($socwh);
           $progsoc  = round1(___batSocWhToPercent($bs->{batinstcap}, $socwh));
 
