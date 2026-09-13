@@ -26,6 +26,17 @@ xx.xx.xxxx Rev. xxxxx
     'aitrained'/'airaw': delete der alten Hash-Referenz vor dem Retrieve (Guard: -s $file).
     'neuralnet': selektives Löschen der XS-seitigen FannModel-Objekte (nicht serialisierbar,
     dominanter RAM-Anteil); Blob-Daten und Validierungslogik bleiben unverändert.
+
+  * _aiFannPercentileBasedLimits: der overshoot-Faktor (raw_max / p999) hob den
+    Percentile-Clip rechnerisch auf raw_max zurück, womit der Double-Percentile-Filter
+    wirkungslos wurde; targmaxval wird jetzt korrekt als p999 * 1.05 berechnet
+  
+  * bugfix: _aiFannNormAsymFixRange: fehlender Hard-Clamp [0,1] ließ normierte Werte > 1.0
+    ins Netz laufen wenn Targets den targmaxval überschritten; Werte werden jetzt hart auf
+    [0,1] begrenzt
+	
+  * beide Fixes zusammen aktivieren das Percentile Clipping für BEV-bedingte Heavy-Tail-
+    Verteilungen im Trainingstarget korrekt
 	 
 - Add: 
   * Kreuzvalidierung stepSoC * careCycle in ctrlBatSocManagementXX
