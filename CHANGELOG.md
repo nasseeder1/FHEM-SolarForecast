@@ -3,13 +3,13 @@
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 ## [unreleased]
-xx.xx.xxxx Rev. 
+xx.xx.xxxx Rev. xxxxx
 
 
 
 
 ## [v2.10.3]
-xx.xx.xxxx Rev. 
+xx.xx.xxxx Rev. xxxxx
 
 - Fix: 
   * SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh
