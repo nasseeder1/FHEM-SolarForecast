@@ -11,12 +11,31 @@ xx.xx.xxxx Rev.
 ## [v2.10.3]
 xx.xx.xxxx Rev. 
 
-- Fix: SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh
-       ___batClampValue snappte den prognostizierten SoC im Ladefall bedingungslos auf batoptsocwh,
-       wodurch bpinmax wirkungslos war und 100% SoC bereits nach wenigen Stunden prognostiziert
-       wurde. Im Ladefall (delta >= 0) wird nun nur noch auf [lowSocwh, batinstcap] begrenzt;
-       der Snap-up auf batoptsocwh bleibt ausschließlich dem Entladefall vorbehalten.
-
+- Fix: 
+  * SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh
+    ___batClampValue snappte den prognostizierten SoC im Ladefall bedingungslos auf batoptsocwh,
+    wodurch bpinmax wirkungslos war und 100% SoC bereits nach wenigen Stunden prognostiziert
+    wurde. Im Ladefall (delta >= 0) wird nun nur noch auf [lowSocwh, batinstcap] begrenzt;
+    der Snap-up auf batoptsocwh bleibt ausschließlich dem Entladefall vorbehalten.
+	   
+  * readCacheFile - RAM-Peak beim Nachladen von KI-Modellen reduziert (Forum: https://forum.fhem.de/index.php?msg=1368934)
+    Beim Reload von 'aitrained', 'airaw' und 'neuralnet' lagen kurzzeitig zwei vollständige
+    Modelle gleichzeitig im Heap (altes Objekt + neu deserialisiertes). Auf speicherschwachen
+    Systemen (z.B. Raspberry Pi 2, ~1 GB RAM) konnte dies den OOM-Killer triggern.
+    Behoben durch gezieltes Freigeben der Vorgängerdaten unmittelbar vor fileRetrieve:
+    'aitrained'/'airaw': delete der alten Hash-Referenz vor dem Retrieve (Guard: -s $file).
+    'neuralnet': selektives Löschen der XS-seitigen FannModel-Objekte (nicht serialisierbar,
+    dominanter RAM-Anteil); Blob-Daten und Validierungslogik bleiben unverändert.
+	 
+- Add: 
+  * Kreuzvalidierung stepSoC * careCycle in ctrlBatSocManagementXX
+    Das Produkt aus stepSoC und careCycle muss 100 ergeben (oder stepSoC=0
+    zur Deaktivierung des SoC-Managements). Ungültige Kombinationen werden
+    beim Setzen des Attributs abgewiesen. Gültige Paare: 1/100, 2/50, 4/25,
+    5/20, 10/10, 20/5, 25/4, 50/2, 100/1.
+    Der zulässige Wertebereich von stepSoC wurde auf die ganzzahligen Teiler
+    von 100 im Bereich 1..100 erweitert (zuvor: 0..5).
+	   
 
 
 ## [v2.10.2]
