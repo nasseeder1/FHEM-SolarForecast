@@ -31,11 +31,11 @@ xx.xx.xxxx Rev. xxxxx
     Percentile-Clip rechnerisch auf raw_max zurück, womit der Double-Percentile-Filter
     wirkungslos wurde; targmaxval wird jetzt korrekt als p999 * 1.05 berechnet
   
-  * _aiFannNormAsymFixRange: fehlender Hard-Clamp [0,1] ließ normierte Werte > 1.0
+    _aiFannNormAsymFixRange: fehlender Hard-Clamp [0,1] ließ normierte Werte > 1.0
     ins Netz laufen wenn Targets den targmaxval überschritten; Werte werden jetzt hart auf
     [0,1] begrenzt
 	
-  * beide Fixes zusammen aktivieren das Percentile Clipping für BEV-bedingte Heavy-Tail-
+    Beide obiges Fixes zusammen aktivieren das Percentile Clipping für BEV-bedingte Heavy-Tail-
     Verteilungen im Trainingstarget korrekt
 	 
 - Add: 
