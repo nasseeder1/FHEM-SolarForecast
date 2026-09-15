@@ -11,6 +11,9 @@ xx.xx.xxxx Rev. xxxxx
 ## [v2.10.3]
 xx.xx.xxxx Rev. xxxxx
 
+- Change:
+  * Online-Hilfe für Attribut consForecastBase präzisiert
+
 - Fix: 
   * SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh
     ___batClampValue snappte den prognostizierten SoC im Ladefall bedingungslos auf batoptsocwh,
