@@ -15,6 +15,11 @@ xx.xx.xxxx Rev. xxxxx
   * Online-Hilfe für Attribut consForecastBase präzisiert
 
 - Fix: 
+  * ## Flowgrafik: 
+    Korrektur der Darstellung bei Netzladung der Batterie über den Hausknoten. 
+    Ein negativer Energiefluss zwischen Inverterknoten und Hausknoten wird nun korrekt als direkter Fluss Hausknoten → Batterie dargestellt. 
+    Der angezeigte Hausverbrauch bleibt davon unberührt. (__calcVectorConsumption + _flowGraphic)
+    
   * SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh
     ___batClampValue snappte den prognostizierten SoC im Ladefall bedingungslos auf batoptsocwh,
     wodurch bpinmax wirkungslos war und 100% SoC bereits nach wenigen Stunden prognostiziert
