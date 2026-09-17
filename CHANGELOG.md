@@ -15,7 +15,7 @@ xx.xx.xxxx Rev. xxxxx
   * Online-Hilfe für Attribut consForecastBase präzisiert
 
 - Fix: 
-  * ## Flowgrafik: 
+  * Flowgrafik: 
     Korrektur der Darstellung bei Netzladung der Batterie über den Hausknoten. 
     Ein negativer Energiefluss zwischen Inverterknoten und Hausknoten wird nun korrekt als direkter Fluss Hausknoten → Batterie dargestellt. 
     Der angezeigte Hausverbrauch bleibt davon unberührt. (__calcVectorConsumption + _flowGraphic)
