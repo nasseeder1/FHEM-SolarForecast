@@ -54,6 +54,14 @@ xx.xx.xxxx Rev. xxxxx
     5/20, 10/10, 20/5, 25/4, 50/2, 100/1.
     Der zulässige Wertebereich von stepSoC wurde auf die ganzzahligen Teiler
     von 100 im Bereich 1..100 erweitert (zuvor: 0..5).
+    
+  * Schlüssel plantControl->plantCoordinates hinzugefügt, um mehrere SF-Geräte
+    an verschiedenen Standorten innerhalb eines FHEM-Systems zu unterstützen.
+    Format: latitude-><Wert>, longitude-><Wert>
+    Wenn dieses Attribut gesetzt ist, haben die gerätespezifischen Koordinaten Vorrang vor den Werten,
+    die im globalen Device definiert sind. Die Höhe ist hier nicht konfigurierbar
+    und muss im globalen Device festgelegt bleiben (erforderlich für das Astro-Modul).
+    Die Eingabe wird beim Setzen validiert; unbekannte Schlüssel werden abgelehnt.
 	   
 
 

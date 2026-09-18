@@ -72,8 +72,10 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.3" => "13.09.2026  Fix: SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh ".
-                           "Wertebereiche für stepSoC und careCycle überarbeitet ",
+  "2.10.3" => "18.09.2026  Fix: SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh ".
+                           "Wertebereiche für stepSoC und careCycle überarbeitet ".
+                           "Korrektur der Darstellung bei Netzladung der Batterie über den Hausknoten ".
+                           "Schlüssel plantControl->plantCoordinates hinzugefügt, um mehrere SF-Geräte an verschiedenen Standorten innerhalb eines FHEM-Systems zu unterstützen ",
   "2.10.2" => "29.08.2026  userExit bzgl. zirkulären Referenzen gehärtet, potenzielle Speicherleaks geschlossen ".
                            "_aiFannAutoArchitecture: Warnung durch undefiniertes dataParamRatio beseitigt ".
                            "_aiFannEpochDiagnostic: neuen hint29, very_early-Zweig: hint1 und hint26 zusaätzlich gated, early-Zweig: hint5 und hint23 zusätzlich gated ",
@@ -89,125 +91,6 @@ my %vNotesIntern = (
                            "neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten ".
                            "Sun Position Caching integriert ".
                            "kleinere Patches ",
-  "2.9.4"  => "02.08.2026  Resync Consumer Schaltstatus an der Flanke Automatik AUS→EIN beim Umlegen des Automatik-Schalters ".
-                           "Post-Icon für Schweregrad '2' geändert, Bugfix in _addDynAttr: Regexfilter für statische Platzhalter korrigiert ".
-                           "Mitteilungssystem: es wird immer das Icon für die Severity der letzten Message und nicht die höchste Severity aller Messages angezeigt ".
-                           "Debug consumerSwitchingXX erweitert ",
-  "2.9.3"  => "31.07.2026  Die reset-Funktion 'set ... reset ..' kann Daten in pvCircular suchen, löschen und bearbeiten ".
-                           "Einbau hint27 und hint28 sowie Überprüfung hint12 abhängig von aiConShuffleMode und aiConShufflePeriod ".
-                           "_calcConsForecast_legacy: eigener consForecastBase-Durchlauf auf conraw, konsistent zu confc/confcex ".
-                           "neuer Wert 'pvfcfeedlim' in Datenpool pvHistory und NextHours ".
-                           "neue Auswahl pvForecastLimited im Attr 'graphicBeamXContent' zur Anzeige der Einspeise-limitierten PV-Prognose ",
-  "2.9.2"  => "26.07.2026  Einbau hint26 mit Erkennung unterer Grenze von aiControl->aiConLearnRate ".
-                           "consumerControl->iconFix zur statischen Darstellung der Verbraucher-Icons ".
-                           "der Ready-Status der Fann-KI wird sprachensensitiv ausgegeben ".
-                           "Ergänzung Datensammlung und Training für consumerXX->type heatpump->opmode 'eco' ".
-                           "vermeide zu wenig Datensätze im Drift-Retrain Prüfungskontext ".
-                           "Änderung plantControl->writeForceType: 'file' ist Standardspeicher, 'auto' ist deprecated, verwende 'db' anstatt (incl. BugFix FileRead) ".
-                           "Integration initialen Cache-Load 'initfirst' um vor dem Laden weiterer Daten Voreinstellungen festzulegen ".
-                           "Setter 'reset consumptionHistory' in 'reset consumptionShort' umbenannt ".
-                           "Intern: writeCacheToFile nach writeCacheFile umbenannt ",
-  "2.9.1"  => "16.07.2026  neuer FEATURE BLOCKS semantics_heatpump_nopv, Gemini model auf gemini-3.5-flash geändert ".
-                           "neuer Befehl set .. reset aiData setValue ... ".
-                           "das Gemini Model kann im Schlüssel aiControl->geminiAPIkey nach dem API-Key angegeben werden ".
-                           "die Victron API ((Model VictronKiAPI) kann nun den neuen Token-Auth verwenden ",
-  "2.9.0"  => "10.07.2026  speichere Gründe für Retrainstatus in RetrainReason, Persistenztyp mit plantControl->writeForceType ".
-                           "_aiFannRetrainIndicator: berücksichtige neuen bias_abs_min, Gemini Prompt Erweiterung ".
-                           "Consumer Typ 'heatpump' für Planung & automatisches Schalten freigegeben, hef angepasst für: dishwasher, dryer, dehydrator ".
-                           "Consumer heatpump kann mit opmodeIcons jedem Betriebsmodus ein eigenes Icon zugewiesen werden ".
-                           "Aktivierung WP-Modusanteile (Punktesystem) im Training und Inferenz, Speicherung zeitgewichtete Empfehlung Verbrauchernutzung ".
-                           "Bereinigung Verbrauchsinput um PV-getriebenen Anteil im CON-KI-Training für Non-PV-Profile ".
-                           "Consumer type noSchedule (deprecated) setzt immer mode=mustNot, Änderung von type=noSchedule nach type=X ist ohne Löschrequest möglich ".
-                           "Trainingsergebnisse können per Copy&Paste über ein generiertes Output manuell an LLM übergeben werden ".
-                           "Consumer 'power' darf nicht mehr 0 sein, dafür 'power=<Nominalleistung>' und 'pvshare=0' nutzen ".
-                           "neuer Consumer Typ 'fridge' ",
-  "2.8.0"  => "30.06.2026  BEV Implementierung, Data Leakage beseitigt, neuer Consumer type dehydrator, Weiterentwicklung Berater ".
-                           "__hpConsumerOpmode: Umstellung modus-minutes nach points, ConsumerXX->modulation kann fest auf 100 eingestellt werden ".
-                           "neue Blöcke semantics_temp_basic, semantics_stochastic, hod_mean7_norm, hod_cv7_norm ".
-                           "Erweiterung _aiFannBevConsumerAggregate um energy_remaining, charge_intensity ".
-                           "Auto-Konfiguration: aiConHiddenLayers, aiConLearnRate, aiConSteepness, aiConShufflePeriod - falls nicht gesetzt ".
-                           "Trainingsdefaults angepasst, _aiFannEpochDiagnostic: Anpassung (very) early Konvergenzgrenzen ".
-                           "Getter aiNeuralNetConState in aiConTrainState umbenannt, Online KI-Bewertung durch Gemini ",
-  "2.7.0"  => "20.06.2026  _aiFannBuildLagFeatures: erweiterte Lag-Erstellung, nicht kompatibel mit Vorgänger Version ".
-                           "verbesserter Snap-Guard und Retrainidicator, Hint-Korrektur, Div0-Fix ".
-                           "Refakturierung _listDataPoolPvHist: Möglichkeit der Eingrenzung anzuzeigender / zu exportierender Werte ".
-                           "Reading Tomorrow_ConsumptionForecast entfernt, neuer _aiFannFeatureBuilder ersetzt FEATURE-REGISTRY ".
-                           "Umstellung aiControl->aiConProfile auf Flags (bisherige Profile behalten Gültigkeit) ".
-                           "neue lag2_spike Features aus sandbox in BLOCKS->lags aktiviert, _aiFannEpochDiagnostic: Hints erweitert ".
-                           "delConsumerFromMem: Aufnahme neuer Schlüssel, _attrconsumer: Integration des Fingerprint-Guard ".
-                           "neue WP-Werte csmXX_(off|heating|defrost|hotwater|cooling|pool|poolheating)_minutes ".
-                           "neuer Schlüssel aiControl->opmode für Consumer 'heatpump', Definition mehrere WP-Consumer nun möglich ".
-                           "verbesserte Prüfung des Objektes 'Weather Properties' im Anlagencheck ",
-  "2.6.11" => "26.05.2026  _saveEnergyConsumption: nutze Logsequenzmanagement für Verbrauchslimitüberschreitung ".
-                           "_aiFannApplyBiasCorrection: Anpassung OSL-Gewicht ",
-  "2.6.10" => "25.05.2026  Bewertungsübersicht im AI-Status Popup, pv_mittag_peak_boost_special geändert ".
-                           "aiFannConInfer: Fortschreibung der Arrays! mit Horizont-Dämpfung, geändert aiConShuffleMode default=1 ".
-                           "__getCyclesAndRuntime: Fix für Race Condition beim Übergang OFF->ON genau an einem Stundenwechsel ".
-                           "_aiFannPercentileBasedLimits: Safety Berechnung angepasst, aiFannDetectNoiseLevel: Bugfix n ".
-                           "Fix Bat Prognose < 100% wenn Bat voll und PVü > Con, safetyMargin default: 20:20 gesetzt ".
-                           "v1_common_active_pv in FEATURE-REGISTRY ergänzt, Online-Hilfe für v1_common_pv und v1_common_active_pv geändert ".
-                           "Diagnose Lernverhalten eingebaut, aiConHiddenLayers kann nun auch Netze wie 80-3-5 ".
-                           "_aiFannApplyBiasCorrection: Einbau OSL-Korrektur, neuer Schlüssel aiCaontrol->aiConTrainLimit ".
-                           "AI mehr Neuronenlayer X-X-X-X... möglich, aiConLearnRate: kleinste Lernrate nun 0.0001 ".
-                           "Messagesystem: gelesene Mitteilungen werden auch nach Systemneustart nicht als neu signalisiert ",
-  "2.6.9"  => "15.05.2026  Umbenennungen im CON Fann Statusdashboeard, dynamisches Drift Detect Fenster, Retrain Empfehlung ".
-                           "_aiFannDriftSafetyBlocked: Ausbau und zusätzliches Debug, aiConHiddenLayers: letzte Zahl kann einstellig sein ".
-                           "Flowgrafik Batteriefluß erneut nachgebessert, Adaptives Fenster _aiFannSelectWindow invertiert ".
-                           "AI Status Popup Inhalt aufklappbar ",
-  "2.6.8"  => "10.05.2026  ___doPlanning: Berücksichtigung des PV-Überschuß Budgets im Planungsprozesses von can-Consumern ".
-                           "___csmSpecificEpieces: stündliche AVG-Aktualisierung auch im laufenden Betrieb, ausgelöst durch einen Stundenwechsel ".
-                           "neuer Consumer-Schlüssel exclgroup zur Formung einer Exclude-Gruppe ",
-  "2.6.7"  => "09.05.2026  __calcVectorConsumption: fix Doppelbatteriebug mit einem Batterieinverter Forum: https://forum.fhem.de/index.php?msg=1363211 ",
-  "2.6.6"  => "07.05.2026  nicht mehr benötigten Code entfernt, writeToHistory, _saveHistP1 und _saveHistP2 refactored, ___doPlanning refactored ".
-                           "Einbau consumerCacheDirty, ___setConsumerSwitchingState: lastOwnSwitchCmd eingebaut, ".
-                           "BLINDTIME, REAPLANINTVL einegbaut, Anti-Toggling / Cycle-Budget: Verhindert dass mehrere starke Consumer im selben ".
-                           "Zyklus starten und den PV-Überschuss überzeichnen. Implementiert durch surplusCycleCommitted als Zyklus-Budget ".
-                           "neuer Verbraucher Schlüssel swprio ",
-  "2.6.5"  => "03.05.2026  _batChargeMgmt Refactored: Äußere Stundenschleife -> Innere Batterieschleife, Fix 100%-Bug ".
-                           "wichtiger Bugfix weekday in LOCALE_DAYNAMES, Debug consumerPlanning angepasst ".
-                           "Speicherung von bevcsmBatCapXX und bevcsmPwrXX in pvHistory und aiRawData ",
-  "2.6.4"  => "01.05.2026  _calcTodayDeviation: prozentuale Abweichung von Tageswerten mit Konfidenz-Gewichtung, Clipping & ".
-                           "exponentielles Glätten EWMA -> verhindert Sprünge durch einen gleitenden Mittelwert über die letzten ".
-                           "Berechnungen, Routine ___areaFactorTrack entfernt ",
-  "2.6.3"  => "27.04.2026  Debug apiProcess: Anzeige ob ein Cached Wert verwendet wird bei 'DWD API Tilted' ".
-                           "__calcSunPosition: Korrektur für Randstunden, __getDWDSolarData: Korrektur DWD rad1h-Reading ",
-  "2.6.2"  => "23.04.2026  aiFannDetectDrift: Änderung der Driftanalyse ",
-  "2.6.1"  => "22.04.2026  neues Debug: miniCache, replace separate Mini Caches by one Multi_Cache, LRU Cache for timestringToTimestamp ".
-                           "Mini Caches FmtWeatherCache / cloud2bin / sunalt2bin / temp2bin / isHoliday ",
-  "2.6.0"  => "16.04.2026  new ___computeTiltedIrradianceCached: implement new tilted irradiance calc for DWD ".
-                           "rename debug id saveData2Cache -> saveData2Storage, new Debug Id tiltedIrrCache ".
-                           "new Mini Caches: Solar2Astro_Cache, DayHourMove_Cache, move __createAdditionalEvents to Task 8 ".
-                           "complete universal LRU-Cache implementation for DWD Tilted Irradiance Cache, TimestringsFromOffset Cache ".
-                           "rework: timestringsFromOffset, _beamGraphicFirstHour -> fix graphic error hour -1 if graphicHistoryHour > day change ".
-                           "prepare replacing of Reading Tomorrow_ConsumptionForecast by Tomorrow_CONforecast, reqork _createSummaries to slots ",
-  "2.5.3"  => "09.04.2026  _attrMeterDev: complete refactored to avoid problems like https://forum.fhem.de/index.php?msg=1361507 ".
-                           "correct ___areaFactorTrack: offset_hours ",
-  "2.5.2"  => "07.04.2026  func ___openMeteoErrorExit, ___solCastErrorExit -> 5 minutes Log message lock ".
-                           "get solardata API response code refactored ___forecastSolarErrorExit ",
-  "2.5.1"  => "06.04.2026  bugfixes _calcConsForecast_legacy Forum: https://forum.fhem.de/index.php?msg=1361272 ".
-                           "new func ___openMeteoErrorExit, ___solCastErrorExit, edit CommandRef ",
-  "2.5.0"  => "05.04.2026  new key plantControl->consForecastBase, checkPlantConfig: add String Inverter Mapping check ".
-                           "edit ComRef, expand consForecastBase for groups e.g. 3-9, header: CO -> CON, use current environment variables for display in header ".
-                           "checkPlantConfig: check con in aiRawData, HPCOMFTEMP => 21 °C, __getaiFannState: more Drift parameter ".
-                           "aiFannDetectDrift: new drift weighting, move comforttemp to plantControl ".
-                           "_setattrKeyVal: change code, isReductionState: fix code call Forum https://forum.fhem.de/index.php?msg=1360810 ".
-                           "new key aiControl->aiConAbsOversample, new key hpcsm in pvHistory & aiRawData ".
-                           "integrate new consumer type=bev as a device with no control, rework of _listDataPoolPvHist ",
-  "2.4.0"  => "20.03.2026  change of __normBeamHeight -> Forum: https://forum.fhem.de/index.php?msg=1359069 ".
-                           "change last_presence_check to central 'last_transfer', edit comref, Drift complete rework & lock ".
-                           "aiFannConDataLoad: use new value pvInverterCapSum, _attrconsumer: fix locktime=0:0 ".
-                           "extended/refactored: writeCacheFile, readCacheFile, timestampToTimestring, timestringToTimestamp ".
-                           "new key graphicControl->headerShowEnv, _saveEnergyConsumption: implemntation of MAXCONLIMIT ".
-                           "new key plantControl->conEnergyHourLimit ",
-  "2.3.0"  => "07.03.2026  new environment windSpeed, new Debug option aiProcess_long ",
-  "2.2.3"  => "05.03.2026  _saveEnergyConsumption: improvement of deny save negative con values, _transferInverterValues: fix rounding of difference carryforward ".
-                           "_transferAPIRadiationValues: fix round0 ",
-  "2.2.2"  => "03.03.2026  _transferInverterValues: change etotal init of new hour, new keys consumerControl->globalMode ".
-                           "add windspeed to aiRawData ",
-  "2.2.1"  => "28.02.2026  _listDataPoolPvHist: clear non-numerical hours from history, new sub round0 ",
-  "2.2.0"  => "15.02.2026  new Consumer mode 'mustNot', _aiFannCreateAddOnSignals: fix problem devision by zero in special case 40 degrees ".
-                           "edit comref, _attrconsumer refactored ",
-  "2.1.1"  => "10.02.2026  sub _createSummaries refactored ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -4823,12 +4706,11 @@ sub __forecastSolar_ApiRequest {
   my $string;
   ($string, $allstrings) = split ",", $allstrings, 2;
 
-  my ($set, $lat, $lon) = locCoordinates();
+  my ($set, $lat, $lon) = locCoordinates ($name);
 
   if (!$set) {
       my $err = qq{ERROR - the attribute 'latitude' and/or 'longitude' in global device is not set};
       Log3 ($name, 1, "$name - $err");
-      #singleUpdateState ( {hash => $hash, state => $err, evt => 1} );
       return $err;
   }
 
@@ -6473,7 +6355,7 @@ sub ___createOpenMeteoURL {
   my $string      = $paref->{string};
 
   my $err;
-  my ($set, $lat, $lon, $elev) = locCoordinates();
+  my ($set, $lat, $lon, $elev) = locCoordinates ($name);
 
   if (!$set) {
       $err = qq{ERROR - the attribute 'latitude' and/or 'longitude' in global device is not set};
@@ -9739,6 +9621,7 @@ sub _attrplantControl {                  ## no critic "not used"
       consForecastBase          => { comp => $cforegex,                                           act => 1 },
       showLink                  => { comp => '(0|1)',                                             act => 0 },
       comforttemp               => { comp => '.*',                                                act => 1 },
+      plantCoordinates          => { comp => '.*',                                                act => 1 },
       writeForceType            => { comp => '(auto|db|file)',                                    act => 0 },
   };
 
@@ -10698,8 +10581,8 @@ sub _attrRadiationAPI {                  ## no critic "not used"
       return if(_checkSetupNotComplete ($hash));                                                   # keine Stringkonfiguration wenn Setup noch nicht komplett
 
       if ($aVal =~ /(ForecastSolar|OpenMeteoDWD|OpenMeteoDWDEnsemble|OpenMeteoWorld)-API/xs) {
-          my ($set, $lat, $lon, $elev) = locCoordinates();
-          return qq{set attributes 'latitude' and 'longitude' in global device first} if(!$set);
+          my ($set, $lat, $lon, $elev) = locCoordinates ($name);
+          return qq{set value for latitude, longitude in $name or the global device first} if(!$set);
 
           my $tilt = AttrVal ($name, 'setupStringDeclination', '');                                # Modul Neigungswinkel für jeden Stringbezeichner
           return qq{Please complete command "attr $name setupStringDeclination".} if(!$tilt);
@@ -10879,6 +10762,11 @@ sub __attrKeyAction {
       }
 
       # --- Ende init_done Sektion
+      
+      if ($akey eq 'plantCoordinates') {
+          my $err = __validatePlantCoordinates ($akeyval);
+          return $err if($err);
+      }
 
       if ($akey eq 'stepSoC' || $akey eq 'careCycle') {                                             # Kreuzvalidierung stepSoC * careCycle
           my $stepSoc   = $pphash->{stepSoC}   // BATSOCCHGDAY;
@@ -11250,6 +11138,57 @@ sub __attrKeyAction {
   }
 
 return $err;
+}
+
+################################################################
+#  Eingabevalidierung für Attribut plantCoordinates
+#
+#  Format:  latitude->52.4350,longitude->9.8790,altitude->90
+#           alle Felder optional – Fallback auf global
+#           wenn gesetzt, muss der Wert valide sein
+#
+#  Rückgabe: Fehlerstring -> Attribut-Set wird von FHEM geblockt
+#            undef        -> OK
+################################################################
+sub __validatePlantCoordinates {
+  my ($val) = @_;
+
+  my (undef, $h) = parseParams ($val, ',', '', '->');
+
+  for my $k (keys %{$h}) {                                                  # Keys von führenden und trailing Leerzeichen befreien
+      my $clean = $k;
+      $clean =~ s/^\s+|\s+$//g;
+      
+      if ($clean ne $k) {
+          $h->{$clean} = delete $h->{$k};
+      }
+  }
+
+  if (defined $h->{latitude}) {                                             # --- latitude: optional, wenn gesetzt Bereich -90..90 ---
+      my $lat = $h->{latitude};
+      return "plantCoordinates: invalid latitude '$lat' (expected: decimal number -90..90)"
+          unless ($lat ne '' && $lat =~ /^-?\d+(?:\.\d+)?$/ && $lat >= -90 && $lat <= 90);
+  }
+
+  if (defined $h->{longitude}) {                                            # --- longitude: optional, wenn gesetzt Bereich -180..180 ---
+      my $lon = $h->{longitude};
+      return "plantCoordinates: invalid longitude '$lon' (expected: decimal number -180..180)"
+          unless ($lon ne '' && $lon =~ /^-?\d+(?:\.\d+)?$/ && $lon >= -180 && $lon <= 180);
+  }
+
+  #if (defined $h->{altitude}) {                                             # --- altitude: optional, wenn gesetzt beliebige Dezimalzahl ---
+  #    my $alt = $h->{altitude};                                             # altitude muß für [ASTRO] im global device gesetzt werden!!
+  #    return "plantCoordinates: invalid altitude '$alt' (expected: decimal number)"
+  #        unless ($alt ne '' && $alt =~ /^-?\d+(?:\.\d+)?$/);
+  #}
+
+  my %known = map { $_ => 1 } qw(latitude longitude);                       # --- unbekannte Schlüssel abweisen ---
+  for my $k (keys %{$h}) {
+      return "plantCoordinates: unknown key '$k'"
+          unless $known{$k};
+  }
+
+return;                                                                     # undef = OK
 }
 
 ################################################################
@@ -14270,14 +14209,18 @@ sub __sunRS {
   my $type   = $paref->{type};
   my $date   = $paref->{date};                                                    # aktuelles Datum
   my $apiu   = $paref->{apiu};
+  my $debug  = $paref->{debug};
 
   my $hash   = $defs{$name};
 
   my ($fc0_sr, $fc0_ss, $fc1_sr, $fc1_ss);
 
-  my ($cset, undef, undef, undef) = locCoordinates();
-
-  debugLog ($paref, 'collectData_long', "collect sunrise/sunset times - device: $fcname =>");
+  my ($cset, $lat, $lon, $alt) = locCoordinates ($name);
+  
+  if ($debug =~ /collectData_long/x) {
+      Log3 ($name, 1, "$name DEBUG> plant coordinates used: latitude=$lat, longitude=$lon, altitude=$alt");
+      Log3 ($name, 1, "$name DEBUG> collect sunrise/sunset times - device: $fcname =>");
+  }
 
   my ($rapi, $wapi) = getStatusApiName ($hash);
 
@@ -17617,20 +17560,6 @@ sub __calcVectorConsumption {
       $node2bat = 0 if($dc2inv2node && $node2bat > 0);                                      # muß negativ (0) sein: Richtung Bat -> Inv.Knoten,  wichtig zur Festlegung Richtung und Inv. Knoten Summierung
   }
 
-  ### nicht mehr benötigte Daten verarbeiten - Bereich kann später wieder raus !!
-  ########################################################################################################################
-  #if ($node2bat > 0) {
-      # Messversatz nur wenn mindestens eine Batterie-Pfad-Variable aktiv:
-      # - dc2inv2node: Hybrid-Wechselrichter entlädt (Zeitversatz AC/DC-Messung)
-      # - node2inv2dc: Wechselrichter lädt (Zeitversatz AC/DC-Messung)
-      # - pv2bat:      Solarladegerät (separater DC-Pfad, nicht über Knoten)
-      # Wenn alle null: direktes Bat-Setup (z.B. Enphase, Zendure) →
-      # node2bat ist echter Ladefluss aus dem Knoten → kein Clamp!
-      #if ($dc2inv2node || ($node2inv2dc && $node2bat - $node2inv2dc <= 0)) {
-      #    $node2bat = 0;
-      #}
-  #}
-
   my $pnodesum  = $ppall + $pv2node + $dc2inv2node - $node2inv2dc;                          # Erzeugung Summe im Inverter-Knoten
   $pnodesum    += $node2bat < 0 ? abs $node2bat : 0;                                        # z.B. Batterie ist voll und SolarLader liefert an Knoten
   $pnodesum     = __normDecPlaces ($pnodesum);
@@ -17639,11 +17568,26 @@ sub __calcVectorConsumption {
   $node2home    = __normDecPlaces ($node2home);
 
   $vector->{vectorconsumption} = round0 ($gcon + $node2home + $bat2home);                   # V 1.52.0 Anpassung Consumption wegen Verlustleistungsdifferenzen
+  
+  ## Netzladung Batterie via Hausknoten: negativer node2home bei aktivem Laden
+  ## -> Fluß grafisch auf Home->Bat umleiten, node->Home auf 0 setzen (v2.10.3)
+  ##############################################################################
+  my $home2bat = 0;
+
+  if ($node2home < 0 && $batin > 0 && !$dc2inv2node && !$node2inv2dc) {
+      $home2bat  = abs ($node2home);
+      $node2bat += $node2home;                                                              # PV-Anteil am Knoten isolieren (node2bat - |home2bat|)
+      $node2bat  = 0 if ($node2bat < 0);                                                    # Clamp gegen Messartefakte
+      $node2home = 0;
+      
+      $vector->{gridChargeBat} = 1;                                                         # Flag für Grafikrichtung
+  }
 
   ## Linearverbrauch
   ####################
   $vector->{linearconsumption} = round0 ($pv2node + $pv2bat + $ppall - $gfeedin + $gcon - $batin + $batout);
 
+  $vector->{home2bat}  = $home2bat;
   $vector->{bat2home}  = $bat2home;
   $vector->{pnodesum}  = $pnodesum;
   $vector->{node2home} = $node2home;
@@ -21874,7 +21818,7 @@ sub _readSystemMessages {
 
   my $midx = 0;
 
-  my ($cset, $lat, $lon, $alt) = locCoordinates();
+  my ($cset, $lat, $lon, $alt) = locCoordinates ($name);
   my $noloc = '';
   my @nlc;
 
@@ -22285,7 +22229,7 @@ sub _checkSetupNotComplete {
 
   my $vrmcr   = StatusAPIVal ($hash, '?VRM', '?API', 'credentials', '');                    # Victron VRM Credentials gesetzt
 
-  my ($coset, $lat, $lon) = locCoordinates();                                               # Koordinaten im global device
+  my ($coset, $lat, $lon) = locCoordinates ($name);                                         # Koordinaten im global oder lokalen device
   my $rip;
   $rip    = 1 if(exists $data{$name}{statusapi}{'?IdPair'});                                # es existiert mindestens ein Paar RoofTop-ID / API-Key
   my $pv0 = NexthoursVal ($hash, 'NextHour00', 'pvfc', undef);                              # der erste PV ForeCast Wert
@@ -25268,9 +25212,9 @@ sub _flowGraphic {
                   "$stna bat75";
 
   my $grid2home_style       = $gconMetered ? "$stna active_sig"    : "$stna inactive";    # GridConsumption
-  my $bat2home_style        = "$stna inactive";
   my $dc2inv2node_style     = $dc2inv2node ? "$stna active_normal" : "$stna inactive";    # Batterie zu Inverter mit source=bat
   my $gconMetered_direction = "M250,515 L670,590";
+  my $bat2home_style        = "$stna inactive";
   my $bat2home_direction    = "M1200,515 L730,590";
 
   ## Knotensummen Erzeuger - Batterie - Home ermitteln -> Hausverbrauch ermitteln
@@ -25290,6 +25234,7 @@ sub _flowGraphic {
 
   my $consptn   = $vector->{vectorconsumption};                                           # Hausverbrauch auf Grundlage der Leistungsflüsse
   my $bat2home  = $vector->{bat2home};                                                    # Batterie -> Hausknoten
+  my $home2bat  = $vector->{home2bat} // 0;                                               # Hausknoten -> Batterie (v2.10.3)
   my $pnodesum  = $vector->{pnodesum};                                                    # Summe Inverterknoten
   my $node2home = $vector->{node2home};                                                   # Inverterknoten -> Haus
   my $node2bat  = $vector->{node2bat};                                                    # Inverterknoten -> Batterie
@@ -25298,7 +25243,10 @@ sub _flowGraphic {
       $bat2home_style     = "$stna active_normal";
       $bat2home_direction = "M1200,515 L730,590";
   }
-
+  elsif ($home2bat > 0) {                                                                 # v2.10.3: Netzladung Bat via Hausknoten
+      $bat2home_style     = "$stna active_sig";                                           # Signalfarbe -> Netzstrom
+      $bat2home_direction = "M730,590 L1200,515";                                         # Richtung umkehren: Home -> Bat
+  }
 
   ## definierte Verbraucher ermitteln
   #####################################
@@ -25702,16 +25650,22 @@ END3
   ###################################
   $cons_dmy    = round0 ($cons_dmy);                                                                # Verbrauch Dummy-Consumer
   $bat2home    = __normDecPlaces ($bat2home);
+  $home2bat    = __normDecPlaces ($home2bat);                                                       # v2.10.3
   $dc2inv2node = __normDecPlaces ($dc2inv2node);
   $node2bat    = __normDecPlaces ($node2bat);
   $consptn     = __normDecPlaces ($consptn);
+  
+  my $bat_conn_val = $home2bat || $bat2home;
 
   $ret .= qq{<text class="$stna text" id="nodetxt_$stna"      x="800"  y="320" style="text-anchor: start;">$pnodesum</text>}        if ($pnodesum > 0);
   $ret .= qq{<text class="$stna text" id="batsoctxt_$stna"    x="1380" y="520" style="text-anchor: start;">$soc %</text>}           if ($hasbat);                         # Lage Text Batterieladungszustand
   $ret .= qq{<text class="$stna text" id="node2hometxt_$stna" x="730"  y="520" style="text-anchor: start;">$node2home</text>}       if ($node2home);
   $ret .= qq{<text class="$stna text" id="node2gridtxt_$stna" x="420"  y="420" style="text-anchor: end;">$node2gridMetered</text>}  if ($node2gridMetered);
   $ret .= qq{<text class="$stna text" id="grid2hometxt_$stna" x="420"  y="610" style="text-anchor: end;">$gconMetered</text>}       if ($gconMetered);
-  $ret .= qq{<text class="$stna text" id="batouttxt_$stna"    x="1000" y="610" style="text-anchor: start;">$bat2home</text>}        if ($bat2home && $hasbat);
+  
+  #$ret .= qq{<text class="$stna text" id="batouttxt_$stna"    x="1000" y="610" style="text-anchor: start;">$bat2home</text>}        if ($bat2home && $hasbat);
+  $ret .= qq{<text class="$stna text" id="batouttxt_$stna"    x="1000" y="610" style="text-anchor: start;">$bat_conn_val</text>}    if ($bat_conn_val && $hasbat);        # v2.10.3
+  
   $ret .= qq{<text class="$stna text" id="node2battxt_$stna"  x="1000" y="420" style="text-anchor: start;">$node2bat</text>}        if ($node2bat && $hasbat);
   $ret .= qq{<text class="$stna text" id="hometxt_$stna"      x="600"  y="710" style="text-anchor: end;">$consptn</text>};                                                # Current_Consumption Anlage
   $ret .= qq{<text class="$stna text" id="dummytxt_$stna"     x="1380" y="710" style="text-anchor: start;">$cons_dmy</text>}        if ($flowgconX && $flowgconsPower);   # Current_Consumption Dummy
@@ -35258,13 +35212,12 @@ sub checkPlantConfig {
 
   ## Allgemeine Settings (auch API spezifisch)
   ##############################################
-  my $eocr                     = AttrVal       ($name, 'event-on-change-reading', '');
-  my $eour                     = AttrVal       ($name, 'event-on-update-reading', '');
-  
-  my $gdn                      = AttrVal       ('global', 'dnsServer', '');
-  my $aiprep                   = isPrepared4AI ($hash, 'full');
-  my $aiusemsg                 = CurrentVal    ($hash, 'aicanuse', '');
-  my ($cset, $lat, $lon, $alt) = locCoordinates();
+  my $eocr                     = AttrVal        ($name, 'event-on-change-reading', '');
+  my $eour                     = AttrVal        ($name, 'event-on-update-reading', '');
+  my $gdn                      = AttrVal        ('global', 'dnsServer', '');
+  my $aiprep                   = isPrepared4AI  ($hash, 'full');
+  my $aiusemsg                 = CurrentVal     ($hash, 'aicanuse', '');
+  my ($cset, $lat, $lon, $alt) = locCoordinates ($name);
   
   my @eocrar = split ',', $eocr; 
   my @eourar = split ',', $eour; 
@@ -35297,29 +35250,29 @@ sub checkPlantConfig {
 
   if (!$lat) {
       $result->{'Common Settings'}{state}   = $warn;
-      $result->{'Common Settings'}{result} .= qq{Attribute latitude in global device is not set. <br>};
-      $result->{'Common Settings'}{note}   .= qq{Set the coordinates of your installation in the latitude attribute of the global device.<br>};
+      $result->{'Common Settings'}{result} .= qq{The latitude value is unknown. <br>};
+      $result->{'Common Settings'}{note}   .= qq{Set the coordinates of your installation in $name plantControl->plantCoordinates or the latitude attribute of the global device.<br>};
       $result->{'Common Settings'}{warn}    = 1;
   }
 
   if (!$lon) {
       $result->{'Common Settings'}{state}   = $warn;
-      $result->{'Common Settings'}{result} .= qq{Attribute longitude in global device is not set. <br>};
-      $result->{'Common Settings'}{note}   .= qq{Set the coordinates of your installation in the longitude attribute of the global device.<br>};
+      $result->{'Common Settings'}{result} .= qq{The longitude value is unknown. <br>};
+      $result->{'Common Settings'}{note}   .= qq{Set the coordinates of your installation in $name plantControl->plantCoordinates or the longitude attribute of the global device.<br>};
       $result->{'Common Settings'}{warn}    = 1;
+  }
+  
+  if (!$alt) {
+      $result->{'Common Settings'}{state}   = $nok;
+      $result->{'Common Settings'}{result} .= qq{The altitude value is not set. <br>};
+      $result->{'Common Settings'}{note}   .= qq{Set the altitude in meters above sea level in the altitude attribute of the global device.<br>};
+      $result->{'Common Settings'}{fault}   = 1;
   }
 
   if (!$gdn) {
       $result->{'Common Settings'}{state}   = $nok;
       $result->{'Common Settings'}{result} .= qq{Attribute dnsServer in global device is not set. <br>};
       $result->{'Common Settings'}{note}   .= qq{Set global attribute dnsServer to the IP Adresse of your DNS Server.<br>};
-      $result->{'Common Settings'}{fault}   = 1;
-  }
-
-  if (!$alt) {
-      $result->{'Common Settings'}{state}   = $nok;
-      $result->{'Common Settings'}{result} .= qq{Attribute altitude in global device is not set. <br>};
-      $result->{'Common Settings'}{note}   .= qq{Set the altitude in meters above sea level in the altitude attribute of the global device.<br>};
       $result->{'Common Settings'}{fault}   = 1;
   }
 
@@ -35352,6 +35305,7 @@ sub checkPlantConfig {
   if (isForecastSolarUsed ($hash)) {                                                         # allg. Settings bei Nutzung Forecast.Solar API
       if ($pcf !~ /on/xs) {
           $result->{'Common Settings'}{state}   = $info;
+          $result->{'Common Settings'}{result} .= qq{plant coordinates are set: longitude=$lon, latitude=$lat, altitude=$alt <br>};
           $result->{'Common Settings'}{result} .= qq{pvCorrectionFactor_Auto is set to "$pcf" <br>};
           $result->{'Common Settings'}{note}   .= qq{Set pvCorrectionFactor_Auto to "on_complex" is recommended.<br>};
       }
@@ -35373,6 +35327,7 @@ sub checkPlantConfig {
 
       if ($pcf !~ /on/xs) {
           $result->{'Common Settings'}{state}   = $info;
+          $result->{'Common Settings'}{result} .= qq{plant coordinates are set: longitude=$lon, latitude=$lat, altitude=$alt <br>};
           $result->{'Common Settings'}{result} .= qq{pvCorrectionFactor_Auto is set to "$pcf" <br>};
           $result->{'Common Settings'}{note}   .= qq{Set pvCorrectionFactor_Auto to "on_complex" is recommended.<br>};
       }
@@ -35389,6 +35344,7 @@ sub checkPlantConfig {
 
       if ($pcf !~ /on/xs) {
           $result->{'Common Settings'}{state}   = $info;
+          $result->{'Common Settings'}{result} .= qq{plant coordinates are set: longitude=$lon, latitude=$lat, altitude=$alt <br>};
           $result->{'Common Settings'}{result} .= qq{pvCorrectionFactor_Auto is set to "$pcf" <br>};
           $result->{'Common Settings'}{note}   .= qq{set pvCorrectionFactor_Auto to "on_complex" is recommended if the SolCast efficiency factor is already adjusted.<br>};
       }
@@ -35425,6 +35381,7 @@ sub checkPlantConfig {
 
       if ($pcf !~ /on/xs) {
           $result->{'Common Settings'}{state}   = $info;
+          $result->{'Common Settings'}{result} .= qq{plant coordinates are set: longitude=$lon, latitude=$lat, altitude=$alt <br>};
           $result->{'Common Settings'}{result} .= qq{pvCorrectionFactor_Auto is set to "$pcf" <br>};
           $result->{'Common Settings'}{note}   .= qq{Set pvCorrectionFactor_Auto to "on_complex" or "on_complex_ai" is recommended.<br>};
       }
@@ -35452,6 +35409,7 @@ sub checkPlantConfig {
 
       if ($pcf !~ /on/xs) {
           $result->{'Common Settings'}{state}   = $warn;
+          $result->{'Common Settings'}{result} .= qq{plant coordinates are set: longitude=$lon, latitude=$lat, altitude=$alt <br>};
           $result->{'Common Settings'}{result} .= qq{pvCorrectionFactor_Auto is set to "$pcf" <br>};
           $result->{'Common Settings'}{note}   .= qq{set pvCorrectionFactor_Auto to "on_complex" is recommended.<br>};
           $result->{'Common Settings'}{warn}    = 1;
@@ -35472,6 +35430,7 @@ sub checkPlantConfig {
   }
 
   if (!$result->{'Common Settings'}{fault}) {
+      $result->{'Common Settings'}{note}   .= qq{plantControl->plantCoordinates keys latitude, longitude, altitude <br>};
       $result->{'Common Settings'}{note}   .= qq{global->latitude, global->longitude, global->altitude <br>};
       $result->{'Common Settings'}{note}   .= qq{global->language, global->dnsServer <br>};
       $result->{'Common Settings'}{note}   .= qq{event-on-change-reading, ctrlLanguage <br>};
@@ -37870,13 +37829,33 @@ return ($riseshift, $setshift);
 #  gibt latitude, longitude und altitude zurück
 ################################################################
 sub locCoordinates {
-
+  my ($name) = @_;
+  
   my $set = 0;
   my $lat = AttrVal ('global', 'latitude',  '');
   my $lon = AttrVal ('global', 'longitude', '');
   my $alt = AttrVal ('global', 'altitude',   0);
+  
+  my $plantCoordinates = CurrentVal ($name, 'plantCoordinates', '');
+  
+  if ($plantCoordinates) {
+      my (undef, $h) = parseParams ($plantCoordinates, ',', '', '->');
+      
+      for my $k (keys %{$h}) {                                                  # Keys von führenden und trailing Leerzeichen befreien
+          my $clean = $k;
+          $clean =~ s/^\s+|\s+$//g;
+          
+          if ($clean ne $k) {
+              $h->{$clean} = delete $h->{$k};
+          }
+      }
+    
+      $lat = $h->{latitude}  if(defined $h->{latitude});
+      $lon = $h->{longitude} if(defined $h->{longitude});
+      $alt = $h->{altitude}  if(defined $h->{altitude});
+  }
 
-  if ($lat && $lon) {
+  if ($lat ne '' && $lon ne '') {
       $set = 1;
   }
 
@@ -42679,6 +42658,11 @@ to ensure that the system configuration is correct.
             <tr><td>                                  </td><td><b>adapt4Steps</b> - the events are optimized for the SVG plot type 'steps'                                                                                              </td></tr>
             <tr><td>                                  </td><td><b>adapt4fSteps</b> - the events are optimized for the SVG plot type 'fsteps'                                                                                            </td></tr>
             <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
+            <tr><td> <b>plantCoordinates</b>          </td><td>Specifies the geographic coordinates (latitude and longitude) of the installed PV system. The values set here take precedence over those stored in the global device.    </td></tr>
+            <tr><td>                                  </td><td>latitude - latitude in decimal degrees (-90 .. 90)                                                                                                                       </td></tr>
+            <tr><td>                                  </td><td>longitude - geographic longitude in decimal degrees (−180 .. 180)                                                                                                        </td></tr>
+            <tr><td>                                  </td><td>Syntax: <b>latitude->&lt;Value&gt;,longitude->&lt;Value&gt;</b> (predefined by the setting in the global device)                                                         </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
             <tr><td> <b>reductionState</b>            </td><td>SolarForecast uses this parameter to determine the current curtailment status of the PV system (optional).                                                               </td></tr>
             <tr><td>                                  </td><td>The syntax is a <b>&lt;Device&gt;:&lt;Reading&gt;:&lt;Function&gt;</b>  combination. Possible values for &lt;Function&gt; are:                                           </td></tr>
 			<tr><td>                                  </td><td><b>&lt;Regex&gt;</b> - The regular expression is applied to the value of &lt;Device&gt;:&lt;Reading&gt;. Boolean result: 'true' -> throttled, 'false' -> not throttled   </td></tr>
@@ -42697,7 +42681,7 @@ to ensure that the system configuration is correct.
 
        <ul>
          <b>Example: </b> <br>
-         attr &lt;name&gt; plantControl feedinPowerLimit=4800 consForecastInPlanning=1 showLink=1 backupFilesKeep=2 consForecastIdentWeekdays=1 consForecastLastDays=8 genPVdeviation=continuously genPVforecastsToEvent=adapt4Steps consForecastBase=1->400,12->Dev:Rdg:650
+         attr &lt;name&gt; plantControl feedinPowerLimit=4800 consForecastInPlanning=1 showLink=1 backupFilesKeep=2 consForecastIdentWeekdays=1 consForecastLastDays=8 genPVdeviation=continuously genPVforecastsToEvent=adapt4Steps consForecastBase=1->400,12->Dev:Rdg:650 plantCoordinates=latitude->41.235272,longitude->15.437722
        </ul>
 
        </li>
@@ -45869,6 +45853,11 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                                  </td><td><b>adapt4Steps</b> - die Events werden für den SVG Plot-Type 'steps' optimiert                                                                                       </td></tr>
             <tr><td>                                  </td><td><b>adapt4fSteps</b> - die Events werden für den SVG Plot-Type 'fsteps' optimiert                                                                                     </td></tr>
             <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
+            <tr><td> <b>plantCoordinates</b>          </td><td>Legt die geografischen Daten latitude und longitude der installierten PV-Anlage fest. Gesetzte Werte haben Priorität vor den im global Device hinterlegten Werten.   </td></tr>
+            <tr><td>                                  </td><td>latitude - geographische Breite in Dezimalgrad (-90 .. 90)                                                                                                           </td></tr>
+            <tr><td>                                  </td><td>longitude - geographische Länge in Dezimalgrad (−180 .. 180)                                                                                                         </td></tr>
+            <tr><td>                                  </td><td>Syntax: <b>latitude->&lt;Wert&gt;,longitude->&lt;Wert&gt;</b> (vorbelegt durch die Einstellung im global Device)                                                     </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
             <tr><td> <b>reductionState</b>            </td><td>SolarForecast nutzt diesen Parameter, um den aktuellen Abregelungsstatus der PV-Anlage auszulesen (optional).                                                        </td></tr>
             <tr><td>                                  </td><td>Die Syntax ist eine <b>&lt;Device&gt;:&lt;Reading&gt;:&lt;Funktion&gt;</b>-Kombination. Möglich als &lt;Funktion&gt; sind:                                           </td></tr>
 			<tr><td>                                  </td><td><b>&lt;Regex&gt;</b> - Der Regex wird auf den Wert von &lt;Device&gt;:&lt;Reading&gt; angewendet. Boolesches Ergebnis: true'->abgeregelt, 'false'->nicht abgeregelt  </td></tr>
@@ -45887,7 +45876,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
 
        <ul>
          <b>Beispiel: </b> <br>
-         attr &lt;name&gt; plantControl feedinPowerLimit=4800 consForecastInPlanning=1 showLink=1 backupFilesKeep=2 consForecastIdentWeekdays=1 consForecastLastDays=8 genPVdeviation=continuously genPVforecastsToEvent=adapt4Steps consForecastBase=1->400,12->Dev:Rdg:650
+         attr &lt;name&gt; plantControl feedinPowerLimit=4800 consForecastInPlanning=1 showLink=1 backupFilesKeep=2 consForecastIdentWeekdays=1 consForecastLastDays=8 genPVdeviation=continuously genPVforecastsToEvent=adapt4Steps consForecastBase=1->400,12->Dev:Rdg:650 plantCoordinates=latitude->41.235272,longitude->15.437722
        </ul>
 
        </li>
