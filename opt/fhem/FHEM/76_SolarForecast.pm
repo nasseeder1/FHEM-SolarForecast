@@ -160,8 +160,7 @@ BEGIN {
           ReplaceEventMap
           readingFnAttributes
           setKeyValue
-          sunrise_abs_dat
-          sunset_abs_dat
+          sr_alt
           FW_cmd
           FW_directNotify
           FW_pH
@@ -14225,20 +14224,26 @@ sub __sunRS {
   my ($rapi, $wapi) = getStatusApiName ($hash);
 
   if ($cset) {
-      my $alt = 'HORIZON=-0.833';                                                 # default from https://metacpan.org/release/JFORGET/DateTime-Event-Sunrise-0.0505/view/lib/DateTime/Event/Sunrise.pm
-      $fc0_sr = substr (sunrise_abs_dat ($t, $alt),         0, 5);                # SunRise heute
-      $fc0_ss = substr (sunset_abs_dat  ($t, $alt),         0, 5);                # SunSet heute
-      $fc1_sr = substr (sunrise_abs_dat ($t + 86400, $alt), 0, 5);                # SunRise morgen
-      $fc1_ss = substr (sunset_abs_dat  ($t + 86400, $alt), 0, 5);                # SunSet morgen
+      my $altit = 'HORIZON=-0.833';                                                                     # default from https://metacpan.org/release/JFORGET/DateTime-Event-Sunrise-0.0505/view/lib/DateTime/Event/Sunrise.pm
+
+      # sr_alt direkt mit device-eigenen Koordinaten aufrufen.
+      # Parameter: $nt, $rise, $isrel, $daycheck, $nextDay,
+      #            $altit, $seconds, $min, $max, $lat, $lon
+      # Rückgabe:  "HH:MM:SS" via h2hms_fmt → substr 0..4 = "HH:MM"
+
+      $fc0_sr = substr (sr_alt ($t,         1, 0, 0, 0, $altit, 0, undef, undef, $lat, $lon), 0, 5);    # SunRise heute
+      $fc0_ss = substr (sr_alt ($t,         0, 0, 0, 0, $altit, 0, undef, undef, $lat, $lon), 0, 5);    # SunSet heute
+      $fc1_sr = substr (sr_alt ($t + 86400, 1, 0, 0, 0, $altit, 0, undef, undef, $lat, $lon), 0, 5);    # SunRise morgen
+      $fc1_ss = substr (sr_alt ($t + 86400, 0, 0, 0, 0, $altit, 0, undef, undef, $lat, $lon), 0, 5);    # SunSet morgen
   }
   else {
-      if (!$apiu) {                                                               # Daten aus DWD Device holen
+      if (!$apiu) {                                                                                     # Daten aus DWD Device holen
           $fc0_sr = ReadingsVal ($fcname, 'fc0_SunRise', '23:59');
           $fc0_ss = ReadingsVal ($fcname, 'fc0_SunSet',  '00:00');
           $fc1_sr = ReadingsVal ($fcname, 'fc1_SunRise', '23:59');
           $fc1_ss = ReadingsVal ($fcname, 'fc1_SunSet',  '00:00');
       }
-      else {                                                                                          # Daten aus solcastapi (API) holen
+      else {                                                                                            # Daten aus solcastapi (API) holen
           $fc0_sr = substr (WeatherAPIVal ($hash, $wapi, 'sunrise', 'today',    '23:59:59'), 0, 5);
           $fc0_ss = substr (WeatherAPIVal ($hash, $wapi, 'sunset',  'today',    '00:00:00'), 0, 5);
           $fc1_sr = substr (WeatherAPIVal ($hash, $wapi, 'sunrise', 'tomorrow', '23:59:59'), 0, 5);
