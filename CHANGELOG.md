@@ -62,7 +62,7 @@ xx.xx.xxxx Rev. xxxxx
     an verschiedenen Standorten innerhalb eines FHEM-Systems zu unterstützen.
     Format: latitude-><Wert>, longitude-><Wert>
     Wenn dieses Attribut gesetzt ist, haben die gerätespezifischen Koordinaten Vorrang vor den Werten,
-    die im globalen Device definiert sind. Die Höhe ist hier nicht konfigurierbar
+    die im globalen Device definiert sind. Die Höhe (altitude) ist hier nicht konfigurierbar
     und muss im globalen Device festgelegt bleiben (erforderlich für das Astro-Modul).
     Die Eingabe wird beim Setzen validiert; unbekannte Schlüssel werden abgelehnt.
 	   
