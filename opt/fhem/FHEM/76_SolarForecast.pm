@@ -12653,10 +12653,6 @@ sub centralTask {
 
   ### nicht mehr benötigte Daten verarbeiten - Bereich kann später wieder raus !!
   ########################################################################################################################
-  #for my $hodc (1..9) {
-  #    delete $data{$name}{circular}{$hodc};
-  #}
-
   #my $gbw = AttrVal ($name, 'graphicBeamWidth', undef);                 # 27.04.
   #my $gco = AttrVal ($name, 'graphicControl', '');
 

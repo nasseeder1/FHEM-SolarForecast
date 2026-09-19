@@ -9,7 +9,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.10.3]
-xx.xx.xxxx Rev. xxxxx
+19.09.2026 Rev. 31664
 
 - Change:
   * plantControl ->consForecastBase: Das Verfahren zur Anwendung des Basiswerts ist jetzt über den optionalen Token 
