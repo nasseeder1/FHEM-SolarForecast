@@ -25,3 +25,6 @@
 3|SV|1
 3|DE|Ab 30.08. ca. 08:15 Uhr wird die Version 2.10.2 mit kleineren Fixes und Anpassungen im internen KI-Guide ausgeliefert.
 3|EN|Starting on August 30 at approximately 8:15 a.m., version 2.10.2—which includes minor fixes and adjustments to the internal AI guide—will be released.
+4|SV|1
+4|DE|Ab 20.09. ca. 08:15 Uhr wird die Version 2.10.3 ausgeliefert. Änderungen/Verbesserungen beziehen sich insbesondere auf die Flußgrafik, Batterie SoC-Prognose, CON-KI Trainingsdatenbereitstellung und die Möglichkeit mehrere PV Anlagen mit unterschiedlichen geografischen Lokationen in einem FHEM-System zu verwalten. Weitere Informationen sind in diesem <html><a href='https://forum.fhem.de/index.php?msg=1369196' target='_blank'>Beitrag</a></html> zu lesen.
+4|EN|Version 2.10.3 will be released starting September 20 at approximately 8:15 a.m. Changes and improvements primarily relate to the flow graph, battery SoC forecast, CON-KI training data provision, and the ability to manage multiple PV systems with different geographic locations within a single FHEM system. Further information can be found in this <html><a href=‘https://forum.fhem.de/index.php?msg=1369196’ target=‘_blank’>post</a></html>.
