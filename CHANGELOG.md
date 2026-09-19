@@ -12,8 +12,8 @@ xx.xx.xxxx Rev. xxxxx
 xx.xx.xxxx Rev. xxxxx
 
 - Change:
-  * consForecastBase: Das Verfahren zur Anwendung des Basiswerts ist jetzt über den optionalen Token 'Mode->Base' (Default) bzw. 
-    'Mode->AddOn' steuerbar. Base hebt Prognosen unterhalb des Schwellwerts an (bisheriges Verhalten). 
+  * plantControl ->consForecastBase: Das Verfahren zur Anwendung des Basiswerts ist jetzt über den optionalen Token 
+    'Mode->Base' (Default) bzw. 'Mode->AddOn' steuerbar. Base hebt Prognosen unterhalb des Schwellwerts an (bisheriges Verhalten). 
 	AddOn addiert den Basiswert als festen Aufschlag auf die berechnete Prognose - unabhängig von deren Höhe. Rückwärtskompatibel.
   * Online-Hilfe für Attribut consForecastBase präzisiert
 
