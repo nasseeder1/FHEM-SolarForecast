@@ -19,6 +19,9 @@ xx.xx.xxxx Rev. xxxxx
     XS-Objekt kapselt und dessen Freigabe sauber über Perls Referenzzählung
     steuert – ohne globale Seiteneffekte.
 
+- Change:
+  * _batSocTarget: Debuglog für Step6 korrigiert
+
 
 ## [v2.10.3]
 19.09.2026 Rev. 31664
