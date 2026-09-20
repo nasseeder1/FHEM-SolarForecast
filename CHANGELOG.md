@@ -7,6 +7,18 @@ xx.xx.xxxx Rev. xxxxx
 
 
 
+## [v2.10.4]
+xx.xx.xxxx Rev. xxxxx
+
+- Fix: 
+  * AI::FANN Speicherleck durch globales DESTROY-Patching behoben.
+    writeCacheFile neutralisierte AI::FANN::DESTROY permanent und prozessweit,
+    so dass kein AI::FANN-Objekt (Training, Reload, Inferenz) nach dem ersten
+    Speichervorgang seinen C-seitigen Speicher jemals freigab. Behoben durch
+    Einführung eines schlanken Perl-Wrappers (AiFannModelWrapper), der das
+    XS-Objekt kapselt und dessen Freigabe sauber über Perls Referenzzählung
+    steuert – ohne globale Seiteneffekte.
+
 
 ## [v2.10.3]
 19.09.2026 Rev. 31664
