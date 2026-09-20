@@ -28,3 +28,6 @@
 4|SV|1
 4|DE|Ab 20.09. ca. 08:15 Uhr wird die Version 2.10.3 ausgeliefert. Änderungen/Verbesserungen beziehen sich insbesondere auf die Flußgrafik, Batterie SoC-Prognose, CON-KI Trainingsdatenbereitstellung und die Möglichkeit mehrere PV Anlagen mit unterschiedlichen geografischen Lokationen in einem FHEM-System zu verwalten. Weitere Informationen sind in diesem <html><a href='https://forum.fhem.de/index.php?msg=1369196' target='_blank'>Beitrag</a></html> zu lesen.
 4|EN|Version 2.10.3 will be released starting September 20 at approximately 8:15 a.m. Changes and improvements primarily relate to the flow graph, battery SoC forecast, CON-KI training data provision, and the ability to manage multiple PV systems with different geographic locations within a single FHEM system. Further information can be found in this <html><a href=‘https://forum.fhem.de/index.php?msg=1369196’ target=‘_blank’>post</a></html>.
+5|SV|1
+5|DE|Ab 21.09. ca. 08:15 Uhr wird die Version 2.10.4 ausgeliefert. Es wird ein potentielles Speicherleck bei Verwendung von AI::FANN beseitigt.
+5|EN|Version 2.10.4 will be released starting September 21 at approximately 8:15 a.m. A potential memory leak when using AI::FANN has been fixed.
