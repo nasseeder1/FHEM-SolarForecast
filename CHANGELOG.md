@@ -8,7 +8,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.10.4]
-xx.xx.xxxx Rev. xxxxx
+20.09.2026 Rev. 31670
 
 - Fix: 
   * AI::FANN Speicherleck durch globales DESTROY-Patching behoben.
