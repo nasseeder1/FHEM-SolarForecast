@@ -7,6 +7,13 @@ xx.xx.xxxx Rev. xxxxx
 
 
 
+## [v2.10.5]
+xx.xx.xxxx Rev. xxxxx
+
+- Fix:
+  * _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271)
+
+
 ## [v2.10.4]
 20.09.2026 Rev. 31670
 

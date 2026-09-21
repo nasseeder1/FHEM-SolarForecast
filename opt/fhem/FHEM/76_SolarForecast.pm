@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31664 2026-09-19 12:54:58Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31670 2026-09-20 20:30:08Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -49,6 +49,7 @@ use utf8;
 use HttpUtils;
 
 #use Test::Memory::Usage;                                                            # https://metacpan.org/pod/Test::Memory::Usage
+#use Devel::Size qw(total_size);
 
 eval "use FHEM::Meta;1"                   or my $modMetaAbsent = 1;                  ## no critic 'eval'
 eval "use FHEM::Utility::CTZ qw(:all);1;" or my $ctzAbsent     = 1;                  ## no critic 'eval'
@@ -72,6 +73,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.10.5" => "21.09.2026  _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271) ",
   "2.10.4" => "20.09.2026  _batSocTarget: Debuglog für Step6 korrigiert ".
                            "AI::FANN Speicherleck durch globales DESTROY-Patching behoben. ",
   "2.10.3" => "19.09.2026  Fix: SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh ".
@@ -12691,6 +12693,14 @@ sub centralTask {
     }
     $data{$name}{current}{airaw_hp_cleanup_done} = 1;               # läuft nur einmal pro Session
   }
+  
+  #Log3 ($name, 1, "$name - circular size: " . total_size($data{$name}{circular}));
+  #Log3 ($name, 1, "$name - pvhist  size: "  . total_size($data{$name}{pvhist}));
+  #Log3 ($name, 1, "$name - current size: "  . total_size($data{$name}{current}));
+  #Log3 ($name, 1, "$name - airaw   size: "  . total_size($data{$name}{aidectree}{airaw}));
+  #Log3 ($name, 1, "$name - weatherapi size: "  . total_size($data{$name}{weatherapi}));
+  #Log3 ($name, 1, "$name - statusapi  size: "  . total_size($data{$name}{statusapi}));
+  #Log3 ($name, 1, "$name - readings size: "    . total_size($defs{$name}{READINGS}));
 
 ##########################################################################################################################
 
@@ -36293,10 +36303,12 @@ sub _createReadingsFromArrayFast {
 
       my $changed;
       
-      if (!$hasEour && !$hasTocr) {
-          my $old  = $hash->{READINGS}{$rn}{VAL};
-          $changed = (!defined($old) || $old ne $rval) ? undef : 0;
-      }                                                             # sonst: $changed bleibt undef -> normales FHEM-Verhalten
+  if (!$hasEour && !$hasTocr) {
+      my $old = exists $hash->{READINGS}{$rn}
+                ? $hash->{READINGS}{$rn}{VAL}
+                : undef;
+      $changed = (!defined($old) || $old ne $rval) ? undef : 0;
+  }                                                                 # sonst: $changed bleibt undef -> normales FHEM-Verhalten
 
       readingsBulkUpdate ($hash, $rn, $rval, $changed, $ts);
   }
