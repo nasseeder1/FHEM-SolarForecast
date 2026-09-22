@@ -73,7 +73,8 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.5" => "21.09.2026  _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271) ",
+  "2.10.5" => "22.09.2026  _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271) ".
+                           "removeMinMaxArray: fix limit ",
   "2.10.4" => "20.09.2026  _batSocTarget: Debuglog für Step6 korrigiert ".
                            "AI::FANN Speicherleck durch globales DESTROY-Patching behoben. ",
   "2.10.3" => "19.09.2026  Fix: SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh ".
@@ -35851,7 +35852,7 @@ sub removeMinMaxArray {
   my ($min, $max) = (sort { $a <=> $b } @$aref)[0, -1];                # finde Min- und Max-Werte
   @$aref          = grep { $_ != $min && $_ != $max } @$aref;          # Entferne die Werte
 
-  removeMinMaxArray ($aref, $limit) if(@$aref > 20);                   # Rekursiver Aufruf, wenn nötig
+  removeMinMaxArray ($aref, $limit) if(@$aref > $limit);               # Rekursiver Aufruf, wenn nötig
 
 return;
 }
