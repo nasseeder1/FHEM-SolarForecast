@@ -13,6 +13,12 @@ xx.xx.xxxx Rev. xxxxx
 - Fix:
   * _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum: https://forum.fhem.de/index.php?msg=1369271)
   * removeMinMaxArray: fix limit
+  
+  * Neural Network Wrapper neue Wrapper‑Methode
+    AIF_isModelValid()  
+    Neue Validierungsmethode, die das FANN-Modell leak-frei prüft.
+    Verwendet get_num_input() statt MSE(), da diese XS-Methode keine Exceptions wirft und keine temporären Referenzen erzeugt.
+  
 
 ## [v2.10.4]
 20.09.2026 Rev. 31670
