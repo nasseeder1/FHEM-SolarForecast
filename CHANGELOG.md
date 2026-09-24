@@ -10,7 +10,7 @@ xx.xx.xxxx Rev. xxxxx
 ## [v2.10.5]
 xx.xx.xxxx Rev. xxxxx
 
-- Fix:
+- **Fix:**
   * _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum: https://forum.fhem.de/index.php?msg=1369271)
   * removeMinMaxArray: fix limit
   
@@ -22,7 +22,7 @@ xx.xx.xxxx Rev. xxxxx
   * Absturzgefahr (Segfault) bei Verwendung von gebrochenen `AI::FANN`-C-Pointern aus wiederhergestellten Storable-Cache-Dateien behoben.
   * Falsch-positive I/O-Fehlermeldungen beim Auslesen gültiger Cache-Dateien mit Null-Werten behoben.
     
-- Change:
+- **Change:**
   * **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über `Storable` deutlich erhöht.
     - Implementierung von `STORABLE_freeze` und `STORABLE_thaw` Hooks, um ungültige C-Pointer/Memory-Leaks nach Demaskierung (Deserialisierung) zu verhindern und FHEM vor Segmentation Faults zu schützen.
     - Überarbeitung der Methode `AIF_isModelValid` zur besseren Unterscheidung zwischen Objekt- und Klassenaufrufen.
