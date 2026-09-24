@@ -21,6 +21,7 @@ xx.xx.xxxx Rev. xxxxx
     
   * Absturzgefahr (Segfault) bei Verwendung von gebrochenen `AI::FANN`-C-Pointern aus wiederhergestellten Storable-Cache-Dateien behoben.
   * Falsch-positive I/O-Fehlermeldungen beim Auslesen gültiger Cache-Dateien mit Null-Werten behoben.
+  * _calcDataEveryFullHour: durch Array-Kopie bedingtes Speicherleck beseitigt
     
 - **Change:**
   * **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über `Storable` deutlich erhöht.
@@ -33,6 +34,7 @@ xx.xx.xxxx Rev. xxxxx
     - Vor dem Laden neuer Cache-Daten werden alte XS-Objekte nun explizit via `AIF_modelDestroy()` freigegeben.
   * **Serialize / Deserialize**:
     - `Deserialize` um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet.
+  * removeMinMaxArray, limitArray, _addCon2CircArray, __aiAddRawData refakturiert
   
 
 ## [v2.10.4]

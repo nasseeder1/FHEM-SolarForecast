@@ -20963,6 +20963,8 @@ sub _calcDataEveryFullHour {
 
   for my $h (0..23) {
       next if($h > $chour);
+      
+      delete @{$paref}{qw(h cpcf aihit yday ydayname yt pvrlvd)};                                 # Temp-Keys in paref vorab bereinigen
 
       if (int $chour == 0) {                                                                      # 00:XX -> Stunde 24 des Vortages speichern
           my $dt             = timestringsFromOffset ($name, $t, -3600);
@@ -20979,52 +20981,45 @@ sub _calcDataEveryFullHour {
       $paref->{aihit} = CircularVal ($name, $hh, 'aihit',  0);                                    # AI verwendet?
       $paref->{h}     = $h;
 
-      next if(ReadingsVal ($name, '.signaldone_'.$hh, '') eq "done");
+      if (ReadingsVal ($name, '.signaldone_'.$hh, '') eq 'done') {
+          delete @{$paref}{qw(h cpcf aihit yday ydayname yt)};
+          next;
+      }
 
       $paref->{pvrlvd} = HistoryVal ($name, ($paref->{yday} ? $paref->{yday} : $day), $hh, 'pvrlvd', 1);
 
-      _calcCaQsimple    ($paref);                                                                 # einfache Korrekturberechnung duchführen/speichern
-      _calcCaQcomplex   ($paref);                                                                 # Korrekturberechnung mit Bewölkung duchführen/speichern
-      _addHourAiRawdata ($paref);                                                                 # AI Raw Data hinzufügen
-      _addCon2CircArray ($paref);                                                                 # Hausverbrauch / Netzbezug der vergangenen Stunde zum con-Array im Circular Speicher hinzufügen
+      _calcCaQsimple    ($paref);                                                                   # einfache Korrekturberechnung duchführen/speichern
+      _calcCaQcomplex   ($paref);                                                                   # Korrekturberechnung mit Bewölkung duchführen/speichern
+      _addHourAiRawdata ($paref);                                                                   # AI Raw Data hinzufügen
+      _addCon2CircArray ($paref);                                                                   # Hausverbrauch / Netzbezug der vergangenen Stunde zum con-Array im Circular Speicher hinzufügen
 
       # --- Drift Analyse ---
       my ($prepared, $rdy, $cause) = _aiFannModelReady ($name, 'con');
-      aiFannDetectDrift ($name, $t, $lang, $debug, 'con') if($rdy);                               # Drift von AI 'con' Werten ermitteln
+      aiFannDetectDrift ($name, $t, $lang, $debug, 'con') if($rdy);                                 # Drift von AI 'con' Werten ermitteln
 
-      # --- con - Quantile bestimmen ---
-      my ($targetref, $dmy1, $dmy2) = getPvHistTargetArray ( { name  => $name,
-                                                               debug => 'do_not',
-                                                               par1  => 'con',
-                                                               par2  => 'con',
-                                                               par3  => 'con',
-                                                               t     => $t,
-                                                               limit => 750,
-                                                             }
-                                                           );
-      my @targets = @$targetref;
+      # --- con - Quantile bestimmen (ohne unnötiges Umkopieren) ---
+      my ($targetref) = getPvHistTargetArray ( { name  => $name,
+                                                 debug => 'do_not',
+                                                 par1  => 'con',
+                                                 par2  => 'con',
+                                                 par3  => 'con',
+                                                 t     => $t,
+                                                 limit => 750,
+                                               } );
 
-      if (@targets) {                                                                             # Wert des 30%-Quantils als Referenzniveau bestimmen
-          my @sorted = sort { $a <=> $b } @targets;
-          my $n      = @sorted;
-          my $q30    = 0.30;                                                                      # 30%-Quantil
-          my $q90    = 0.90;                                                                      # 90%-Quantil
-          my $idx30  = int ($q30 * ($n - 1));                                                     # Index berechnen
-          my $idx90  = int ($q90 * ($n - 1));
+      if ($targetref && ref $targetref eq 'ARRAY' && @$targetref) {                                 # Wert des 30%-Quantils als Referenzniveau bestimmen
+          my @sorted = sort { $a <=> $b } @$targetref;
+          my $n      = scalar @sorted;
+          my $idx30  = int (0.30 * ($n - 1));                                                       # 30%-Quantil
+          my $idx90  = int (0.90 * ($n - 1));                                                       # 90%-Quantil
 
-          $data{$name}{circular}{99}{con_quantile30} = round0 ($sorted[$idx30]);                  # in Circular persistieren
+          $data{$name}{circular}{99}{con_quantile30} = round0 ($sorted[$idx30]);                    # in Circular persistieren
           $data{$name}{circular}{99}{con_quantile90} = round0 ($sorted[$idx90]);
       }
 
-      storeReading ($name, '.signaldone_'.$hh, 'done');                                                  # Sperrsignal (erledigt) setzen
+      storeReading ($name, '.signaldone_'.$hh, 'done');                                             # Sperrsignal (erledigt) setzen
 
-      delete $paref->{h};
-      delete $paref->{cpcf};
-      delete $paref->{aihit};
-      delete $paref->{yday};
-      delete $paref->{ydayname};
-      delete $paref->{yt};
-      delete $paref->{pvrlvd};
+      delete @{$paref}{qw(h cpcf aihit yday ydayname yt pvrlvd)};
   }
 
   delete $paref->{acu};
@@ -21176,25 +21171,32 @@ sub _addCon2CircArray {
   my $paref    = shift;
   my $name     = $paref->{name};
   my $h        = $paref->{h};
-  my $yday     = $paref->{yday};                                                      # vorheriger Tag (falls gesetzt)
-  my $day      = $paref->{day};                                                       # aktueller Tag (range 01 to 31)
+  my $yday     = $paref->{yday};                                                        # vorheriger Tag (falls gesetzt)
+  my $day      = $paref->{day};                                                         # aktueller Tag (range 01 to 31)
   my $dayname  = $paref->{dayname};
   my $ydayname = $paref->{ydayname};
 
-  $day      = $yday     if(defined $yday);                                            # der vergangene Tag soll verarbeitet werden
-  $dayname  = $ydayname if(defined $ydayname);                                        # Name des Vortages
+  $day      = $yday     if(defined $yday);                                              # der vergangene Tag soll verarbeitet werden
+  $dayname  = $ydayname if(defined $ydayname);                                          # Name des Vortages
   my $hh    = sprintf "%02d", $h;
-  my $con   = HistoryVal ($name, $day, $hh, 'con',   0);                              # Consumption der abgefragten Stunde
-  my $gcons = HistoryVal ($name, $day, $hh, 'gcons', 0);                              # Netzbezug der abgefragten Stunde
+  
+  my $con   = HistoryVal ($name, $day, $hh, 'con',   undef);                            # Consumption der abgefragten Stunde
+  my $gcons = HistoryVal ($name, $day, $hh, 'gcons', undef);                            # Netzbezug der abgefragten Stunde
 
-  push @{$data{$name}{circular}{$hh}{con_all}{"$dayname"}}, $con   if($con   >= 0);   # Consumption zum Speicherarray hinzufügen
-  push @{$data{$name}{circular}{$hh}{gcons_a}{"$dayname"}}, $gcons if($gcons >= 0);   # Consumption zum Speicherarray hinzufügen
+  # Nur gültige, definierte Werte >= 0 eintragen
+  if (defined $con && $con >= 0) {
+      push @{$data{$name}{circular}{$hh}{con_all}{"$dayname"}}, $con;                 # Consumption zum Speicherarray hinzufügen
+      limitArray ($data{$name}{circular}{$hh}{con_all}{"$dayname"}, CONDAYSLIDEMAX);
+        
+      debugLog ($paref, 'saveData2Storage', "add consumption into Array (con_all) in Circular - day: $day, hod: $hh, con: $con");
+  }
 
-  limitArray ($data{$name}{circular}{$hh}{con_all}{"$dayname"}, CONDAYSLIDEMAX);
-  limitArray ($data{$name}{circular}{$hh}{gcons_a}{"$dayname"}, CONDAYSLIDEMAX);
-
-  debugLog ($paref, 'saveData2Storage', "add consumption into Array (con_all) in Circular - day: $day, hod: $hh, con: $con");
-  debugLog ($paref, 'saveData2Storage', "add consumption into Array (gcons_a) in Circular - day: $day, hod: $hh, gcons: $gcons");
+  if (defined $gcons && $gcons >= 0) {
+      push @{$data{$name}{circular}{$hh}{gcons_a}{"$dayname"}}, $gcons;               # Consumption zum Speicherarray hinzufügen
+      limitArray ($data{$name}{circular}{$hh}{gcons_a}{"$dayname"}, CONDAYSLIDEMAX);
+        
+      debugLog ($paref, 'saveData2Storage', "add consumption into Array (gcons_a) in Circular - day: $day, hod: $hh, gcons: $gcons");
+  }
 
 return;
 }
@@ -26893,8 +26895,7 @@ sub _addHourAiRawdata {
 
   __aiAddRawData ($paref);                                                                              # Raw Daten für AI hinzufügen und sichern
 
-  delete $paref->{ood};
-  delete $paref->{rho};
+  delete @{$paref}{qw(ood rho)};
 
 return;
 }
@@ -26914,9 +26915,7 @@ sub __aiAddRawData {
 
   my $hash     = $defs{$name};
   my @hpStates = split /\|/, HPOPMODES;
-  my @bevmodes = split /\|/, BEVOPMODES;                                                                # prio|auto
-  
-  push @bevmodes, 'other';
+  my @bevmodes = (split(/\|/, BEVOPMODES), 'other');                                                    # prio|auto|other
 
   delete $data{$name}{current}{aitrawstate};
 
@@ -26926,7 +26925,7 @@ sub __aiAddRawData {
   $day       = $yday     if(defined $yday);                                                             # der vergangene Tag soll verarbeitet werden
   $dayname   = $ydayname if(defined $ydayname);                                                         # Name des Vortages
 
-  for my $pvd (sort keys %{$data{$name}{pvhist}}) {
+  for my $pvd (sort { $a <=> $b } keys %{$data{$name}{pvhist}}) {                                       # Numerische Sortierung der Tage
       next if(!$pvd);
 
       if ($ood) {
@@ -26966,28 +26965,30 @@ sub __aiAddRawData {
           my $hpcsm     = HistoryVal ($name, $pvd, $hod, 'hpcsm',            undef);                    # Nummern registrierter Wärmepumpen
           my $bevcsm    = HistoryVal ($name, $pvd, $hod, 'bevcsm',           undef);                    # Nummern registrierter BEV
 
-          $data{$name}{aidectree}{airaw}{$ridx}{sunalt}         = $sunalt;
-          $data{$name}{aidectree}{airaw}{$ridx}{sunaz}          = $sunaz;
-          $data{$name}{aidectree}{airaw}{$ridx}{dayname}        = $dayname;
-          $data{$name}{aidectree}{airaw}{$ridx}{hod}            = $hod;
-          $data{$name}{aidectree}{airaw}{$ridx}{comforttemp}    = $comftemp;
-          $data{$name}{aidectree}{airaw}{$ridx}{pvrlvd}         = $pvrlvd;
-          $data{$name}{aidectree}{airaw}{$ridx}{socwhsum}       = $socwhsum                        if(defined $socwhsum);
-          $data{$name}{aidectree}{airaw}{$ridx}{temp}           = round1 ($temp)                   if(defined $temp);
-          $data{$name}{aidectree}{airaw}{$ridx}{con}            = $con                             if(defined $con     && $con     >= 0);
-          $data{$name}{aidectree}{airaw}{$ridx}{conaifc}        = $conaifc                         if(defined $conaifc && $conaifc >= 0);
-          $data{$name}{aidectree}{airaw}{$ridx}{gcons}          = $gcons                           if(defined $gcons   && $gcons   >= 0);
-          $data{$name}{aidectree}{airaw}{$ridx}{wcc}            = $wcc                             if(defined $wcc);
-          $data{$name}{aidectree}{airaw}{$ridx}{weatherid}      = $wid >= 100 ? $wid - 100 : $wid  if(defined $wid);
-          $data{$name}{aidectree}{airaw}{$ridx}{rr1c}           = $rr1c                            if(defined $rr1c);
-          $data{$name}{aidectree}{airaw}{$ridx}{rad1h}          = $rad1h                           if(defined $rad1h && $rad1h >  0);
-          $data{$name}{aidectree}{airaw}{$ridx}{pvrl}           = $pvrl                            if(defined $pvrl  && $pvrl  >= 0);
-          $data{$name}{aidectree}{airaw}{$ridx}{presence}       = $presence                        if(defined $presence);
-          $data{$name}{aidectree}{airaw}{$ridx}{holiday}        = $holiday                         if(defined $holiday);
-          $data{$name}{aidectree}{airaw}{$ridx}{windspeed}      = $windspeed                       if(defined $windspeed);
-          $data{$name}{aidectree}{airaw}{$ridx}{windspeed_fast} = $wind_fast                       if(defined $wind_fast);
-          $data{$name}{aidectree}{airaw}{$ridx}{hpcsm}          = $hpcsm                           if(defined $hpcsm);
-          $data{$name}{aidectree}{airaw}{$ridx}{bevcsm}         = $bevcsm                          if(defined $bevcsm);
+          my $raw_ref   = \%{$data{$name}{aidectree}{airaw}{$ridx}};
+          
+          $raw_ref->{sunalt}         = $sunalt;
+          $raw_ref->{sunaz}          = $sunaz;
+          $raw_ref->{dayname}        = $dayname;
+          $raw_ref->{hod}            = $hod;
+          $raw_ref->{comforttemp}    = $comftemp;
+          $raw_ref->{pvrlvd}         = $pvrlvd;
+          $raw_ref->{socwhsum}       = $socwhsum                          if (defined $socwhsum);
+          $raw_ref->{temp}           = round1 ($temp)                     if (defined $temp);
+          $raw_ref->{con}            = $con                               if (defined $con    && $con    >= 0);
+          $raw_ref->{conaifc}        = $conaifc                           if (defined $conaifc && $conaifc >= 0);
+          $raw_ref->{gcons}          = $gcons                             if (defined $gcons  && $gcons  >= 0);
+          $raw_ref->{wcc}            = $wcc                               if (defined $wcc);
+          $raw_ref->{weatherid}      = ($wid >= 100) ? $wid - 100 : $wid  if (defined $wid);
+          $raw_ref->{rr1c}           = $rr1c                              if (defined $rr1c);
+          $raw_ref->{rad1h}          = $rad1h                             if (defined $rad1h  && $rad1h  >  0);
+          $raw_ref->{pvrl}           = $pvrl                              if (defined $pvrl   && $pvrl   >= 0);
+          $raw_ref->{presence}       = $presence                          if (defined $presence);
+          $raw_ref->{holiday}        = $holiday                           if (defined $holiday);
+          $raw_ref->{windspeed}      = $windspeed                         if (defined $windspeed);
+          $raw_ref->{windspeed_fast} = $wind_fast                         if (defined $wind_fast);
+          $raw_ref->{hpcsm}          = $hpcsm                             if (defined $hpcsm);
+          $raw_ref->{bevcsm}         = $bevcsm                            if (defined $bevcsm);
 
           for my $c (1..MAXCONSUMER) {
               $c           = sprintf "%02d", $c;
@@ -27000,23 +27001,23 @@ sub __aiAddRawData {
               my $rcmdcsm  = HistoryVal ($name, $pvd, $hod, 'rcmdcsm'.$c,       undef);                         # zeitgewichtete Nutzungsempfehlung für Verbraucher XX
               my $exconfc  = HistoryVal ($name, $pvd, $hod, 'exconfc'.$c,       undef);                         # Snapshot des Ausschluss-Flags zum Zeitpunkt der csme-Erfassung
 
-              if (defined $csme)     { $data{$name}{aidectree}{airaw}{$ridx}{'csme'.$c}          = round0 ($csme) }
-              if (defined $evsoc)    { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmSoC'.$c}     = round0 ($evsoc) }
-              if (defined $evtgtsoc) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmTargSoC'.$c} = round0 ($evtgtsoc) }
-              if (defined $evbatcap) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmBatCap'.$c}  = round0 ($evbatcap) }
-              if (defined $evcurpwr) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmPwr'.$c}     = round0 ($evcurpwr) }
-              if (defined $evphases) { $data{$name}{aidectree}{airaw}{$ridx}{'bevcsmPhases'.$c}  = $evphases }
-              if (defined $rcmdcsm)  { $data{$name}{aidectree}{airaw}{$ridx}{'rcmdcsm'.$c}       = $rcmdcsm }
-              if (defined $exconfc)  { $data{$name}{aidectree}{airaw}{$ridx}{'exconfc'.$c}       = $exconfc }
+              if (defined $csme)     { $raw_ref->{'csme'.$c}          = round0 ($csme) }
+              if (defined $evsoc)    { $raw_ref->{'bevcsmSoC'.$c}     = round0 ($evsoc) }
+              if (defined $evtgtsoc) { $raw_ref->{'bevcsmTargSoC'.$c} = round0 ($evtgtsoc) }
+              if (defined $evbatcap) { $raw_ref->{'bevcsmBatCap'.$c}  = round0 ($evbatcap) }
+              if (defined $evcurpwr) { $raw_ref->{'bevcsmPwr'.$c}     = round0 ($evcurpwr) }
+              if (defined $evphases) { $raw_ref->{'bevcsmPhases'.$c}  = $evphases }
+              if (defined $rcmdcsm)  { $raw_ref->{'rcmdcsm'.$c}       = $rcmdcsm }
+              if (defined $exconfc)  { $raw_ref->{'exconfc'.$c}       = $exconfc }
 
               for my $s (@hpStates) {                                                                           # WP Opmode-Punkte je Status
                   my $hppnt = HistoryVal ($name, $pvd, $hod, "csm${c}_${s}_points", undef);
-                  if (defined $hppnt) { $data{$name}{aidectree}{airaw}{$ridx}{"csm${c}_${s}_points"} = $hppnt }
+                  if (defined $hppnt) { $raw_ref->{"csm${c}_${s}_points"} = $hppnt }
               }
       
               for my $bm (@bevmodes) {                                                                          # BEV Opmode-Punkte je Modus
                   my $bvpnt = HistoryVal ($name, $pvd, $hod, "csm${c}_${bm}_points", undef);
-                  if (defined $bvpnt) { $data{$name}{aidectree}{airaw}{$ridx}{"csm${c}_${bm}_points"} = $bvpnt }
+                  if (defined $bvpnt) { $raw_ref->{"csm${c}_${bm}_points"} = $bvpnt }
               }
           }
 
@@ -35790,54 +35791,52 @@ return ($method, $surplus);
 #  $limit = die Anzahl Elemente auf die gekürzt werden soll
 #           (default SLIDENUMMAX)
 #
-################################################################    limitArray (\@arr, SLIDENUMMAX);
+################################################################ 
 sub limitArray {
   my $aref  = shift;
   my $limit = shift // SLIDENUMMAX;
 
-  return if(ref $aref ne 'ARRAY');
+  return if (!ref $aref eq 'ARRAY');
 
-  while (scalar @{$aref} > $limit) {
-      shift @{$aref};
+  my $count = scalar @$aref;
+  
+  if ($count > $limit) {                                            # Einmaliger Schnitt statt Schleife (extrem effizient bei großen Differenzen)
+      splice @$aref, 0, $count - $limit;
   }
 
 return;
 }
 
 ################################################################
-#  Array auf eine festgelegte Anzahl Elemente beschränken.
-#  Es wird das kleinste und das größte Elemente entfernt
-#
-#  $aref  = Referenz zum Array
-#  $limit = die Anzahl Elemente auf die gekürzt werden soll
-#           (default SPLSLIDEMAX)
-#
+# Array auf eine festgelegte Anzahl Elemente beschränken.
+# Es wird paarweise das kleinste und das größte Element entfernt.
 ################################################################
 sub removeMinMaxArray {
   my $aref  = shift;
   my $limit = shift // SPLSLIDEMAX;
 
-  return if(ref $aref ne 'ARRAY' || scalar @$aref <= $limit);           # Abbruchbedingung
+  return if (!ref $aref eq 'ARRAY' || @$aref <= $limit);
+    
+  while (@$aref > $limit) {                                             # Iterativ abarbeiten statt Rekursion (verhindert Stack-Overflow)
+      my ($min_idx, $max_idx) = (0, 0);                                 # Indizes von Minimum und Maximum bestimmen
 
-  my ($min_idx, $max_idx) = (0, 0);                                     # Indizes von Minimum und Maximum bestimmen
-  for my $i (1 .. $#$aref) {
-      $min_idx = $i if $aref->[$i] < $aref->[$min_idx];
-      $max_idx = $i if $aref->[$i] > $aref->[$max_idx];
-  }
+      for my $i (1 .. $#$aref) {
+          $min_idx = $i if $aref->[$i] < $aref->[$min_idx];
+          $max_idx = $i if $aref->[$i] > $aref->[$max_idx];
+      }
 
-  if ($min_idx == $max_idx) {                                           # Sonderfall: alle Elemente gleich
-      splice @$aref, $min_idx, 1;
+      if ($min_idx == $max_idx) {                                       # Sonderfall: alle Elemente gleich
+          splice @$aref, $min_idx, 1;
+      }
+      elsif ($min_idx > $max_idx) {                                     # höheren Index zuerst entfernen
+          splice @$aref, $min_idx, 1;
+          splice @$aref, $max_idx, 1;
+      }
+      else {
+          splice @$aref, $max_idx, 1;
+          splice @$aref, $min_idx, 1;
+      }
   }
-  elsif ($min_idx > $max_idx) {                                         # höheren Index zuerst entfernen
-      splice @$aref, $min_idx, 1;
-      splice @$aref, $max_idx,  1;
-  }
-  else {
-      splice @$aref, $max_idx,  1;
-      splice @$aref, $min_idx, 1;
-  }
-
-  removeMinMaxArray ($aref, $limit) if(@$aref > $limit);               
 
 return;
 }
@@ -40243,14 +40242,13 @@ sub AUTOLOAD {
   my $self   = shift;
   my $method = $AUTOLOAD;
   $method    =~ s/.*:://;
-
   return if $method eq 'DESTROY';
-
-  unless (ref($self) && $self->{model}) {                       # Verhindert Aufruf von Methoden auf ungültigen/zerstörten Modellen
-      return;
-  }
-
-return $self->{model}->$method(@_);
+  
+  my $caller = join ' <- ', map { (caller($_))[3] // '?' } 1..3;
+  Log3 ('global', 1, "SF - AiFannModelWrapper AUTOLOAD: '$method' via $caller");
+  
+  return unless ref($self) && $self->{model};                   # Verhindert Aufruf von Methoden auf ungültigen/zerstörten Modellen
+  return $self->{model}->$method(@_);
 }
 
 sub DESTROY {                                                   # Automatische Freigabe via Perl-GC
