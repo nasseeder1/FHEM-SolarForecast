@@ -73,31 +73,15 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.5" => "23.09.2026  _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271) ".
+  "2.10.5" => "24.09.2026  _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271) ".
                            "removeMinMaxArray: Fix: Rekursionsbedingung > 20 -> > \$limit, Fix: grep entfernt alle Duplikate von Min und Max -> Umstellung auf splice ".
-                           "AIF_isModelValid: neue Validierungsmethode, die das FANN-Modell leak-frei prüft ",
+                           "AIF_isModelValid: neue Validierungsmethode, die das FANN-Modell leak-frei prüft ".
+                           "Implementierung von STORABLE_freeze und STORABLE_thaw Hooks ".
+                           "fileStore / fileRetrieve: Fehlerbehandlung und Evaluierung geglättet ".
+                           "readCacheFile: Ressourcenverwaltung für AI::FANN-Modelle verbessert ".
+                           "Deserialize um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet ",
   "2.10.4" => "20.09.2026  _batSocTarget: Debuglog für Step6 korrigiert ".
                            "AI::FANN Speicherleck durch globales DESTROY-Patching behoben. ",
-  "2.10.3" => "19.09.2026  Fix: SOC-Prognose LR überschätzt erreichbaren Ladestand wenn aktueller SoC < batoptsocwh ".
-                           "Wertebereiche für stepSoC und careCycle überarbeitet ".
-                           "Korrektur der Darstellung bei Netzladung der Batterie über den Hausknoten ".
-                           "Schlüssel plantControl->plantCoordinates hinzugefügt, um mehrere SF-Geräte an verschiedenen Standorten innerhalb eines FHEM-Systems zu unterstützen ".
-                           "consForecastBase: Das Verfahren zur Anwendung des Basiswerts ist jetzt über den optionalen Token 'Mode->Base|AddOn' steuerbar. ",
-  "2.10.2" => "29.08.2026  userExit bzgl. zirkulären Referenzen gehärtet, potenzielle Speicherleaks geschlossen ".
-                           "_aiFannAutoArchitecture: Warnung durch undefiniertes dataParamRatio beseitigt ".
-                           "_aiFannEpochDiagnostic: neuen hint29, very_early-Zweig: hint1 und hint26 zusaätzlich gated, early-Zweig: hint5 und hint23 zusätzlich gated ",
-  "2.10.1" => "20.08.2026  writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075) ".
-                           "weitere singleUpdateState in Getter entfernt ".
-                           "isGhoValFormValid geändert: die Prüfung erfolgt nun zuverlässig bei Eingabe des graphicHeaderOwnspecValForm-Attributs ",
-  "2.10.0" => "11.08.2026  __saveBEVBatteryValues: Batteriedaten auch bei nicht aktivierten BEV-Consumer speichern ".
-                           "neuer Debug Modus aiData_long ".
-                           "vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' ".
-                           "Logausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse ".
-                           "neuer Debug Modus aiData_long, bev-Consumer: Aufzeichnung der zum Laden verwendete Anzahl Phasen – reine Rohdatenerfassung für später ".
-                           "Fix fehlenden success-Status in Victron VRM API Forecast Response wenn vorher Response fehlerhaft war ".
-                           "neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten ".
-                           "Sun Position Caching integriert ".
-                           "kleinere Patches ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -11944,58 +11928,62 @@ sub readCacheFile {
       return;
   }
   elsif ($cachename eq 'neuralnet') {
-      my @fanntypes = qw(con pv);                                                                           # --- Liste aller FANN-Typen, die geladen werden sollen ---
-      
-      if ($data{$name}{neuralnet} && -s $file) {                                                            # FannModel-Objekte (XS) vorab freigeben – sie sind nie im Cache-File und stellen den größten Teil des RAM-Peaks dar
+      my @fanntypes = qw(con pv);
+
+      if (ref $data{$name}{neuralnet} eq 'HASH') {                              # vorhandene XS-Objekte explizit und sauber destruieren
           for my $ft (@fanntypes) {
+              my $wrapper = $data{$name}{neuralnet}{$ft}{FannModel};
+              
+              if (ref $wrapper && $wrapper->can('AIF_modelDestroy')) {
+                  $wrapper->AIF_modelDestroy();                                 # Setzt inneren C-Pointer zurück
+              }
+              
               delete $data{$name}{neuralnet}{$ft}{FannModel};
           }
-      }      
-      
-      my ($err, $net) = fileRetrieve($file);
+      }
 
-      if (!$err && $net) {
-          $data{$name}{neuralnet} = $net;                                                                   # --- kompletten Zustand übernehmen ---
+      my ($err, $net) = fileRetrieve ($file);                                   # Daten aus der Datei abrufen
+
+      if (!$err && ref $net eq 'HASH') {
+          $data{$name}{neuralnet} = $net;                                       # alte Struktur erst jetzt mit den frischen Daten überschreiben
 
           if ($aifannabs) {
               $data{$name}{current}{conNNTrainstate} = "Perl Modul AI::FANN is missing. Install it first with e.g. 'cpan AI::FANN' or 'cpanm AI::FANN'";
               return;
           }
 
-          # --- für jeden Typ das Modell aus dem Blob neu erzeugen ---
-          for my $fanntyp (@fanntypes) {
+          for my $fanntyp (@fanntypes) {                                        # für jeden Typ das Modell aus dem Blob neu erzeugen
               my $blob = $data{$name}{neuralnet}{$fanntyp}{FannBlob};
 
-              if (!defined $blob) {                                                                         # Kein Blob → kein Modell
+              if (!defined $blob || length($blob) == 0) {
                   $data{$name}{current}{$fanntyp.'NNTrainstate'} = "No FANN blob found for type '$fanntyp'";
                   next;
               }
 
-              my $tmpfile = $neuralnet."fannmodel_${name}_${fanntyp}";
+              my $tmpfile = $neuralnet . "fannmodel_${name}_${fanntyp}";
               my $werr    = write_blob ($tmpfile, $blob);
 
               if ($werr) {
                   $data{$name}{current}{$fanntyp.'NNTrainstate'} = $werr;
-                  Log3 ($name, 1, qq{$name - WARNING - cached data "$title" restored, but FANN blob for '$fanntyp' could not be written});
+                  Log3($name, 1, qq{$name - WARNING - cached data "$title" restored, but FANN blob for '$fanntyp' could not be written});
                   next;
               }
 
-              my $raw = AI::FANN->new_from_file ($tmpfile);                                                 # Modell neu laden
-              unlink $tmpfile if -e $tmpfile;
+              my $raw = AI::FANN->new_from_file($tmpfile);
+              
+              unlink $tmpfile if -e $tmpfile;                                   # Datei direkt löschen
 
-              if ($raw && FHEM::SolarForecast::AiFannModelWrapper->AIF_isModelValid($raw)) {
+              if ($raw && FHEM::SolarForecast::AiFannModelWrapper->AIF_isModelValid ($raw)) {
                   $data{$name}{neuralnet}{$fanntyp}{FannModel} =
                       FHEM::SolarForecast::AiFannModelWrapper->AIF_modelCreate($raw);
 
                   $data{$name}{current}{$fanntyp.'NNTrainstate'} = 'ok';
-                  
                   Log3($name, 3, qq{$name - cached data "$title" restored for FANN type '$fanntyp'});
               }
-              else {                                                                                        # Modell kaputt → Status setzen
+              else {
                   my $msg = $@ || "AI::FANN object for '$fanntyp' is empty or faulty";
                   $data{$name}{current}{$fanntyp.'NNTrainstate'} = $msg;
-
-                  Log3 ($name, 1, qq{$name - WARNING - cached data "$title" restored, but FANN object for '$fanntyp' is faulty});
+                  Log3($name, 1, qq{$name - WARNING - cached data "$title" restored, but FANN object for '$fanntyp' is faulty});
               }
           }
       }
@@ -12156,46 +12144,25 @@ sub writeCacheFile {
   }
   elsif ($cachename eq 'neuralnet') {
       if (scalar keys %{$data{$name}{neuralnet}}) {
-          my $nnref = $data{$name}{neuralnet};
-          my %saved_models;
+          my $nnref = $data{$name}{neuralnet};          
+          my %store_data;                                                                   # saubere Kopie der Struktur für das Speichern erstellen, wir duplizieren nur die Hash-Ebenen, um den Live-Hash $nnref nicht zu verändern.
 
-          for my $fanntyp (qw(con pv)) {                                                  # --- Alle FANN-Objekte sichern und entfernen ---
-              next unless exists $nnref->{$fanntyp}{FannModel};
-
-              my $obj = $nnref->{$fanntyp}{FannModel};
-              $saved_models{$fanntyp} = $obj;
-
-              delete $nnref->{$fanntyp}{FannModel};
-          }
-
-          my $error = fileStore ($nnref, $file);                                          # --- EINMAL speichern ---
-
-          for my $fanntyp (keys %saved_models) {
-              my $obj = $saved_models{$fanntyp};
-              my $ok  = $obj->AIF_isModelValid();                                         # Objekt testen
-
-              if ($ok) {                                                                  # gültig → zurück in Struktur
-                  $nnref->{$fanntyp}{FannModel} = $obj;
-              }
-              else {
-                  my $blob = $nnref->{$fanntyp}{FannBlob};                                # kaputt → neu aus Blob laden
-
-                  if (defined $blob) {
-                      my $tmpfile = $file . "_reload_fannmodel_$fanntyp";
-                      write_blob ($tmpfile, $blob);
-
-                      my $new_raw = AI::FANN->new_from_file ($tmpfile);
-                      unlink $tmpfile;
-
-                      if ($new_raw) {
-                          $nnref->{$fanntyp}{FannModel} =
-                              FHEM::SolarForecast::AiFannModelWrapper->AIF_modelCreate ($new_raw);
-                      }
+          for my $key (keys %$nnref) {
+              if (ref $nnref->{$key} eq 'HASH') {                 
+                  for my $sub_key (keys %{$nnref->{$key}}) {                                # Unter-Hash (z. B. 'con', 'pv' oder Drift-Daten) kopieren
+                      next if $sub_key eq 'FannModel';                                      # Das XS-Objekt FannModel explizit NICHT mit in die Speicher-Kopie übernehmen!
+                      
+                      $store_data{$key}{$sub_key} = $nnref->{$key}{$sub_key};
                   }
               }
+              else {                                                                        # Normale Skalare / Daten direkt übernehmen
+                  $store_data{$key} = $nnref->{$key};
+              }
           }
 
-          if ($error) {
+          my $error = fileStore (\%store_data, $file);                                      # nur die bereinigte Kopie serialisieren, FannBlob und alle Drift-Werte bleiben in %store_data voll erhalten!
+
+          if ($error) {                                                                     # Fehlerbehandlung
               my $msg = qq{ERROR while writing AI FANN data to file "$file": $error};
               Log3($name, 1, "$name - $msg");
               return $msg;
@@ -28291,8 +28258,8 @@ sub aiFannRunTrain {
       my $mse_val = $sum_sq / scalar (@test_inputs);                                                        # MSE (Mean Squared Error)
       push @val_history, $mse_val;                                                                          # Verlauf der Validierungs-MSE
 
-      my $mae_val   = _aiFannMeanAbsoluteError   (\@targetvals, \@predictvals);
-      my $medae_val = _aiFannMedianAbsoluteRrror (\@targetvals, \@predictvals);
+      my $mae_val   = _aiFannMeanAbsoluteError  (\@targetvals, \@predictvals);
+      my $medae_val = _aiFannMedianAbsolutError (\@targetvals, \@predictvals);
 
       if ($debug =~ /aiProcess/xs
           && $num_epoch_between_statmsg
@@ -32547,7 +32514,7 @@ return $sum_abs / $n;
 ###############################################################
 #   Berechnung MedAE
 ###############################################################
-sub _aiFannMedianAbsoluteRrror {
+sub _aiFannMedianAbsolutError {
   my ($targetsref, $predictsref) = @_;
 
   my @abs_errors = map { abs ($targetsref->[$_] - $predictsref->[$_]) } 0 .. $#$targetsref;
@@ -38753,7 +38720,7 @@ return $dstr;
 #                   Daten Serialisieren
 ###############################################################
 sub Serialize {
-  my $dat  = shift;                   # Hash-Referenz der Daten
+  my $dat  = shift;                                                         # Hash-Referenz der Daten
   my $name = $dat->{name} // 'global';
 
   my $serial = eval { freeze ($dat)
@@ -38769,15 +38736,18 @@ return $serial;
 #                   Daten Deserialisieren
 ###############################################################
 sub Deserialize {
-  my ($name, $dat) = @_;             # Name, serialisierte Daten
+  my ($name, $dat) = @_;
+
+  return unless defined $dat && length $dat;                                # <-- Schutz gegen leere Inputs
 
   my $serial = decode_base64 ($dat);
 
-  my $deseref  = eval { thaw ($serial)
-                    }
-                    or do { Log3 ($name, 1, "$name - Deserialization ERROR: $@");
-                            return;
-                          };
+  my $deseref = eval { thaw ($serial) 
+                     }
+                     or do { 
+                         Log3 ($name, 1, "$name - Deserialization ERROR: " . ($@ // 'Unknown error'));
+                         return;
+                     };
 
 return $deseref;
 }
@@ -38787,15 +38757,19 @@ return $deseref;
 #  zu schreiben
 ################################################################
 sub fileStore {
-  my $obj  = shift;
-  my $file = shift;
+  my ($obj, $file) = @_;
+
+  return "No file path specified" unless defined $file && length $file;
 
   my $err;
-  my $ret = eval { nstore ($obj, $file) };
-
-  if (!$ret || $@) {
-      $err = $@ ? $@ : 'I/O problems or other internal error';
-  }
+    
+  eval {
+      nstore ($obj, $file);
+      1;                                                                    # Stellt sicher, dass eval im Erfolgsfall wahr zurückgibt
+  } 
+  or do {
+      $err = $@ ? $@ : 'Unknown I/O error during store';
+  };
 
 return $err;
 }
@@ -38805,17 +38779,20 @@ return $err;
 #  zu lesen
 ################################################################
 sub fileRetrieve {
-  my $file = shift;
+  my ($file) = @_;
 
-  my ($err, $obj);
+  return ("No file path specified", undef)      unless defined $file && length $file;
+  return ("File '$file' does not exist", undef) unless -e $file;
 
-  if (-e $file) {
-      eval { $obj = retrieve ($file) };
-
-      if (!$obj || $@) {
-          $err = $@ ? $@ : 'I/O error while reading';
-      }
-  }
+  my ($obj, $err);
+  
+  eval {
+      $obj = retrieve ($file);
+      1;                                                                # Erfolgs-Marker für eval
+  } 
+  or do {
+      $err = $@ ? $@ : 'Unknown I/O error during retrieve';
+  };
 
 return ($err, $obj);
 }
@@ -40230,28 +40207,53 @@ sub AIF_modelDestroy {                                          # explizite Frei
   $self->{model} = undef;
 }
 
-sub AIF_isModelValid {
-  my ($invocant, $model) = @_;
+sub AIF_isModelValid {                                          # Validitätsprüfung
+  my ($invocant, $check_model) = @_;
 
-  if (ref($invocant)) {                                         # Objektaufruf: Wrapper-Objekt
-      $model = $invocant->{model};
-  }
+  my $target = ref($invocant) ? $invocant->{model} : $check_model;
 
-  return 0 unless $model && ref($model);                        # Muss ein Objekt sein
+  return 0 unless defined $target;
+  return 0 unless ref($target) && ref($target) ne 'HASH';       # Sicherstellen, dass es ein gewracktes XS-Objekt ist
   return 1;
 }
 
-our $AUTOLOAD;
-sub AUTOLOAD {                                                  # Delegiert alle unbekannten Methoden (MSE, save …) an echtes FANN-Objekt
-  my $self = shift;
-  my $method = $AUTOLOAD;
-  $method =~ s/.*:://;
-  return if $method eq 'DESTROY';
-  return unless $self->{model};
-  return $self->{model}->$method (@_);
+####################
+# STORABLE HOOKS
+####################
+sub STORABLE_freeze {                                           # Wird von Storable::freeze automatisch aufgerufen, muß! STORABLE_freeze heißen
+  my ($self, $cloning) = @_;
+    
+  return if $cloning;                                           # $cloning ist wahr, wenn Storable::dclone im Arbeitsspeicher genutzt wird
+
+  # Wir geben KEINE Daten des C-Pointers weiter, um ungültige Speicheradressen
+  # im serialisierten String / Base64 zu vermeiden.
+  return ""; 
 }
 
-sub DESTROY {                                                 # Automatische Freigabe via Perl-GC
+sub STORABLE_thaw {                                             # Wird von Storable::thaw automatisch aufgerufen, muß! STORABLE_thaw heißen
+  my ($self, $cloning, $serialized) = @_;
+    
+  # Nach dem Deserialisieren setzen wir das C-Objekt explizit auf undef.
+  # Das verhindert den Zugriff auf Speicherleichen (Segmentation Faults).
+  $self->{model} = undef;
+}
+
+our $AUTOLOAD;
+sub AUTOLOAD {
+  my $self   = shift;
+  my $method = $AUTOLOAD;
+  $method    =~ s/.*:://;
+
+  return if $method eq 'DESTROY';
+
+  unless (ref($self) && $self->{model}) {                       # Verhindert Aufruf von Methoden auf ungültigen/zerstörten Modellen
+      return;
+  }
+
+return $self->{model}->$method(@_);
+}
+
+sub DESTROY {                                                   # Automatische Freigabe via Perl-GC
   my ($self) = @_;
   $self->AIF_modelDestroy();
 }
