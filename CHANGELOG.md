@@ -18,6 +18,21 @@ xx.xx.xxxx Rev. xxxxx
     AIF_isModelValid()  
     Neue Validierungsmethode, die das FANN-Modell leak-frei prüft.
     Verwendet get_num_input() statt MSE(), da diese XS-Methode keine Exceptions wirft und keine temporären Referenzen erzeugt.
+    
+  * Absturzgefahr (Segfault) bei Verwendung von gebrochenen `AI::FANN`-C-Pointern aus wiederhergestellten Storable-Cache-Dateien behoben.
+  * Falsch-positive I/O-Fehlermeldungen beim Auslesen gültiger Cache-Dateien mit Null-Werten behoben.
+    
+- Change:
+  **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über `Storable` deutlich erhöht.
+    - Implementierung von `STORABLE_freeze` und `STORABLE_thaw` Hooks, um ungültige C-Pointer/Memory-Leaks nach Demaskierung (Deserialisierung) zu verhindern und FHEM vor Segmentation Faults zu schützen.
+    - Überarbeitung der Methode `AIF_isModelValid` zur besseren Unterscheidung zwischen Objekt- und Klassenaufrufen.
+  **fileStore / fileRetrieve**: Fehlerbehandlung und Evaluierung geglättet.
+    - Umstellung auf das `eval { ... 1; } or do { ... }` Pattern, damit skalare Falsy-Werte (`0`, `""`) nicht fälschlicherweise als I/O-Fehler interpretiert werden.
+    - Expliziter Guard-Check bei Nichtexistenz von Dateien in `fileRetrieve`.
+  **readCacheFile**: Ressourcenverwaltung für `AI::FANN`-Modelle verbessert.
+    - Vor dem Laden neuer Cache-Daten werden alte XS-Objekte nun explizit via `AIF_modelDestroy()` freigegeben.
+  **Serialize / Deserialize**:
+    - `Deserialize` um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet.
   
 
 ## [v2.10.4]
