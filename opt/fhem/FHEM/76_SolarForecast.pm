@@ -39851,8 +39851,12 @@ sub LRU_evict_tail {
       ${ $cache->{tail} } = undef;
   }
 
-
-  delete $cache->{lru}{$old};
+  if (exists $cache->{lru}{$old}) {
+      $cache->{lru}{$old}{prev} = undef;
+      $cache->{lru}{$old}{next} = undef;
+      delete $cache->{lru}{$old};
+  }
+    
   delete $cache->{data}{$old};
 
   ${ $cache->{size} }--;
@@ -39930,12 +39934,19 @@ sub LRU_update_internals {
 return;
 }
 
-# --- Cache zurücksetzen
+# --- Cache vollständig leeren und Speicher freigeben
 sub LRU_reset {
   my ($name, $cache) = @_;
 
-  %{ $cache->{data} } = ();
-  %{ $cache->{lru} }  = ();
+  # Tiefe Löschung
+  for my $k (keys %{ $cache->{data} }) {
+      delete $cache->{data}{$k};
+  }
+  
+  for my $k (keys %{ $cache->{lru} }) {
+      delete $cache->{lru}{$k};
+  }
+
   ${ $cache->{head} } = undef;
   ${ $cache->{tail} } = undef;
   ${ $cache->{size} } = 0;
