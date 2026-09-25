@@ -20281,8 +20281,8 @@ return;
 }
 
 ################################################################
-#  historische Verbrauchsdaten aus pvCircular lesen und
-#  deren Median oder Average berechnen
+# historische Verbrauchsdaten aus pvCircular lesen und
+# deren Median oder Average berechnen
 ################################################################
 sub __readConFromCircular {
   my $paref      = shift;
@@ -20292,35 +20292,41 @@ sub __readConFromCircular {
   my $lct        = $paref->{lct};
   my $dayname    = $paref->{dayname};
   my $tomdayname = $paref->{tomdayname};
-  my $cofciwd    = $paref->{cofciwd};                       # consForecastIdentWeekdays (default: 0)
-  my $usage      = $paref->{usage};                         # Referenz von %usage
-  my $ncds       = $paref->{ncds};                          # consForecastIdentWeekdays ? consForecastLastDays * 7 : consForecastLastDays
-  my $nhist      = $paref->{nhist};                         # Anzahl vorhandener Tage in pvHistory
+  my $cofciwd    = $paref->{cofciwd};                               # consForecastIdentWeekdays (default: 0)
+  my $usage      = $paref->{usage};                                 # Referenz von %usage
+  my $ncds       = $paref->{ncds};                                  # consForecastIdentWeekdays ? consForecastLastDays * 7 : consForecastLastDays
+  my $nhist      = $paref->{nhist};                                 # Anzahl vorhandener Tage in pvHistory
 
   my (@conhtod, @conhtom);
-  my $mix = 0;
 
-  if ($cofciwd) {
-      # --- nur Stunde eines bestimmten Wochentags (Mo...So) einbeziehen
-      push @conhtod, @{$data{$name}{circular}{$hod}{con_all}{"$dayname"}}    if(defined ${$data{$name}{circular}{$hod}{con_all}{"$dayname"}}[0]);
-      push @conhtom, @{$data{$name}{circular}{$hod}{con_all}{"$tomdayname"}} if(defined ${$data{$name}{circular}{$hod}{con_all}{"$tomdayname"}}[0]);      # für den nächsten Tag
+  my $con_all_ref = $data{$name}{circular}{$hod}{con_all} // {};    # Sichere Referenzen holen (verhindert Autovivification)
+
+  if ($cofciwd) {                                                   # --- nur Stunde eines bestimmten Wochentags (Mo...So) einbeziehen
+      if (my $tod_arr = $con_all_ref->{$dayname}) {
+          push @conhtod, @$tod_arr if @$tod_arr;
+      }
+      
+      if (my $tom_arr = $con_all_ref->{$tomdayname}) {              # für den nächsten Tag
+          push @conhtom, @$tom_arr if @$tom_arr;
+      }
   }
-  else {
-      # --- alle aufgezeichneten Wochentage in der Stunde berücksichtigen
-      for my $dy (keys %{$data{$name}{circular}{$hod}{con_all}}) {                                                                                       # den max Index aller Tagesarrays ermitteln
-          my $ai = $#{$data{$name}{circular}{$hod}{con_all}{$dy}};
-          $mix   = $ai if($ai > $mix);
+  else {                                                            # --- alle aufgezeichneten Wochentage in der Stunde berücksichtigen
+      my $mix = 0;
+      
+      for my $dy (keys %$con_all_ref) {
+          my $ai = $#{$con_all_ref->{$dy}};
+          $mix   = $ai if ($ai > $mix);
       }
 
-      for my $i (0..$mix) {                                                                                                                             # Werte sortiert nach Alter aufsteigend in Array einfügen
+      for my $i (0 .. $mix) {
           for my $dy (sort keys %habwdn) {
               my $dayshortname = $habwdn{$dy}{$lct};
+              my $val          = $con_all_ref->{$dayshortname}[$i];
 
-              push @conhtod, ${$data{$name}{circular}{$hod}{con_all}{$dayshortname}}[$i]
-                             if(defined ${$data{$name}{circular}{$hod}{con_all}{$dayshortname}}[$i]);
-
-              push @conhtom, ${$data{$name}{circular}{$hod}{con_all}{$dayshortname}}[$i]                   # V2.5.1
-                             if(defined ${$data{$name}{circular}{$hod}{con_all}{$dayshortname}}[$i]);
+              if (defined $val) {
+                  push @conhtod, $val;
+                  push @conhtom, $val;                              # V2.5.1
+              }
           }
       }
   }
@@ -20328,22 +20334,22 @@ sub __readConFromCircular {
   my $hnumtod = scalar @conhtod;
   my $hnumtom = scalar @conhtom;
 
-  if ($hnumtod) {
+  if ($hnumtod) {                                                   
       # --- die nächsten 1..24 Stunden
-      if ($hnumtod > $fcld) {
-          @conhtod = splice (@conhtod, $fcld * -1);
+      if ($fcld > 0 && $hnumtod > $fcld) {
+          splice @conhtod, 0, ($hnumtod - $fcld);
           $hnumtod = scalar @conhtod;
       }
 
-      my $hcontod = $ncds <= $nhist
-                    ? (round0 (avgArray    (\@conhtod, $hnumtod)))
-                    : (round0 (medianArray (\@conhtod)));
+      my $hcontod = ($ncds <= $nhist)
+                  ? round0 (avgArray    (\@conhtod, $hnumtod))
+                  : round0 (medianArray (\@conhtod));
 
-      $usage->{nxt}{$hod}{con} = $hcontod;                                                                  # prognostizierter Verbrauch der Stunde hh (Hour of Day)
+      $usage->{nxt}{$hod}{con} = $hcontod;                          # prognostizierter Verbrauch der Stunde hh (Hour of Day)
       $usage->{nxt}{$hod}{num} = $hnumtod;
 
       # --- mit consForecastLastDays = 0
-      if ($fcld == 0) {                                                                                     # Prognose aus hist. Tagen für Stunde löschen wenn keine Integration historischer Tage gewünscht
+      if ($fcld == 0) {                                             # Prognose aus hist. Tagen für Stunde löschen wenn keine Integration historischer Tage gewünscht
           $usage->{nxt}{$hod}{con} = 0;
           $usage->{nxt}{$hod}{num} = 1;
       }
@@ -20351,20 +20357,17 @@ sub __readConFromCircular {
 
   if ($hnumtom) {
       # --- Stunden des nächsten Tages
-      if ($fcld == 0) {                                                                                     # V2.5.1
-          # keine Addition — historische Tage sollen nicht einfließen
-      }
-      else {
-          if ($hnumtom > $fcld) {
-              @conhtom = splice (@conhtom, $fcld * -1);
+      if ($fcld != 0) {
+          if ($fcld > 0 && $hnumtom > $fcld) {
+              splice @conhtom, 0, ($hnumtom - $fcld);
               $hnumtom = scalar @conhtom;
           }
 
-          my $hcontom = $ncds <= $nhist
-                        ? (round0 (avgArray    (\@conhtom, $hnumtom)))
-                        : (round0 (medianArray (\@conhtom)));
+          my $hcontom = ($ncds <= $nhist)
+                      ? round0 (avgArray    (\@conhtom, $hnumtom))
+                      : round0 (medianArray (\@conhtom));
 
-          $usage->{tom}{con} += $hcontom;                                                                                                                   # Summe prognostizierter Verbrauch des Tages
+          $usage->{tom}{con} += $hcontom;                           # Summe prognostizierter Verbrauch des Tages
           $usage->{tom}{num} += $hnumtom;
       }
   }
@@ -32287,7 +32290,7 @@ sub _aiFannErrorMetrics {
   my @bias_list;                                                      # signed errors (target - prediction)
   my ($sum_abs, $sum_sq, $sum_bias, $sum_abs_bias) = (0,0,0,0);
 
-  my $tgt_median = medianArray($targets_ref) || 1;                    # Median für RMSErel
+  my $tgt_median = medianArray ($targets_ref) || 1;                   # Median für RMSErel
 
   for my $i (0 .. $#targets) {
       my $a = $targets[$i];
