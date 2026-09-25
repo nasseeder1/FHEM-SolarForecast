@@ -35789,12 +35789,12 @@ sub limitArray {
   my $aref  = shift;
   my $limit = shift // SLIDENUMMAX;
 
-  return if (!ref $aref eq 'ARRAY');
+  return unless (ref $aref eq 'ARRAY');
 
   my $count = scalar @$aref;
-  
-  if ($count > $limit) {                                            # Einmaliger Schnitt statt Schleife (extrem effizient bei großen Differenzen)
-      splice @$aref, 0, $count - $limit;
+    
+  if ($count > $limit) {                                          # Einmaliger Schnitt statt Schleife (extrem effizient bei großen Differenzen)
+      splice @$aref, 0, ($count - $limit);
   }
 
 return;
@@ -35808,26 +35808,20 @@ sub removeMinMaxArray {
   my $aref  = shift;
   my $limit = shift // SPLSLIDEMAX;
 
-  return if (!ref $aref eq 'ARRAY' || @$aref <= $limit);
-    
-  while (@$aref > $limit) {                                             # Iterativ abarbeiten statt Rekursion (verhindert Stack-Overflow)
-      my ($min_idx, $max_idx) = (0, 0);                                 # Indizes von Minimum und Maximum bestimmen
+  return unless (ref $aref eq 'ARRAY');
 
-      for my $i (1 .. $#$aref) {
-          $min_idx = $i if $aref->[$i] < $aref->[$min_idx];
-          $max_idx = $i if $aref->[$i] > $aref->[$max_idx];
-      }
+  my $count = scalar @$aref;
+  return if $count <= $limit;
 
-      if ($min_idx == $max_idx) {                                       # Sonderfall: alle Elemente gleich
-          splice @$aref, $min_idx, 1;
-      }
-      elsif ($min_idx > $max_idx) {                                     # höheren Index zuerst entfernen
-          splice @$aref, $min_idx, 1;
-          splice @$aref, $max_idx, 1;
+  @$aref = sort { $a <=> $b } @$aref;                           # Numerisch sortieren — älteste Einträge werden Ausreißer-bereinigt ersetzt
+
+  while (@$aref > $limit) {
+      if (@$aref - $limit >= 2) {
+          shift @$aref;                                         # kleinsten Wert entfernen
+          pop   @$aref;                                         # größten Wert entfernen
       }
       else {
-          splice @$aref, $max_idx, 1;
-          splice @$aref, $min_idx, 1;
+          pop @$aref;                                           # letzten Überzähligen entfernen
       }
   }
 
