@@ -34,7 +34,7 @@ xx.xx.xxxx Rev. xxxxx
     - Vor dem Laden neuer Cache-Daten werden alte XS-Objekte nun explizit via `AIF_modelDestroy()` freigegeben.
   * **Serialize / Deserialize**:
     - `Deserialize` um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet.
-  * removeMinMaxArray, limitArray, _addCon2CircArray, __aiAddRawData, aiFannDetectDrift, medianArray, _calcCaQcomplex, _calcDataEveryFullHour, _aiFannSlopeBias, getPvHistTargetArray, LRU_reset, LRU_evict_tail refakturiert
+  * removeMinMaxArray, limitArray, _addCon2CircArray, __aiAddRawData, aiFannDetectDrift, medianArray, _calcCaQcomplex, _calcDataEveryFullHour, _aiFannSlopeBias, getPvHistTargetArray, LRU_reset, LRU_evict_tail, __calcNewFactor_migrated refakturiert
   
 
 ## [v2.10.4]

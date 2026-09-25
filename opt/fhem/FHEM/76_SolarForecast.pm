@@ -21250,11 +21250,14 @@ sub __calcNewFactor_migrated {
       }
   }
   else {
-     $pvrl    = medianArray (\@{$data{$name}{circular}{$hh}{'pvrl_'.$sabin}{"$crang"}});                  # neuen Median berechnen
-     $pvfcraw = medianArray (\@{$data{$name}{circular}{$hh}{'pvfc_'.$sabin}{"$crang"}});                  # neuen Median berechnen
+     my $rl_arr = $data{$name}{circular}{$hh}{'pvrl_'.$sabin}{"$crang"} // [];                            # Sichere Referenzabfrage ohne ungewollte Autovivification
+     my $fc_arr = $data{$name}{circular}{$hh}{'pvfc_'.$sabin}{"$crang"} // [];
+
+     $pvrl    = medianArray ($rl_arr);                                                                    # neuen Median berechnen
+     $pvfcraw = medianArray ($fc_arr);                                                                    # neuen Median berechnen
 
      $factor = 0;
-     $dnum   = scalar (@{$data{$name}{circular}{$hh}{'pvrl_'.$sabin}{"$crang"}});
+     $dnum   = scalar @$rl_arr;
      $factor = round2 ($pvrl / $pvfcraw) if($pvrl && $pvfcraw);                                           # devision by zero Forum: https://forum.fhem.de/index.php?msg=1341884
 
      debugLog ($paref, 'pvCorrectionWrite', "$calc Corrf -> read stored values: PVreal median: $pvrl, PVforecast median: $pvfcraw, days: $dnum");
