@@ -35862,18 +35862,29 @@ return $avg;
 #
 ######################################################################################
 sub medianArray {
-    my ($aref, $num) = @_;
+  my ($aref, $num) = @_;
 
-    return unless (ref $aref eq 'ARRAY' && @$aref);
+  return unless (ref $aref eq 'ARRAY' && @$aref);
 
-    if (defined $num) {                                                                 # Anzahl der (neuesten) Elemente die verwendet werden sollen
-        return unless ($num =~ /^\d+$/ && $num > 0 && $num <= @$aref);
-    }
+  my @data;
 
-    # Nur die relevanten Elemente isolieren (Copy-on-Write schonen)
-    my @sorted = sort { $a <=> $b } (defined $num ? @{$aref}[-$num .. -1] : @$aref);    # Numerisch aufsteigend
-    my $n      = scalar @sorted;
-    my $mid    = int($n / 2);
+  if (defined $num && $num =~ /^\d+$/ && $num > 0) {                                    # Anzahl der (neuesten) Elemente die verwendet werden sollen
+      my $count = scalar @$aref;
+        
+      if ($num < $count) {                                                              # Statt Slice-Copy: Direkte Zuweisung über Offset (In-Memory ohne Stack-Overshoot)
+          @data = @{$aref}[ $count - $num .. $count - 1 ];
+      }
+      else {
+          @data = @$aref;
+      }
+  }
+  else {
+      @data = @$aref;
+  }
+
+  my @sorted = sort { $a <=> $b } @data;                                                # Numerisch aufsteigend sortieren
+  my $n      = scalar @sorted;
+  my $mid    = int($n / 2);
 
 return $n % 2
        ? $sorted[$mid]                                                                  # ungerade Elemente -> Median Element steht in der Mitte von @sorted
