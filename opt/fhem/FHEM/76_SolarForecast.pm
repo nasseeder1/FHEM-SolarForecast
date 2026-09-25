@@ -21006,15 +21006,13 @@ sub _calcDataEveryFullHour {
                                                  t     => $t,
                                                  limit => 750,
                                                } );
-
+      
       if ($targetref && ref $targetref eq 'ARRAY' && @$targetref) {                                 # Wert des 30%-Quantils als Referenzniveau bestimmen
-          my @sorted = sort { $a <=> $b } @$targetref;
+          my @sorted = sort { $a <=> $b } @$targetref;                                              # In-place Sortierung auf einer flachen Kopie ohne redundante Array-Erzeugung
           my $n      = scalar @sorted;
-          my $idx30  = int (0.30 * ($n - 1));                                                       # 30%-Quantil
-          my $idx90  = int (0.90 * ($n - 1));                                                       # 90%-Quantil
 
-          $data{$name}{circular}{99}{con_quantile30} = round0 ($sorted[$idx30]);                    # in Circular persistieren
-          $data{$name}{circular}{99}{con_quantile90} = round0 ($sorted[$idx90]);
+          $data{$name}{circular}{99}{con_quantile30} = round0($sorted[int(0.30 * ($n - 1))]);       # 30%-Quantil
+          $data{$name}{circular}{99}{con_quantile90} = round0($sorted[int(0.90 * ($n - 1))]);       # 90%-Quantil
       }
 
       storeReading ($name, '.signaldone_'.$hh, 'done');                                             # Sperrsignal (erledigt) setzen
@@ -21098,10 +21096,10 @@ sub _calcCaQcomplex {
   my $name   = $paref->{name};
   my $debug  = $paref->{debug};
   my $acu    = $paref->{acu};
-  my $pvrlvd = $paref->{pvrlvd};                                                                       # PV-Wert valide 1/0
+  my $pvrlvd = $paref->{pvrlvd};                                                        # PV-Wert valide 1/0
   my $h      = $paref->{h};
-  my $day    = $paref->{day};                                                                          # aktueller Tag
-  my $yday   = $paref->{yday};                                                                         # vorheriger Tag (falls gesetzt)
+  my $day    = $paref->{day};                                                           # aktueller Tag
+  my $yday   = $paref->{yday};                                                          # vorheriger Tag (falls gesetzt)
   my $aihit  = $paref->{aihit};
 
   if (!$pvrlvd) {
@@ -21110,26 +21108,29 @@ sub _calcCaQcomplex {
   }
 
   my $hh         = sprintf "%02d", $h;
-  my $pvrl       = CircularVal ($name, $hh, 'pvrl',       0);                         # real erzeugte PV Energie am Ende der vorherigen Stunde
-  my $pvapifc    = CircularVal ($name, $hh, 'pvapifc',    0);                         # vorhergesagte PV Energie incl. Korrekturfaktoren am Ende der vorherigen Stunde
-  my $pvapifcraw = CircularVal ($name, $hh, 'pvapifcraw', 0);                         # vorhergesagte PV Energie (raw) am Ende der vorherigen Stunde
+  my $pvrl       = CircularVal ($name, $hh, 'pvrl',       0);                           # real erzeugte PV Energie am Ende der vorherigen Stunde
+  my $pvapifc    = CircularVal ($name, $hh, 'pvapifc',    0);                           # vorhergesagte PV Energie incl. Korrekturfaktoren am Ende der vorherigen Stunde
+  my $pvapifcraw = CircularVal ($name, $hh, 'pvapifcraw', 0);                           # vorhergesagte PV Energie (raw) am Ende der vorherigen Stunde
+  
+  return if (!$pvrl || !$pvapifcraw);
 
-  if (!$pvrl || !$pvapifcraw) {
-      return;
-  }
-
-  my $chwcc  = HistoryVal ($name, $day, $hh, 'wcc',    0);                            # Wolkenbedeckung heute & abgefragte Stunde
-  my $sunalt = HistoryVal ($name, $day, $hh, 'sunalt', 0);                            # Sonne Altitude
+  my $chwcc  = HistoryVal ($name, $day, $hh, 'wcc',    0);                              # Wolkenbedeckung heute & abgefragte Stunde
+  my $sunalt = HistoryVal ($name, $day, $hh, 'sunalt', 0);                              # Sonne Altitude
   my $crang  = cloud2bin  ($chwcc);
   my $sabin  = sunalt2bin ($sunalt);
+  
+  my $circ_hh = $data{$name}{circular}{$hh} //= {};                                     # direct Reference Assignment statt tiefer Autovivification
+    
+  my $rl_key = 'pvrl_' . $sabin;
+  my $fc_key = 'pvfc_' . $sabin;
 
   ## Speicherarrays schreiben
   #############################
-  push @{$data{$name}{circular}{$hh}{'pvrl_'.$sabin}{"$crang"}}, $pvrl;
-  push @{$data{$name}{circular}{$hh}{'pvfc_'.$sabin}{"$crang"}}, $pvapifcraw;
+  push @{$circ_hh->{$rl_key}{"$crang"}}, $pvrl;
+  push @{$circ_hh->{$fc_key}{"$crang"}}, $pvapifcraw;
 
-  removeMinMaxArray ($data{$name}{circular}{$hh}{'pvrl_'.$sabin}{"$crang"}, SPLSLIDEMAX);
-  removeMinMaxArray ($data{$name}{circular}{$hh}{'pvfc_'.$sabin}{"$crang"}, SPLSLIDEMAX);
+  removeMinMaxArray ($circ_hh->{$rl_key}{"$crang"}, SPLSLIDEMAX);
+  removeMinMaxArray ($circ_hh->{$fc_key}{"$crang"}, SPLSLIDEMAX);
 
   ## neuen Korrekturfaktor berechnen
   ####################################
@@ -21140,14 +21141,9 @@ sub _calcCaQcomplex {
   $paref->{sabin}      = $sabin;
   $paref->{calc}       = 'Complex';
 
-  my ($oldfac, $factor, $dnum) = __calcNewFactor_migrated ($paref);                  # migrierte Daten verwenden
+  my ($oldfac, $factor, $dnum) = __calcNewFactor_migrated ($paref);                     # migrierte Daten verwenden
 
-  delete $paref->{pvrl};
-  delete $paref->{pvapifc};
-  delete $paref->{pvapifcraw};
-  delete $paref->{crang};
-  delete $paref->{sabin};
-  delete $paref->{calc};
+  delete @{$paref}{qw(pvrl pvapifc pvapifcraw crang sabin calc)};
 
   $aihit = $aihit ? ' AI result used,' : '';
 
