@@ -32197,13 +32197,17 @@ return { recommendation => 'none',    reason => '-'     };
 #       slope_regres   => Steigung  (undef bei Null-Varianz in targets)
 #       bias_regres    => Achsenabschnitt (= ȳ bei Null-Varianz)
 #       warning        => Fehler-/Sonderfall-Beschreibung (optional)
+#
+# Direct-Ref-Access (Vermeidet Speicherduplizierung großer Arrays)
 ###########################################################################
 sub _aiFannSlopeBias {
   my ($targets_ref, $preds_ref) = @_;
+  
+  return { slope_regres => 1, bias_regres => 0, warning => 'invalid_ref' }                  # Sicherheits-Check auf Gültigkeit der Referenzen
+      unless (ref $targets_ref eq 'ARRAY' && ref $preds_ref eq 'ARRAY');
 
-  my @targets = @$targets_ref;
-  my @preds   = @$preds_ref;
-  my $n       = scalar @targets;
+  my $n       = scalar @$targets_ref;
+  my $n_preds = scalar @$preds_ref;
 
   # --- Sonderfall: zu wenige Datenpunkte
   return {
@@ -32213,7 +32217,6 @@ sub _aiFannSlopeBias {
   } if $n < 2;
 
   # --- Arrays unterschiedlicher Länge: auf das kürzere kürzen, kein Abbruch wenn ausreichend
-  my $n_preds = scalar @preds;
   my $warning = '';
 
   if ($n != $n_preds) {
@@ -32227,12 +32230,12 @@ sub _aiFannSlopeBias {
       } if $n < 2;
   }
 
-  # --- Summen berechnen
+  # Summen direkt über die Referenzen berechnen
   my ($sum_x, $sum_y, $sum_xy, $sum_xx) = (0, 0, 0, 0);
 
   for my $i (0 .. $n - 1) {
-      my $x = $targets[$i];
-      my $y = $preds[$i];
+      my $x = $targets_ref->[$i];
+      my $y = $preds_ref->[$i];
 
       next unless defined $x && defined $y;
 
@@ -32241,7 +32244,7 @@ sub _aiFannSlopeBias {
       $sum_xy += $x * $y;
       $sum_xx += $x * $x;
   }
-
+  
   # --- Nenner / Skalierter Schwellwert
   my $den = $n * $sum_xx - $sum_x * $sum_x;                                           # Nenner der OLS-Formel für die Steigung
   my $eps = 1e-10 * ($sum_xx + abs($sum_x) + 1);                                      # skaliert, nie exakt 0
