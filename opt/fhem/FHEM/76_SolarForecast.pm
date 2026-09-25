@@ -21008,8 +21008,8 @@ sub _calcDataEveryFullHour {
                                                } );
       
       if ($targetref && ref $targetref eq 'ARRAY' && @$targetref) {                                 # Wert des 30%-Quantils als Referenzniveau bestimmen
-          my @sorted = sort { $a <=> $b } @$targetref;                                              # In-place Sortierung auf einer flachen Kopie ohne redundante Array-Erzeugung
-          my $n      = scalar @sorted;
+          my $n      = scalar @$targetref;                                                          # Sortieren direkt inline ohne Umkopieren der Elemente auf ein neues Array
+          my @sorted = sort { $a <=> $b } @$targetref;
 
           $data{$name}{circular}{99}{con_quantile30} = round0($sorted[int(0.30 * ($n - 1))]);       # 30%-Quantil
           $data{$name}{circular}{99}{con_quantile90} = round0($sorted[int(0.90 * ($n - 1))]);       # 90%-Quantil
@@ -38280,7 +38280,7 @@ return ($rapi, $wapi);
 }
 
 ###############################################################
-#  Liefert 2 Array-Refs der letzten $limit Werte von $par1
+#  Liefert 2-3 Array-Refs der letzten $limit Werte von $par1
 #  und $par2 aus pvHistory synchron/chronologisch zurück.
 #  Enthält automatische Interpolation für fehlende p2key-Werte
 ###############################################################
@@ -38305,14 +38305,14 @@ sub getPvHistTargetArray {
   my $mday = $dt->{day};
   my $hour = $dt->{hour};
 
-  # --- Cache-Key generieren ---
-  my $key = join '::', 'PVHISTARR',                                                     # Cache Key ID
+  # --- Cache-Key generieren ---    
+  my $key = join '::', 'PVHISTARR',                                                         # Cache Key ID
                        $name, $year, $mon, $mday, $hour,
                        $par1, $par2, ($par3 // 'undef'), $limit;
 
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return @$cached;                                                                  # (\@p1, \@p2, \@p3)
+      return map { [@$_] } @$cached;                                                        # (\@p1, \@p2, \@p3)
   }
 
   # --- Kein Cache-Hit → Originalberechnung ---
@@ -38324,17 +38324,17 @@ sub getPvHistTargetArray {
   # --- Tage sortieren (Vormonat + aktueller Monat) ---
   my @days_after = sort { $a <=> $b } grep { $_ >  $mday } keys %$ph;
   my @days_upto  = sort { $a <=> $b } grep { $_ <= $mday } keys %$ph;
-  my @days       = (@days_after, @days_upto);
-
+    
   # --- Werte sammeln ---
-  for my $day (@days) {
-      my @hods = sort { $a <=> $b } keys %{ $ph->{$day} };
+  for my $day (@days_after, @days_upto) {
+      my $day_ref = $ph->{$day};
+      next unless ref $day_ref eq 'HASH';
 
-      for my $hod (@hods) {
+      for my $hod (sort { $a <=> $b } keys %$day_ref) {
           next if $hod < 1 || $hod > 24;
           last if ($day == $mday && $hod == $hour + 1);
 
-          my $rec = $ph->{$day}{$hod};
+          my $rec = $day_ref->{$hod};
 
           next unless defined $rec->{$par1};
           next unless $rec->{$par1} >= 0;
@@ -38345,12 +38345,16 @@ sub getPvHistTargetArray {
       }
   }
 
-  # --- Arrays synchronisieren ---
-  my $len = min scalar(@p1keys), scalar(@p2keys), scalar(@p3keys);
+  # --- Arrays synchronisieren (Fix: p3keys berücksichtigen nur wenn definiert) ---
+  my $len = scalar @p1keys;
+  $len = scalar @p2keys if scalar @p2keys < $len;
+  $len = scalar @p3keys if (defined $par3 && scalar @p3keys < $len);
 
   splice @p1keys, $len;
   splice @p2keys, $len;
-  splice @p3keys, $len;
+  splice @p3keys, $len if defined $par3;
+
+  return (\@p1keys, \@p2keys, \@p3keys) if $len == 0;
 
   # --- Interpolation fehlender Werte in @p2keys ---
   for (my $i = 0; $i < $len; $i++) {
@@ -38377,17 +38381,19 @@ sub getPvHistTargetArray {
       }
   }
 
-  # --- Limit anwenden ---
-  my $min = min $len, $limit;
-
-  @p1keys = @p1keys[-$min .. -1];
-  @p2keys = @p2keys[-$min .. -1];
-  @p3keys = @p3keys[-$min .. -1];
+  # --- Limit in-place anwenden (Keine Array-Slice-Kopien per [- $min .. -1]) ---
+  if ($len > $limit) {
+      my $remove = $len - $limit;
+      splice @p1keys, 0, $remove;
+      splice @p2keys, 0, $remove;
+      splice @p3keys, 0, $remove if defined $par3;
+  }
 
   # --- Ergebnis cachen ---
-  LRU_insert ($name, $cache, $key, [ \@p1keys, \@p2keys, \@p3keys ]);
+  my $res = [ \@p1keys, \@p2keys, \@p3keys ];
+  LRU_insert ($name, $cache, $key, $res);
 
-return (\@p1keys, \@p2keys, \@p3keys);
+return @$res;
 }
 
 ################################################################
