@@ -21161,7 +21161,7 @@ return;
 
 ################################################################
 #  den Hausverbrauch der vergangenen Stunde zum con-Array
-#  im Circular Speicher hinzufügen
+#  im Circular Speicher hinzufügen (Speicheroptimiert)
 ################################################################
 sub _addCon2CircArray {
   my $paref    = shift;
@@ -21178,18 +21178,24 @@ sub _addCon2CircArray {
   
   my $con   = HistoryVal ($name, $day, $hh, 'con',   undef);                            # Consumption der abgefragten Stunde
   my $gcons = HistoryVal ($name, $day, $hh, 'gcons', undef);                            # Netzbezug der abgefragten Stunde
+  
+  return unless ((defined $con && $con >= 0) || (defined $gcons && $gcons >= 0));       # Nur ausführen, wenn mindestens ein gültiger Wert vorliegt
+  
+  my $circ_hh = $data{$name}{circular}{$hh} //= {};                                     # Direct Reference Assignment zur Vermeidung von tiefen Autovivification-Peaks
 
   # Nur gültige, definierte Werte >= 0 eintragen
   if (defined $con && $con >= 0) {
-      push @{$data{$name}{circular}{$hh}{con_all}{"$dayname"}}, $con;                 # Consumption zum Speicherarray hinzufügen
-      limitArray ($data{$name}{circular}{$hh}{con_all}{"$dayname"}, CONDAYSLIDEMAX);
+      my $target_arr = ($circ_hh->{con_all}{"$dayname"} //= []);
+      push @$target_arr, $con;                                                          # Consumption zum Speicherarray hinzufügen
+      limitArray ($target_arr, CONDAYSLIDEMAX);
         
       debugLog ($paref, 'saveData2Storage', "add consumption into Array (con_all) in Circular - day: $day, hod: $hh, con: $con");
   }
 
   if (defined $gcons && $gcons >= 0) {
-      push @{$data{$name}{circular}{$hh}{gcons_a}{"$dayname"}}, $gcons;               # Consumption zum Speicherarray hinzufügen
-      limitArray ($data{$name}{circular}{$hh}{gcons_a}{"$dayname"}, CONDAYSLIDEMAX);
+      my $target_arr = ($circ_hh->{gcons_a}{"$dayname"} //= []);
+      push @$target_arr, $gcons;                                                        # Consumption zum Speicherarray hinzufügen
+      limitArray ($target_arr, CONDAYSLIDEMAX);
         
       debugLog ($paref, 'saveData2Storage', "add consumption into Array (gcons_a) in Circular - day: $day, hod: $hh, gcons: $gcons");
   }
