@@ -43,7 +43,7 @@ xx.xx.xxxx Rev. xxxxx
   * **Serialize / Deserialize**:
     - `Deserialize` um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet.
   
-  * removeMinMaxArray, limitArray, _addCon2CircArray, __aiAddRawData, aiFannDetectDrift, medianArray, _calcCaQcomplex, _calcDataEveryFullHour, _aiFannSlopeBias, getPvHistTargetArray, LRU_reset, LRU_evict_tail, __calcNewFactor_migrated, __readConFromCircular refakturiert
+  * removeMinMaxArray, limitArray, _addCon2CircArray, __aiAddRawData, aiFannDetectDrift, medianArray, _calcCaQcomplex, _calcDataEveryFullHour, _aiFannSlopeBias, getPvHistTargetArray, LRU_reset, LRU_evict_tail, __calcNewFactor_migrated, __readConFromCircular refaktoriert
   
 
 ## [v2.10.4]
