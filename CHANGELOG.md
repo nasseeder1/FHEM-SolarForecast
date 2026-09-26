@@ -25,6 +25,10 @@ xx.xx.xxxx Rev. xxxxx
     
 - **Change:**
   * Anpassung bezüglich OpenMeteo API Änderung für OpenMeteoDWDEnsembleAPI
+  * Der Befehl "get ... rooftopData" kehrt bei Erfolg anstatt bisher undefiniert mit der Meldung 
+    "A data retrieval request for the selected radiation and/or weather API has been triggered"
+	zurück.
+  
   * **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über `Storable` deutlich erhöht.
     - Implementierung von `STORABLE_freeze` und `STORABLE_thaw` Hooks, um ungültige C-Pointer/Memory-Leaks nach Demaskierung (Deserialisierung) zu verhindern und FHEM vor Segmentation Faults zu schützen.
     - Überarbeitung der Methode `AIF_isModelValid` zur besseren Unterscheidung zwischen Objekt- und Klassenaufrufen.

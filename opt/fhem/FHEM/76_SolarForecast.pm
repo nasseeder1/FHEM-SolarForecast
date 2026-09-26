@@ -4139,7 +4139,7 @@ sub _getRoofTopData {
 
   delete $paref->{reqm};
 
-return $ret;
+return $ret || 'A data retrieval request for the selected radiation and/or weather API has been triggered';
 }
 
 ################################################################
