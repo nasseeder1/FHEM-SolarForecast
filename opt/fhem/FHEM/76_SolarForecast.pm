@@ -8042,7 +8042,7 @@ sub ___aiFannExplainKeyFigures {
       $note .= $spc3.(encode('utf8', "DPR < 5 → gilt als kritisch: das Netz ist unterbestimmt und neigt zu instabilem Training oder toten Neuronen"))."\n";
       $note .= $spc3.(encode('utf8', "7 < DPR < 20 → das Netz hat genug Freiheitsgrade um zu lernen, wird aber durch ausreichend Daten zuverlässig kontrolliert"))."\n";
       $note .= $spc3.(encode('utf8', "DPR > 30 → deutet darauf hin, dass die Architektur für die vorhandene Datenmenge zu klein gewählt wurde und ein größeres Netz möglicherweise mehr Muster erfassen könnte"))."\n";
-	  $note .= $spc3.(encode('utf8', '<b>Hinweis:</b>'))."\n";
+      $note .= $spc3.(encode('utf8', '<b>Hinweis:</b>'))."\n";
       $note .= $spc6.(encode('utf8', 'Bei automatischer Architekturwahl wird die erste Konfiguration gewählt, die einen DPR ≥ 7 erreicht.'))."\n";
       $note .= $spc6.(encode('utf8', 'Legt der Anwender die Architektur manuell fest, dient der angezeigte DPR-Wert zur Orientierung, ob die Wahl zur aktuellen Datenlage passt.'))."\n";
       $note .= "\n";
@@ -8187,7 +8187,7 @@ sub ___aiFannExplainKeyFigures {
       $note .= $spc3.(encode('utf8', "DPR < 5 → is considered critical: the network is underdetermined and prone to unstable training or dead neurons"))."\n";
       $note .= $spc3.(encode('utf8', "7 < DPR < 20 → The network has enough freedom to learn, but is reliably controlled through sufficient data."))."\n";
       $note .= $spc3.(encode('utf8', "DPR > 30 → suggests that the architecture was chosen to be too small for the existing data set and that a larger network might be able to detect more patterns"))."\n";
-	  $note .= $spc3.(encode('utf8', '<b>Note:</b>'))."\n";
+      $note .= $spc3.(encode('utf8', '<b>Note:</b>'))."\n";
       $note .= $spc6.(encode('utf8', 'When architecture selection is automatic, the first configuration that achieves a DPR ≥ 7 is selected.'))."\n";
       $note .= $spc6.(encode('utf8', 'If the user defines the architecture manually, the displayed DPR value serves as a guide to determine whether the choice is appropriate given the current data situation.'))."\n";
       $note .= "\n";
@@ -40863,9 +40863,9 @@ to ensure that the system configuration is correct.
       <ul>
          <table>
          <colgroup> <col width="10%"> <col width="90%"> </colgroup>
-			<tr><td> <b>pwd</b>    </td><td>Password for access to the Victron VRM Portal                                     </td></tr>
-			<tr><td> <b>token</b>  </td><td>API Access Token                                                                  </td></tr>
-			<tr><td>               </td><td>Create the API token in the Victron VRM Portal under Preferences > Integrations.  </td></tr>
+            <tr><td> <b>pwd</b>    </td><td>Password for access to the Victron VRM Portal                                     </td></tr>
+            <tr><td> <b>token</b>  </td><td>API Access Token                                                                  </td></tr>
+            <tr><td>               </td><td>Create the API token in the Victron VRM Portal under Preferences > Integrations.  </td></tr>
          </table>
       </ul>
       <br>
@@ -40875,7 +40875,7 @@ to ensure that the system configuration is correct.
       <ul>
        <b>Examples: </b> <br>
        set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 pwd=somepassword <br>
-	   set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 token=addd5....b3e72e15e0 <br>
+       set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 token=addd5....b3e72e15e0 <br>
        set &lt;name&gt; vrmCredentials delete <br>
       </ul>
 
@@ -41641,7 +41641,7 @@ to ensure that the system configuration is correct.
             <tr><td> <b>globalMode</b>          </td><td>Sets the planning mode globally for all consumers. This setting takes precedence over specific mode settings.                                      </td></tr>
             <tr><td>                            </td><td>The meaning of the options is identical to the setting of the specific <i>consumerXX->mode</i>:                                                    </td></tr>
             <tr><td>                            </td><td><b>unset</b> - No global mode setting; consumer-specific mode applies. (default)                                                                   </td></tr>
-			<tr><td>                            </td><td><b>can</b>  - Scheduling takes place at a time when there is likely to be sufficient PV surplus available.                                         </td></tr>
+            <tr><td>                            </td><td><b>can</b>  - Scheduling takes place at a time when there is likely to be sufficient PV surplus available.                                         </td></tr>
             <tr><td>                            </td><td><b>must</b> - Consumers will be optimally scheduled even if there is likely to be insufficient surplus PV power available.                         </td></tr>
             <tr><td>                            </td><td><b>mustNot</b> - Consumers must not be scheduled or started. Consumers that have been started will be stopped.                                     </td></tr>
             <tr><td>                            </td><td>                                                                                                                                                   </td></tr>
@@ -41897,12 +41897,12 @@ to ensure that the system configuration is correct.
             <tr><td> <b>evid</b>           </td><td>The key value uniquely identifies a connected electric vehicle.                                                                                    </td></tr>
             <tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;Regex&gt;</b> - The specified regular expression is applied to the reading value. If the expression is true, the            </td></tr>
             <tr><td>                       </td><td><ul><ul><ul><ul>&nbsp; consumer is activated in SolarForecast. </ul></ul></ul></ul>                                                                </td></tr>
-			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-			<tr><td> <b>batCap</b>         </td><td>Indicates the nominal battery capacity. This information may be provided by:                                                                       </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>batCap</b>         </td><td>Indicates the nominal battery capacity. This information may be provided by:                                                                       </td></tr>
             <tr><td>                       </td><td>Integer: <b>0..X</b> - the battery capacity in Wh <b>without specifying the unit</b>                                                               </td></tr>
-			<tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;Unit&gt;</b> - Reading that provides the capacity and the unit of measurement (Wh, kWh)                                     </td></tr>
-			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-			<tr><td> <b>etotal</b>         </td><td>The key is a required field using the syntax specified above. The value is the total amount of charging energy consumed.                           </td></tr>
+            <tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;Unit&gt;</b> - Reading that provides the capacity and the unit of measurement (Wh, kWh)                                     </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>etotal</b>         </td><td>The key is a required field using the syntax specified above. The value is the total amount of charging energy consumed.                           </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>opmode</b>         </td><td>A &lt;Device&gt;:&lt;Reading&gt; combination that returns the current charging mode (optional).                                                    </td></tr>
             <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b>                                                                                                      </td></tr>
@@ -41918,9 +41918,9 @@ to ensure that the system configuration is correct.
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>power</b>          </td><td>Maximum charging power of the vehicle or wallbox using the syntax defined above.                                                                   </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-			<tr><td> <b>currSoC</b>        </td><td><b>&lt;Reading&gt;</b> - A reading from the device that returns the vehicle's current battery SoC in %.                                            </td></tr>
-			<tr><td>                       </td><td><ul><ul>&nbsp;&nbsp; The reading must be a value in the range 0 < X <= 100. </ul></ul>                                                             </td></tr>
-			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>currSoC</b>        </td><td><b>&lt;Reading&gt;</b> - A reading from the device that returns the vehicle's current battery SoC in %.                                            </td></tr>
+            <tr><td>                       </td><td><ul><ul>&nbsp;&nbsp; The reading must be a value in the range 0 < X <= 100. </ul></ul>                                                             </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>targetSoC</b>      </td><td>Optional specification of the target SoC for the charging session. This can alternatively be set by:                                               </td></tr>
             <tr><td>                       </td><td>Integer: <b>0..100</b> - the target SoC in % as a fixed setting (default: 80)                                                                      </td></tr>
             <tr><td>                       </td><td><b>&lt;Reading&gt;</b> -  A reading that returns the target SoC as a percentage (0–100%).                                                          </td></tr>
@@ -42460,7 +42460,7 @@ to ensure that the system configuration is correct.
             <tr><td> <b>headerShowEnv</b>       </td><td>Select the environmental values to display in the header section of the graph. The selected options are separated by commas.              </td></tr>
             <tr><td>                            </td><td>The environment variables are set using the <a href="#SolarForecast-attr-setupEnvironment">setupEnvironment attribute.                    </td></tr>
             <tr><td>                            </td><td><b>gridStatus</b>  - current availability/current connection status to the public network                                                 </td></tr>
-			<tr><td>                            </td><td><b>outsideTemp</b> - the current outdoor temperature                                                                                      </td></tr>
+            <tr><td>                            </td><td><b>outsideTemp</b> - the current outdoor temperature                                                                                      </td></tr>
             <tr><td>                            </td><td><b>presence</b>    - presence status                                                                                                      </td></tr>
             <tr><td>                            </td><td><b>windSpeed</b>   - the current wind speed (smoothed)                                                                                    </td></tr>
             <tr><td>                            </td><td>                                                                                                                                          </td></tr>
@@ -42740,21 +42740,21 @@ to ensure that the system configuration is correct.
             <tr><td>                                  </td><td>Werte oberhalb des Limits werden durch SolarForecast als ungültig bewertet und nicht gespeichert.                                                                        </td></tr>
             <tr><td>                                  </td><td>Wert: <b>Ganzzahl</b>, default: 100000                                                                                                                                   </td></tr>
             <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
-			<tr><td> <b>consForecastBase</b>          </td><td>This parameter controls a base value for the consumption forecast. The application method can be selected via the optional token <b>Mode</b>.                            </td></tr>
-			<tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
-			<tr><td>                                  </td><td><b>Mode->Base</b>: The base value acts as a minimum threshold (default).                                                                                                 </td></tr>
-			<tr><td>                                  </td><td><ul>-> calculated forecasts below consForecastBase are raised to this value (basement).                     </ul>                                                        </td></tr>
-			<tr><td>                                  </td><td><ul>-> calculated forecasts above consForecastBase remain unchanged.                                        </ul>                                                        </td></tr>
-			<tr><td>                                  </td><td><b>Mode->AddOn</b>: The base value is added as a fixed surcharge to the calculated forecast — regardless of its magnitude.                                               </td></tr>
-			<tr><td>                                  </td><td><ul>-> e.g. 'Mode->AddOn,6-11->200' adds a surcharge of 200 Wh to every forecast for hours 6–11.            </ul>                                                        </td></tr>
-			<tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
-			<tr><td>                                  </td><td>The base value can be defined separately for each hour of the day (1..24) or as a group of hours (e.g. 5-9).                                                             </td></tr>
-			<tr><td>                                  </td><td>Syntax: <b>[Mode->&lt;Base|AddOn&gt;,]&lt;hod&gt;->&lt;value&gt;,&lt;hod&gt;->&lt;value&gt;,...</b>                                                                      </td></tr>
-			<tr><td>                                  </td><td>&lt;value&gt; can be defined in different ways:                                                                                                                          </td></tr>
-			<tr><td>                                  </td><td><b>&lt;integer&gt;</b> - a fixed value, e.g. '2->500' or '3-9->650'                                                                                                      </td></tr>
-			<tr><td>                                  </td><td><b>&lt;Device&gt;:&lt;Reading&gt;:&lt;Default&gt;</b> - e.g. '11->Dev:Rdg:200' or '6-11->Dev:Rdg:200', returns the value as an integer. '200' is the fallback value.     </td></tr>
-			<tr><td>                                  </td><td><b>Note:</b> consForecastBase is only effective within the non-AI consumption forecast component.                                                                        </td></tr>
-			<tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
+            <tr><td> <b>consForecastBase</b>          </td><td>This parameter controls a base value for the consumption forecast. The application method can be selected via the optional token <b>Mode</b>.                            </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
+            <tr><td>                                  </td><td><b>Mode->Base</b>: The base value acts as a minimum threshold (default).                                                                                                 </td></tr>
+            <tr><td>                                  </td><td><ul>-> calculated forecasts below consForecastBase are raised to this value (basement).                     </ul>                                                        </td></tr>
+            <tr><td>                                  </td><td><ul>-> calculated forecasts above consForecastBase remain unchanged.                                        </ul>                                                        </td></tr>
+            <tr><td>                                  </td><td><b>Mode->AddOn</b>: The base value is added as a fixed surcharge to the calculated forecast — regardless of its magnitude.                                               </td></tr>
+            <tr><td>                                  </td><td><ul>-> e.g. 'Mode->AddOn,6-11->200' adds a surcharge of 200 Wh to every forecast for hours 6–11.            </ul>                                                        </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
+            <tr><td>                                  </td><td>The base value can be defined separately for each hour of the day (1..24) or as a group of hours (e.g. 5-9).                                                             </td></tr>
+            <tr><td>                                  </td><td>Syntax: <b>[Mode->&lt;Base|AddOn&gt;,]&lt;hod&gt;->&lt;value&gt;,&lt;hod&gt;->&lt;value&gt;,...</b>                                                                      </td></tr>
+            <tr><td>                                  </td><td>&lt;value&gt; can be defined in different ways:                                                                                                                          </td></tr>
+            <tr><td>                                  </td><td><b>&lt;integer&gt;</b> - a fixed value, e.g. '2->500' or '3-9->650'                                                                                                      </td></tr>
+            <tr><td>                                  </td><td><b>&lt;Device&gt;:&lt;Reading&gt;:&lt;Default&gt;</b> - e.g. '11->Dev:Rdg:200' or '6-11->Dev:Rdg:200', returns the value as an integer. '200' is the fallback value.     </td></tr>
+            <tr><td>                                  </td><td><b>Note:</b> consForecastBase is only effective within the non-AI consumption forecast component.                                                                        </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
             <tr><td> <b>consForecastIdentWeekdays</b> </td><td>If set, only the same weekdays (Mon..Sun) are included in the calculation of the consumption forecast.                                                                   </td></tr>
             <tr><td>                                  </td><td>Otherwise, all weekdays are used equally for the calculation.                                                                                                            </td></tr>
             <tr><td>                                  </td><td>Value: <b>0|1</b>, default: 0                                                                                                                                            </td></tr>
@@ -42806,7 +42806,7 @@ to ensure that the system configuration is correct.
             <tr><td>                                  </td><td>                                                                                                                                                                         </td></tr>
             <tr><td> <b>reductionState</b>            </td><td>SolarForecast uses this parameter to determine the current curtailment status of the PV system (optional).                                                               </td></tr>
             <tr><td>                                  </td><td>The syntax is a <b>&lt;Device&gt;:&lt;Reading&gt;:&lt;Function&gt;</b>  combination. Possible values for &lt;Function&gt; are:                                           </td></tr>
-			<tr><td>                                  </td><td><b>&lt;Regex&gt;</b> - The regular expression is applied to the value of &lt;Device&gt;:&lt;Reading&gt;. Boolean result: 'true' -> throttled, 'false' -> not throttled   </td></tr>
+            <tr><td>                                  </td><td><b>&lt;Regex&gt;</b> - The regular expression is applied to the value of &lt;Device&gt;:&lt;Reading&gt;. Boolean result: 'true' -> throttled, 'false' -> not throttled   </td></tr>
             <tr><td>                                  </td><td><b>&lt;{Perl-Code}&gt;</b> - The result of the Perl code is evaluated. Boolean result: 'true' -> throttled, 'false' -> not throttled                                     </td></tr>
             <tr><td>                                  </td><td><ul><ul><ul> The Perl code must not contain any spaces. The value of &lt;Device&gt;:&lt;Reading&gt; is passed to the code </ul></ul></ul>                                </td></tr>
             <tr><td>                                  </td><td><ul><ul><ul> via the variable $VALUE. </ul></ul></ul>                                                                                                                    </td></tr>
@@ -43197,49 +43197,42 @@ to ensure that the system configuration is correct.
        <b>Note:</b> If an OpenMeteo API is also set in the 'setupWeatherDev1' attribute, the settings of both attributes
                     are harmonized, whereby the setting of 'setupRadiationAPI' is leading. <br><br>
 
-       <b>OpenMeteoDWD-API</b> <br>
+       <b>OpenMeteoDWD API</b> <br>
 
-       Open-Meteo is an open source weather API and offers free access for non-commercial purposes.
+       Open-Meteo is an open-source weather API that offers free access for non-commercial purposes.
        No API key is required.
-       Open-Meteo leverages a powerful combination of global (11 km) and mesoscale (1 km) weather models from esteemed
-       national weather services.
-       This API provides access to the renowned ICON weather models of the German Weather Service (DWD), which provide
-       15-minute data for short-term forecasts in Central Europe and global forecasts with a resolution of 11 km.
-       The ICON model is a preferred choice for general weather forecast APIs when no other high-resolution weather
-       models are available. The models DWD Icon D2, DWD Icon EU and DWD Icon Global models are merged into a
-       seamless forecast.
-       The comprehensive and clearly laid out
-       <a href='https://open-meteo.com/en/docs/dwd-api' target='_blank'>API Documentation</a> is available on
-       the service's website.
+       Open-Meteo uses a powerful combination of global (11 km) and mesoscale (1 km) weather models
+       from reputable national weather services.
+       This API uses the DWD’s deterministic main model. It seamlessly combines ICON-D2 (high-resolution, ~2 km), ICON-EU, and ICON-Global 
+       into a continuous forecast with up to 15-minute resolution. Ideal as a standard for Central Europe over several days.
+       The service’s website features comprehensive and clear
+       <a href=‘https://open-meteo.com/en/docs/dwd-api’ target=‘_blank’>API documentation</a>.
        <br><br>
 
        <b>OpenMeteoDWD_D2-API</b> <br>
 
-       Like OpenMeteoDWD-API. However, only the ICON D2 model is used for Central Europe
-       (Germany, Switzerland, Austria, France, Belgium, Netherlands, Denmark, Czech Republic, Slovenia) is used.
-       The spatial resolution of this model is 0.02° (approx. 2 km) and a temporal resolution of 15 minutes.
+       Like the OpenMeteoDWD API, but uses exclusively the high-resolution ICON-D2 model (~2 km grid size).
+       The API offers the highest local accuracy for Central Europe (Germany, Austria, Switzerland, and neighboring countries), but is limited to the
+       short-term range (max. 48 hours).
        <br><br>
 
-       <b>OpenMeteoDWDEnsemble-API</b> <br>
+       <b>OpenMeteoDWD Ensemble API</b> <br>
 
-       This Open-Meteo API variant provides access to the DWD's global
-       <a href='https://www.dwd.de/DE/forschung/wettervorhersage/num_modellierung/04_ensemble_methoden/ensemble_vorhersage/ensemble_vorhersagen.html' target='_blank'>Ensemble Prediction System (EPS)</a>.
-       <br>
-       The ensemble models ICON-D2-EPS, ICON-EU-EPS and ICON-EPS-Global are seamlessly combined. <br>
-       <a href='https://openmeteo.substack.com/p/ensemble-weather-forecast-api' target='_blank'>Ensemble weather forecasts</a> are
-       a special type of forecasting method that takes into account the uncertainties in weather forecasting.
-       They do this by running several simulations or models with slight differences in the starting conditions or settings.
-       Each simulation, known as an ensemble member, represents a possible outcome of the weather.
-       In this implementation, 40 ensemble members per weather feature are combined and the most probable result is used.
+       The API is based on the
+       <a href=‘https://www.dwd.de/DE/forschung/wettervorhersage/num_modellierung/04_ensemble_methoden/ensemble_vorhersage/ensemble_vorhersagen.html’ target=‘_blank’>Ensemble Forecast System (EPS)</a>
+       of the DWD. <br>
+       It seamlessly combines the ensemble models ICON-D2-EPS, ICON-EU-EPS, and ICON-EPS. <br>
+       <a href=‘https://openmeteo.substack.com/p/ensemble-weather-forecast-api’ target=‘_blank’>Ensemble weather forecasts</a> are
+       a special type of forecasting method.
+       Up to 40 parallel simulations are run with slightly varied initial conditions
+       to better account for uncertainties (e.g., local cloud fields). The most likely outcome is calculated from these members.
        <br><br>
 
-       <b>OpenMeteoWorld-API</b> <br>
+       <b>OpenMeteoWorld API</b> <br>
 
-       As a variant of the Open Meteo service, the OpenMeteoWorld API provides the optimum forecast for a specific location worldwide.
-       The OpenMeteoWorld API seamlessly combines weather models from well-known organizations such as NOAA (National Oceanic and Atmospheric
-       Administration), DWD (German Weather Service), CMCC (Canadian) and ECMWF (European Centre for Medium-Range Weather Forecasts).
-       The providers' models are combined for each location worldwide to produce the best possible forecast.
-       The services and weather models are used automatically based on the location coordinates contained in the API call.
+       Global standard: Automatically selects the best available weather model based on location coordinates
+       (e.g., ECMWF, NOAA/GFS, DWD, GEM, CMCC). Recommended for locations outside Central Europe.
+       For every location worldwide, models from various providers are combined to create the best possible forecast.
        <br><br>
 
        <b>SolCast-API</b> <br>
@@ -44061,9 +44054,9 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
       <ul>
          <table>
          <colgroup> <col width="10%"> <col width="90%"> </colgroup>
-			<tr><td> <b>pwd</b>    </td><td>Paßwort für den Zugang zum Victron VRM Portal                                     </td></tr>
-			<tr><td> <b>token</b>  </td><td>API-Zugriffstoken                                                                 </td></tr>
-			<tr><td>               </td><td>Das API-Token im Victron VRM Portal unter Präferenzen->Integrationen anlegen.     </td></tr>
+            <tr><td> <b>pwd</b>    </td><td>Paßwort für den Zugang zum Victron VRM Portal                                     </td></tr>
+            <tr><td> <b>token</b>  </td><td>API-Zugriffstoken                                                                 </td></tr>
+            <tr><td>               </td><td>Das API-Token im Victron VRM Portal unter Präferenzen->Integrationen anlegen.     </td></tr>
          </table>
       </ul>
       <br>
@@ -44073,7 +44066,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
       <ul>
        <b>Beispiele: </b> <br>
        set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 pwd=somepassword <br>
-	   set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 token=addd5....b3e72e15e0 <br>
+       set &lt;name&gt; vrmCredentials user=john@example.com idsite=212008 token=addd5....b3e72e15e0 <br>
        set &lt;name&gt; vrmCredentials delete <br>
       </ul>
 
@@ -44839,7 +44832,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>globalMode</b>          </td><td>Setzt den Planungsmodus global für alle Verbraucher. Diese Einstellung ist dominant gegenüber spezifischen mode Einstellungen.                     </td></tr>
             <tr><td>                            </td><td>Die Bedeutung der Optionen ist identisch mit der Einstellung des spezifischen <i>consumerXX->mode</i>:                                             </td></tr>
             <tr><td>                            </td><td><b>unset</b> - keine globale mode Einstellung, es gilt der verbraucherspezifische Modus (default)                                                  </td></tr>
-			<tr><td>                            </td><td><b>can</b>  - die Einplanung erfolgt zum Zeitpunkt mit wahrscheinlich genügend verfügbaren PV Überschuß                                            </td></tr>
+            <tr><td>                            </td><td><b>can</b>  - die Einplanung erfolgt zum Zeitpunkt mit wahrscheinlich genügend verfügbaren PV Überschuß                                            </td></tr>
             <tr><td>                            </td><td><b>must</b> - Verbraucher werden optimiert eingeplant auch wenn wahrscheinlich nicht genügend PV Überschuß vorhanden sein wird                     </td></tr>
             <tr><td>                            </td><td><b>mustNot</b> - Verbraucher dürfen nicht geplant bzw. gestartet werden. Gestartete Verbraucher werden gestoppt                                    </td></tr>
             <tr><td>                            </td><td>                                                                                                                                                   </td></tr>
@@ -45096,12 +45089,12 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>evid</b>           </td><td>Der Schlüsselwert identifiziert ein angeschlossenes Elektrofahrzeug eindeutig.                                                                     </td></tr>
             <tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;Regex&gt;</b> - Der angegebene reguläre Ausdruck wird auf den Readingswert angewendet. Passt der Ausdruck, wird der         </td></tr>
             <tr><td>                       </td><td><ul><ul><ul><ul>&nbsp; Consumer in SolarForecast aktiviert. </ul></ul></ul></ul>                                                                   </td></tr>
-			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-			<tr><td> <b>batCap</b>         </td><td>Gibt die nominale Batteriekapazität an. Die Angabe kann erfolgen durch:                                                                            </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>batCap</b>         </td><td>Gibt die nominale Batteriekapazität an. Die Angabe kann erfolgen durch:                                                                            </td></tr>
             <tr><td>                       </td><td>Ganzzahl: <b>0..X</b> - die Batteriekapaziät in Wh <b>ohne Angabe der Einheit</b>                                                                  </td></tr>
-			<tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;Einheit&gt;</b> - Reading welches die Kapazität liefert und die Einheit der Wertes (Wh, kWh)                                </td></tr>
-			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-			<tr><td> <b>etotal</b>         </td><td>Der Schlüssel ist eine Pflichtangabe mit der oben angegebenen Syntax. Der Wert ist die gesamte verbrauchte Ladeenergie.                            </td></tr>
+            <tr><td>                       </td><td><b>&lt;Reading&gt;:&lt;Einheit&gt;</b> - Reading welches die Kapazität liefert und die Einheit der Wertes (Wh, kWh)                                </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>etotal</b>         </td><td>Der Schlüssel ist eine Pflichtangabe mit der oben angegebenen Syntax. Der Wert ist die gesamte verbrauchte Ladeenergie.                            </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>opmode</b>         </td><td>Eine &lt;Device&gt;:&lt;Reading&gt; Kombination, welche den aktuellen Lademodus liefert (optionale Angabe).                                        </td></tr>
             <tr><td>                       </td><td>Syntax: <b>&lt;Device&gt;:&lt;Reading&gt;</b>                                                                                                      </td></tr>
@@ -45117,9 +45110,9 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>power</b>          </td><td>Maximale Ladeleistung des Fahrzeugs bzw. der Wallbox mit der oben definierten Syntax.                                                              </td></tr>
             <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
-			<tr><td> <b>currSoC</b>        </td><td><b>&lt;Reading&gt;</b> - Reading des Devices welches den aktuellen Batterie-SoC des Fahrzeugs in % liefert.                                        </td></tr>
-			<tr><td>                       </td><td><ul><ul>&nbsp;&nbsp; Das Reading muß einen Wert im Bereich 0 < X <= 100 liefern. </ul></ul>                                                        </td></tr>
-			<tr><td>                       </td><td>                                                                                                                                                   </td></tr>
+            <tr><td> <b>currSoC</b>        </td><td><b>&lt;Reading&gt;</b> - Reading des Devices welches den aktuellen Batterie-SoC des Fahrzeugs in % liefert.                                        </td></tr>
+            <tr><td>                       </td><td><ul><ul>&nbsp;&nbsp; Das Reading muß einen Wert im Bereich 0 < X <= 100 liefern. </ul></ul>                                                        </td></tr>
+            <tr><td>                       </td><td>                                                                                                                                                   </td></tr>
             <tr><td> <b>targetSoC</b>      </td><td>Optionale Angabe des Ziel-SoC für die Ladesession. Die Angabe kann alternativ festgelegt werden durch:                                             </td></tr>
             <tr><td>                       </td><td>Ganzzahl: <b>0..100</b> - der Ziel-SoC in % als feste Einstellung (default: 80)                                                                    </td></tr>
             <tr><td>                       </td><td><b>&lt;Reading&gt;</b> -  Reading welches den Ziel-SoC in (0..100 %) liefert.                                                                      </td></tr>
@@ -45938,24 +45931,24 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                                  </td><td>Werte oberhalb des Limits werden durch SolarForecast als ungültig bewertet und nicht gespeichert.                                                                    </td></tr>
             <tr><td>                                  </td><td>Wert: <b>Ganzzahl</b>, default: 100000                                                                                                                               </td></tr>
             <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
-			<tr><td> <b>consForecastBase</b>          </td><td>Dieser Parameter steuert einen Basiswert für die Verbrauchsprognose. Das Verfahren zur Anwendung ist über den optionalen Token <b>Mode</b> wählbar.                  </td></tr>
-			<tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
-			<tr><td>                                  </td><td><b>Mode->Base</b>: Der Basiswert wirkt als Mindestschwelle (default).                                                                                                </td></tr>
-			<tr><td>                                  </td><td><ul>-> berechnete Prognosen unterhalb von consForecastBase werden auf diesen Wert (Basement) angehoben.   </ul>                                                      </td></tr>
-			<tr><td>                                  </td><td><ul>-> berechnete Prognosen oberhalb von consForecastBase werden nicht verändert.                         </ul>                                                      </td></tr>
-			<tr><td>                                  </td><td><b>Mode->AddOn</b>: Der Basiswert wird als fester Aufschlag auf die berechnete Prognose addiert — unabhängig von deren Höhe.                                         </td></tr>
-			<tr><td>                                  </td><td><ul>-> z.B. 'Mode->AddOn,6-11->200' addiert auf jede Prognose der Stunden 6–11 einen Aufschlag von 200 Wh. </ul>                                                     </td></tr>
-			<tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
-			<tr><td>                                  </td><td>Der Basiswert ist für jede Stunde des Tages (1..24) separat oder als Stundengruppe (z.B. 5-9) definierbar.                                                           </td></tr>
-			<tr><td>                                  </td><td>Syntax: <b>[Mode->&lt;Base|AddOn&gt;,]&lt;hod&gt;->&lt;Wert&gt;,&lt;hod&gt;->&lt;Wert&gt;,...</b>                                                                    </td></tr>
-			<tr><td>                                  </td><td>&lt;Wert&gt; kann durch verschiedene Varianten definiert werden:                                                                                                     </td></tr>
-			<tr><td>                                  </td><td><b>&lt;Ganzzahl&gt;</b> - ein fester Wert, z.B. '2->500' oder '3-9->650'                                                                                             </td></tr>
-			<tr><td>                                  </td><td><b>&lt;Device&gt;:&lt;Reading&gt;:&lt;Default&gt;</b> - z.B. '11->Dev:Rdg:200' oder '6-11->Dev:Rdg:200', liefert den Wert als Ganzzahl. '200' ist der Ersatzwert.    </td></tr>
-			<tr><td>                                  </td><td><b>Hinweise:</b> consForecastBase ist nur im Rahmen des Verbrauchsprognoseanteils ohne KI wirksam.                                                                   </td></tr>
+            <tr><td> <b>consForecastBase</b>          </td><td>Dieser Parameter steuert einen Basiswert für die Verbrauchsprognose. Das Verfahren zur Anwendung ist über den optionalen Token <b>Mode</b> wählbar.                  </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
+            <tr><td>                                  </td><td><b>Mode->Base</b>: Der Basiswert wirkt als Mindestschwelle (default).                                                                                                </td></tr>
+            <tr><td>                                  </td><td><ul>-> berechnete Prognosen unterhalb von consForecastBase werden auf diesen Wert (Basement) angehoben.   </ul>                                                      </td></tr>
+            <tr><td>                                  </td><td><ul>-> berechnete Prognosen oberhalb von consForecastBase werden nicht verändert.                         </ul>                                                      </td></tr>
+            <tr><td>                                  </td><td><b>Mode->AddOn</b>: Der Basiswert wird als fester Aufschlag auf die berechnete Prognose addiert — unabhängig von deren Höhe.                                         </td></tr>
+            <tr><td>                                  </td><td><ul>-> z.B. 'Mode->AddOn,6-11->200' addiert auf jede Prognose der Stunden 6–11 einen Aufschlag von 200 Wh. </ul>                                                     </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
+            <tr><td>                                  </td><td>Der Basiswert ist für jede Stunde des Tages (1..24) separat oder als Stundengruppe (z.B. 5-9) definierbar.                                                           </td></tr>
+            <tr><td>                                  </td><td>Syntax: <b>[Mode->&lt;Base|AddOn&gt;,]&lt;hod&gt;->&lt;Wert&gt;,&lt;hod&gt;->&lt;Wert&gt;,...</b>                                                                    </td></tr>
+            <tr><td>                                  </td><td>&lt;Wert&gt; kann durch verschiedene Varianten definiert werden:                                                                                                     </td></tr>
+            <tr><td>                                  </td><td><b>&lt;Ganzzahl&gt;</b> - ein fester Wert, z.B. '2->500' oder '3-9->650'                                                                                             </td></tr>
+            <tr><td>                                  </td><td><b>&lt;Device&gt;:&lt;Reading&gt;:&lt;Default&gt;</b> - z.B. '11->Dev:Rdg:200' oder '6-11->Dev:Rdg:200', liefert den Wert als Ganzzahl. '200' ist der Ersatzwert.    </td></tr>
+            <tr><td>                                  </td><td><b>Hinweise:</b> consForecastBase ist nur im Rahmen des Verbrauchsprognoseanteils ohne KI wirksam.                                                                   </td></tr>
             <tr><td>                                  </td><td>Die Stunden müssen den Tag sequentiell abdecken, Bereichsangaben mit Start &gt; End (z.B. '22-7') sind ungültig.                                                     </td></tr>
             <tr><td>                                  </td><td><ul>-> <b>gültig:</b>   Mode->AddOn,1-7->250,8-22->300,23-24->250                </ul>                                                                               </td></tr>
             <tr><td>                                  </td><td><ul>-> <b>ungültig:</b> 22-7->250                                                </ul>                                                                               </td></tr>
-			<tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
+            <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
             <tr><td> <b>consForecastIdentWeekdays</b> </td><td>Wenn gesetzt, werden zur Berechnung der Verbrauchsprognose nur gleiche Wochentage (Mo..So) einbezogen.                                                               </td></tr>
             <tr><td>                                  </td><td>Anderenfalls werden alle Wochentage gleichberechtigt zur Kalkulation verwendet.                                                                                      </td></tr>
             <tr><td>                                  </td><td>Wert: <b>0|1</b>, default: 0                                                                                                                                         </td></tr>
@@ -46007,7 +46000,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                                  </td><td>                                                                                                                                                                     </td></tr>
             <tr><td> <b>reductionState</b>            </td><td>SolarForecast nutzt diesen Parameter, um den aktuellen Abregelungsstatus der PV-Anlage auszulesen (optional).                                                        </td></tr>
             <tr><td>                                  </td><td>Die Syntax ist eine <b>&lt;Device&gt;:&lt;Reading&gt;:&lt;Funktion&gt;</b>-Kombination. Möglich als &lt;Funktion&gt; sind:                                           </td></tr>
-			<tr><td>                                  </td><td><b>&lt;Regex&gt;</b> - Der Regex wird auf den Wert von &lt;Device&gt;:&lt;Reading&gt; angewendet. Boolesches Ergebnis: true'->abgeregelt, 'false'->nicht abgeregelt  </td></tr>
+            <tr><td>                                  </td><td><b>&lt;Regex&gt;</b> - Der Regex wird auf den Wert von &lt;Device&gt;:&lt;Reading&gt; angewendet. Boolesches Ergebnis: true'->abgeregelt, 'false'->nicht abgeregelt  </td></tr>
             <tr><td>                                  </td><td><b>&lt;{Perl-Code}&gt;</b> - Das Ergebnis des Perl-Codes wird ausgewertet. Boolesches Ergebnis: 'true'->abgeregelt, 'false'->nicht abgeregelt                        </td></tr>
             <tr><td>                                  </td><td><ul><ul><ul> Der Perl-Code darf keine Leerzeichen enthalten. Der Wert von &lt;Device&gt;:&lt;Reading&gt; wird dem Code </ul></ul></ul>                               </td></tr>
             <tr><td>                                  </td><td><ul><ul><ul> mit der Variable $VALUE übergeben. </ul></ul></ul>                                                                                                      </td></tr>
@@ -46405,43 +46398,36 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
       Es ist kein API-Schlüssel erforderlich.
       Open-Meteo nutzt eine leistungsstarke Kombination aus globalen (11 km) und mesoskaligen (1 km) Wettermodellen
       von angesehenen nationalen Wetterdiensten.
-      Diese API bietet Zugang zu den renommierten ICON-Wettermodellen des Deutschen Wetterdienstes (DWD), die
-      15-minütige Daten für kurzfristige Vorhersagen in Mitteleuropa und globale Vorhersagen mit einer Auflösung
-      von 11 km liefern. Das ICON-Modell ist eine bevorzugte Wahl für allgemeine Wettervorhersage-APIs, wenn keine
-      anderen hochauflösenden Wettermodelle verfügbar sind. Es werden die Modelle DWD Icon D2, DWD Icon EU
-      und DWD Icon Global zu einer nahtlosen Vorhersage zusammengeführt.
+      Diese API das deterministische Hauptmodell des DWD. Sie kombiniert nahtlos ICON-D2 (hochauflösend, ~2 km), ICON-EU und ICON-Global 
+      zu einer durchgehenden Vorhersage mit bis zu 15-minütiger Auflösung. Ideal als Standard für Mitteleuropa über mehrere Tage.
       Auf der Webseite des Dienstes ist die umfangreiche und übersichtliche
       <a href='https://open-meteo.com/en/docs/dwd-api' target='_blank'>API Dokumentation</a> verfügbar.
       <br><br>
 
       <b>OpenMeteoDWD_D2-API</b> <br>
 
-      Wie OpenMeteoDWD-API. Es wird jedoch nur das Modell ICON D2 für Mitteleuropa
-      (Deutschland, Schweiz, Österreich, Frankreich, Belgien, Niederlande, Dänemark, Tschechien, Slowenien) verwendet.
-      Die Raumauflösung dieses Modells beträgt 0,02° (ca. 2 km) und eine zeitliche Auflösung von 15 Minuten.
+      Wie OpenMeteoDWD-API, nutzt jedoch ausschließlich das hochauflösende Modell ICON-D2 (~2 km Rasterweite). 
+      Die API bietet die höchste lokale Genauigkeit für Mitteleuropa (DE, AT, CH und Nachbarländer), ist jedoch auf den 
+      Kurzfristbereich (max. 48 Stunden) beschränkt.
       <br><br>
 
       <b>OpenMeteoDWDEnsemble-API</b> <br>
 
-      Diese Open-Meteo API Variante bietet Zugang zum globalen
+      Die API basiert auf dem 
       <a href='https://www.dwd.de/DE/forschung/wettervorhersage/num_modellierung/04_ensemble_methoden/ensemble_vorhersage/ensemble_vorhersagen.html' target='_blank'>Ensemble-Vorhersagesystem (EPS)</a>
       des DWD. <br>
-      Es werden die Ensemble Modelle ICON-D2-EPS, ICON-EU-EPS und ICON-EPS-Global nahtlos vereint. <br>
+      Es werden die Ensemble Modelle ICON-D2-EPS, ICON-EU-EPS und ICON-EPS nahtlos vereint. <br>
       <a href='https://openmeteo.substack.com/p/ensemble-weather-forecast-api' target='_blank'>Ensemble-Wetterprognosen</a> sind
-      eine spezielle Art von Vorhersagemethode, die die Unsicherheiten bei der Wettervorhersage berücksichtigt.
-      Sie tun dies, indem sie mehrere Simulationen oder Modelle mit leichten Unterschieden in den Startbedingungen
-      oder Einstellungen ausführen. Jede Simulation, bekannt als Ensemblemitglied, stellt ein mögliches Ergebnis des Wetters dar.
-      In der vorliegenden Implementierung werden 40 Ensemblemitglieder pro Wettermerkmal zusammengeführt und das wahrscheinlichste
-      Ergbnis verwendet.
+      eine spezielle Art von Vorhersagemethode.
+      Berechnet werden bis zu 40 parallele Simulationen mit leicht variierten Startbedingungen,
+      um Unsicherheiten (z. B. lokale Wolkenfelder) besser abzubilden. Aus diesen Membern wird der wahrscheinlichste Ertrag berechnet. 
       <br><br>
 
       <b>OpenMeteoWorld-API</b> <br>
 
-      Als Variante des Open-Meteo Dienstes liefert die OpenMeteoWorld-API die optimale Vorhersage für einen bestimmten Ort weltweit.
-      Die OpenMeteoWorld-API vereint nahtlos Wettermodelle bekannter Organisationen wie NOAA (National Oceanic and Atmospheric
-      Administration), DWD (Deutscher Wetterdienst), CMCC (Canadian) und ECMWF (Europäisches Zentrum für mittelfristige Wettervorhersage).
+      Weltweiter Standard: Wählt anhand der Standortkoordinaten automatisch das beste verfügbare Wettermodell 
+      (z.B. ECMWF, NOAA/GFS, DWD, GEM, CMCC). Empfohlen für Standorte außerhalb Mitteleuropas.
       Für jeden Ort weltweit werden die Modelle der Anbieter kombiniert, um die bestmögliche Vorhersage zu erstellen.
-      Die Nutzung der Dienste und Wettermodelle erfolgt automatisch anhand der im API Aufruf enthaltenen Standortkoordinaten.
       <br><br>
 
       <b>SolCast-API</b> <br>
