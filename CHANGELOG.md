@@ -25,7 +25,6 @@ xx.xx.xxxx Rev. xxxxx
     
 - **Change:**
   * Anpassung bezüglich OpenMeteo API Änderung für OpenMeteoDWDEnsembleAPI
-  
   * **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über `Storable` deutlich erhöht.
     - Implementierung von `STORABLE_freeze` und `STORABLE_thaw` Hooks, um ungültige C-Pointer/Memory-Leaks nach Demaskierung (Deserialisierung) zu verhindern und FHEM vor Segmentation Faults zu schützen.
     - Überarbeitung der Methode `AIF_isModelValid` zur besseren Unterscheidung zwischen Objekt- und Klassenaufrufen.
