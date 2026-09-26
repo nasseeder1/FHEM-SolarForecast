@@ -73,13 +73,14 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.5" => "24.09.2026  _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271) ".
+  "2.10.5" => "26.09.2026  _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271) ".
                            "removeMinMaxArray: Fix: Rekursionsbedingung > 20 -> > \$limit, Fix: grep entfernt alle Duplikate von Min und Max -> Umstellung auf splice ".
                            "AIF_isModelValid: neue Validierungsmethode, die das FANN-Modell leak-frei prüft ".
                            "Implementierung von STORABLE_freeze und STORABLE_thaw Hooks ".
                            "fileStore / fileRetrieve: Fehlerbehandlung und Evaluierung geglättet ".
                            "readCacheFile: Ressourcenverwaltung für AI::FANN-Modelle verbessert ".
-                           "Deserialize um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet ",
+                           "Deserialize um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet ".
+                           "Anpassung bezüglich OpenMeteo API Änderung für OpenMeteoDWDEnsembleAPI ",
   "2.10.4" => "20.09.2026  _batSocTarget: Debuglog für Step6 korrigiert ".
                            "AI::FANN Speicherleck durch globales DESTROY-Patching behoben. ",
   "0.1.0"  => "09.12.2020  initiale Version "
@@ -6369,6 +6370,7 @@ sub ___createOpenMeteoURL {
 
   if ($submodel eq 'OpenMeteoDWDEnsembleAPI') {                                                                   # Ensemble Modell gewählt
       $url  = "https://ensemble-api.open-meteo.com/v1/ensemble?";
+      $url .= "models=icon_seamless_eps";
       $url .= "&latitude=".$lat;
       $url .= "&longitude=".$lon;
       $url .= "&hourly=temperature_2m,rain,weather_code,cloud_cover,is_day,global_tilted_irradiance,shortwave_radiation,wind_speed_10m";
@@ -13572,7 +13574,7 @@ sub __delObsoleteAPIData {
   ## Solar-API Daten löschen
   #############################
   if (keys %{$data{$name}{solcastapi}}) {
-      my $refts = timestringToTimestamp ($hash, $date.' 00:00:00');                               # Referenztimestring
+      my $refts = timestringToTimestamp ($hash, $date.' 00:00:00');                        # Referenztimestring
 
       for my $idx (sort keys %{$data{$name}{solcastapi}}) {                                # alle Datumschlüssel kleiner aktueller Tag 00:00:00 selektieren
           if (!keys %{$data{$name}{solcastapi}{$idx}}) {                                   # leeren Schlüssel löschen
@@ -43223,7 +43225,7 @@ to ensure that the system configuration is correct.
        This Open-Meteo API variant provides access to the DWD's global
        <a href='https://www.dwd.de/DE/forschung/wettervorhersage/num_modellierung/04_ensemble_methoden/ensemble_vorhersage/ensemble_vorhersagen.html' target='_blank'>Ensemble Prediction System (EPS)</a>.
        <br>
-       The ensemble models ICON-D2-EPS, ICON-EU-EPS and ICON-EPS are seamlessly combined. <br>
+       The ensemble models ICON-D2-EPS, ICON-EU-EPS and ICON-EPS-Global are seamlessly combined. <br>
        <a href='https://openmeteo.substack.com/p/ensemble-weather-forecast-api' target='_blank'>Ensemble weather forecasts</a> are
        a special type of forecasting method that takes into account the uncertainties in weather forecasting.
        They do this by running several simulations or models with slight differences in the starting conditions or settings.
@@ -46424,7 +46426,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
       Diese Open-Meteo API Variante bietet Zugang zum globalen
       <a href='https://www.dwd.de/DE/forschung/wettervorhersage/num_modellierung/04_ensemble_methoden/ensemble_vorhersage/ensemble_vorhersagen.html' target='_blank'>Ensemble-Vorhersagesystem (EPS)</a>
       des DWD. <br>
-      Es werden die Ensemble Modelle ICON-D2-EPS, ICON-EU-EPS und ICON-EPS nahtlos vereint. <br>
+      Es werden die Ensemble Modelle ICON-D2-EPS, ICON-EU-EPS und ICON-EPS-Global nahtlos vereint. <br>
       <a href='https://openmeteo.substack.com/p/ensemble-weather-forecast-api' target='_blank'>Ensemble-Wetterprognosen</a> sind
       eine spezielle Art von Vorhersagemethode, die die Unsicherheiten bei der Wettervorhersage berücksichtigt.
       Sie tun dies, indem sie mehrere Simulationen oder Modelle mit leichten Unterschieden in den Startbedingungen

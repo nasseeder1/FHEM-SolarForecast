@@ -24,16 +24,22 @@ xx.xx.xxxx Rev. xxxxx
   * _calcDataEveryFullHour: durch Array-Kopie bedingtes Speicherleck beseitigt
     
 - **Change:**
+  * Anpassung bezüglich OpenMeteo API Änderung für OpenMeteoDWDEnsembleAPI
+  
   * **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über `Storable` deutlich erhöht.
     - Implementierung von `STORABLE_freeze` und `STORABLE_thaw` Hooks, um ungültige C-Pointer/Memory-Leaks nach Demaskierung (Deserialisierung) zu verhindern und FHEM vor Segmentation Faults zu schützen.
     - Überarbeitung der Methode `AIF_isModelValid` zur besseren Unterscheidung zwischen Objekt- und Klassenaufrufen.
+  
   * **fileStore / fileRetrieve**: Fehlerbehandlung und Evaluierung geglättet.
     - Umstellung auf das `eval { ... 1; } or do { ... }` Pattern, damit skalare Falsy-Werte (`0`, `""`) nicht fälschlicherweise als I/O-Fehler interpretiert werden.
     - Expliziter Guard-Check bei Nichtexistenz von Dateien in `fileRetrieve`.
+  
   * **readCacheFile**: Ressourcenverwaltung für `AI::FANN`-Modelle verbessert.
     - Vor dem Laden neuer Cache-Daten werden alte XS-Objekte nun explizit via `AIF_modelDestroy()` freigegeben.
+  
   * **Serialize / Deserialize**:
     - `Deserialize` um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet.
+  
   * removeMinMaxArray, limitArray, _addCon2CircArray, __aiAddRawData, aiFannDetectDrift, medianArray, _calcCaQcomplex, _calcDataEveryFullHour, _aiFannSlopeBias, getPvHistTargetArray, LRU_reset, LRU_evict_tail, __calcNewFactor_migrated, __readConFromCircular refakturiert
   
 
