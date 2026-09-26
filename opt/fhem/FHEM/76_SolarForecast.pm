@@ -12155,12 +12155,12 @@ sub _wcfBlockFinish {
       return;
   }
 
-  $hash->{LCACHEFILE} = "last write time: ".FmtTime(gettimeofday())." File (async)";
+  $hash->{LCACHEFILE} = "last write time: ".FmtTime(gettimeofday())." File (async): $cachename";
   Log3 ($name, 4, "$name - writeCacheFileBlocking: $cachename successfully written");
 
   if ($cachename eq 'airaw') {
       $data{$name}{current}{aitrawstate} = 'ok';
-      Log3 ($name, 1, "$name DEBUG> AI raw data saved into file: " . $airaw.$name) if($debug =~ /aiProcess/xs);
+      Log3 ($name, 1, "$name DEBUG> AI raw data saved (async) into File: " . $airaw.$name) if($debug =~ /aiProcess/xs);
   }
 
 return;
