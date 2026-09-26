@@ -13,6 +13,7 @@ xx.xx.xxxx Rev. xxxxx
 - **Fix:**
   * _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum: https://forum.fhem.de/index.php?msg=1369271)
   * removeMinMaxArray: fix limit
+  * aiAddInstance (AI::DecisionTree): push gebinntes sunalt in @pvhdata
   
   * Neural Network Wrapper neue Wrapper‑Methode
     AIF_isModelValid()  

@@ -32892,7 +32892,7 @@ sub aiAddInstance {
       my $cbin   = cloud2bin  ($wcc)     if(defined $wcc);
       my $sabin  = sunalt2bin ($sunalt);
 
-      push @pvhdata, { rad1h => $rad1h, temp => $tbin, wcc => $cbin, wid => $wid, rr1c => $rr1c, sunalt => $sunalt, sunaz => $sunaz, hod => $hod, pvrl => $pvrl };
+      push @pvhdata, { rad1h => $rad1h, temp => $tbin, wcc => $cbin, wid => $wid, rr1c => $rr1c, sunalt => $sabin, sunaz => $sunaz, hod => $hod, pvrl => $pvrl };
   }
 
   if (!scalar @pvhdata) {
