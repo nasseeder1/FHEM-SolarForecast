@@ -27,9 +27,10 @@ xx.xx.xxxx Rev. xxxxx
 - **Change:**
   * Anpassung bezüglich OpenMeteo API Änderung für OpenMeteoDWDEnsembleAPI
   * Der Befehl "get ... rooftopData" kehrt bei Erfolg anstatt bisher undefiniert mit der Meldung 
-    "A data retrieval request for the selected radiation and/or weather API has been triggered"
+    "A data retrieval request for the selected radiation and/or weather API has been triggered" (zweisprachig EN/DE)
 	zurück.
   * __aiAddRawData: writeCacheFile in den BlockingCall Wrapper writeCacheFileBlocking eingebettet -> Vermeidung Speicherleck
+  * Der Befehl "get ... data" meldet in EN oder DE zurück
   
   * **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über `Storable` deutlich erhöht.
     - Implementierung von `STORABLE_freeze` und `STORABLE_thaw` Hooks, um ungültige C-Pointer/Memory-Leaks nach Demaskierung (Deserialisierung) zu verhindern und FHEM vor Segmentation Faults zu schützen.

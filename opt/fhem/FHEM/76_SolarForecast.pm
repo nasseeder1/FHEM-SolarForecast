@@ -4097,6 +4097,7 @@ return $getlist;
 sub _getRoofTopData {
   my $paref = shift;
   my $name  = $paref->{name};
+  my $lang  = $paref->{lang} // 'EN';
   my $hash  = $defs{$name};
 
   delete $data{$name}{current}{dwdRad1hAge};
@@ -4132,7 +4133,8 @@ sub _getRoofTopData {
 
   delete $paref->{reqm};
 
-return $ret || 'A data retrieval request for the selected radiation and/or weather API has been triggered';
+return $ret || ($lang eq 'DE' ? 'Es wurde eine Datenabfrage an die eingestellte Strahlungs- und/oder Wetter-API gestartet' 
+                              : 'A data retrieval request for the selected radiation and/or weather API has been started');
 }
 
 ################################################################
@@ -6527,11 +6529,12 @@ return;
 sub _getdata {
   my $paref = shift;
   my $name  = $paref->{name};
+  my $lang  = $paref->{lang} // 'EN';
   my $hash  = $defs{$name};
 
   centralTask ($hash);
 
-return 'Data cycle triggered, watch readings';
+return $lang eq 'DE' ? 'Datenzyklus gestartet, Readings beachten' : 'Data cycle started, watch readings';
 }
 
 ###############################################################
