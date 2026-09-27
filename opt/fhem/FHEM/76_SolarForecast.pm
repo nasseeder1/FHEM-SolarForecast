@@ -73,14 +73,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.5" => "26.09.2026  _createReadingsFromArrayFast: exists Prüfung zur Verhinderung Auto-Vivification (Forum:https://forum.fhem.de/index.php?msg=1369271) ".
-                           "removeMinMaxArray: Fix: Rekursionsbedingung > 20 -> > \$limit, Fix: grep entfernt alle Duplikate von Min und Max -> Umstellung auf splice ".
-                           "AIF_isModelValid: neue Validierungsmethode, die das FANN-Modell leak-frei prüft ".
-                           "Implementierung von STORABLE_freeze und STORABLE_thaw Hooks ".
-                           "fileStore / fileRetrieve: Fehlerbehandlung und Evaluierung geglättet ".
-                           "readCacheFile: Ressourcenverwaltung für AI::FANN-Modelle verbessert ".
-                           "Deserialize um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet ".
-                           "Anpassung bezüglich OpenMeteo API Änderung für OpenMeteoDWDEnsembleAPI ",
+  "2.10.5" => "27.09.2026  siehe Changelog ",
   "2.10.4" => "20.09.2026  _batSocTarget: Debuglog für Step6 korrigiert ".
                            "AI::FANN Speicherleck durch globales DESTROY-Patching behoben. ",
   "0.1.0"  => "09.12.2020  initiale Version "
@@ -11547,7 +11540,10 @@ sub Undef {
   my $hash = shift;
   my $name = shift;
 
-  for my $blkkey (qw(AINNTRAIN_CON_BLOCKRUN AINNTRAIN_PV_BLOCKRUN AIBLOCKRUNNING GMFRUNNING)) {         # laufende BlockingCall Kindprozesse beenden, sonst Zombie-Prozess + Zugriff auf gelöschten $hash
+  for my $blkkey (qw(AINNTRAIN_CON_BLOCKRUN 
+                     AINNTRAIN_PV_BLOCKRUN 
+                     AIBLOCKRUNNING GMFRUNNING
+                    ) ) {                                                                               # laufende BlockingCall Kindprozesse beenden, sonst Zombie-Prozess + Zugriff auf gelöschten $hash
       BlockingKill ($hash->{HELPER}{$blkkey}) if(defined $hash->{HELPER}{$blkkey});
   }
  
@@ -12173,7 +12169,7 @@ sub _wcfBlockAbort {
   my $name  = $hash->{NAME};
 
   for my $k (grep { /^WCFBLOCK_/xs } keys %{$hash->{HELPER}}) {             # alle laufenden WCFBLOCK_*-Keys bereinigen
-      Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{$k}{fn} pid:$hash->{HELPER}{$k}{pid} aborted: $cause");
+      Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{$k}{fn} pid=$hash->{HELPER}{$k}{pid} aborted. cause=$cause");
 
       delete $hash->{HELPER}{$k};
   }
@@ -26804,7 +26800,7 @@ sub _abortGetMessageFile {
   my $cause = shift // "Timeout: process terminated";
   my $name  = $hash->{NAME};
 
-  Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{GMFRUNNING}{fn} pid:$hash->{HELPER}{AIBLOCKRUNNING}{pid} aborted: $cause");
+  Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{GMFRUNNING}{fn} pid=$hash->{HELPER}{AIBLOCKRUNNING}{pid} aborted. cause=$cause");
 
   delete $hash->{HELPER}{GMFRUNNING};
 
@@ -28843,7 +28839,7 @@ sub aiFannConAbortTrain {
   my $fanntyp = 'con';
   my $blkkey  = 'AINNTRAIN_' . uc($fanntyp) . '_BLOCKRUN';
 
-  Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{$blkkey}{fn} pid:$hash->{HELPER}{$blkkey}{pid} aborted: $cause");
+  Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{$blkkey}{fn} pid=$hash->{HELPER}{$blkkey}{pid} aborted. cause=$cause");
 
   delete $hash->{HELPER}{$blkkey};
   delete $data{$name}{$fanntyp.'temp'};                                                        # verwaiste Trainingsversuche (inkl. FannBlob) des abgebrochenen Laufs verwerfen
@@ -33219,7 +33215,7 @@ sub aiAbortTrain {
   my $cause = shift // "Timeout: process terminated";
   my $name  = $hash->{NAME};
 
-  Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{AIBLOCKRUNNING}{fn} pid:$hash->{HELPER}{AIBLOCKRUNNING}{pid} aborted: $cause");
+  Log3 ($name, 1, "$name -> BlockingCall $hash->{HELPER}{AIBLOCKRUNNING}{fn} pid=$hash->{HELPER}{AIBLOCKRUNNING}{pid} aborted. cause=$cause");
 
   delete $hash->{HELPER}{AIBLOCKRUNNING};
 
