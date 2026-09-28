@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31670 2026-09-20 20:30:08Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31691 2026-09-27 20:12:23Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -73,6 +73,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.10.6" => "28.09.2026  siehe Changelog ",
   "2.10.5" => "27.09.2026  siehe Changelog ",
   "2.10.4" => "20.09.2026  _batSocTarget: Debuglog für Step6 korrigiert ".
                            "AI::FANN Speicherleck durch globales DESTROY-Patching behoben. ",
@@ -21114,11 +21115,58 @@ sub _calcDataEveryFullHour {
       }
 
       storeReading ($name, '.signaldone_'.$hh, 'done');                                             # Sperrsignal (erledigt) setzen
+      
+      # --- Größenausgabe einmal pro Stunde (nur letzte Loop-Iteration) ---
+      #_logDataStructSizes ($paref) if(int $h == int $chour);
 
       delete @{$paref}{qw(h cpcf aihit yday ydayname yt pvrlvd)};
   }
 
   delete $paref->{acu};
+
+return;
+}
+
+################################################################
+#  Einmalige Größenausgabe der internen Datenstrukturen
+#  Aufruf: einmal pro Stunde nach _calcDataEveryFullHour
+################################################################
+sub _logDataStructSizes {
+  my $paref = shift;
+  my $name  = $paref->{name};
+
+  return unless eval { require Devel::Size; Devel::Size->import('total_size'); 1 };
+
+  my @structs = (
+      [ 'pvhist',    \$data{$name}{pvhist}              ],
+      [ 'circular',  \$data{$name}{circular}             ],
+      [ 'airaw',     \$data{$name}{aidectree}{airaw}     ],
+      [ 'neuralnet', \$data{$name}{neuralnet}            ],
+      [ 'weatherapi',\$data{$name}{weatherapi}           ],
+      [ 'solcastapi',\$data{$name}{solcastapi}           ],
+      [ 'statusapi', \$data{$name}{statusapi}            ],
+      [ 'consumers', \$data{$name}{consumers}            ],
+      [ 'current',   \$data{$name}{current}              ],
+      [ 'nexthours', \$data{$name}{nexthours}            ],
+      [ 'messages',  \$data{$name}{messages}             ],
+      [ 'log',       \$data{$name}{log}                  ],
+      [ 'readings',  \$defs{$name}{READINGS}             ],
+  );
+
+  my $total = 0;
+  my @lines;
+
+  for my $s (@structs) {
+      next unless defined ${$s->[1]};
+      my $sz = total_size(${$s->[1]});
+      $total += $sz;
+      push @lines, sprintf "%-12s %8.2f KB", $s->[0], $sz / 1024;
+  }
+
+  push @lines, sprintf "%-12s %8.2f KB", 'TOTAL', $total / 1024;
+
+  Log3 ($name, 1, "$name - DataStructSizes (hourly):\n"
+                . join("\n", map { "  $_" } @lines));
 
 return;
 }

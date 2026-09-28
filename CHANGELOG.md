@@ -7,6 +7,14 @@ xx.xx.xxxx Rev. xxxxx
 
 
 
+## [unreleased]
+xx.xx.xxxx Rev. xxxxx
+
+- **Neu:**
+  * _calcDataEveryFullHour: Einbau einmalige Größenausgabe der internen Datenstrukturen (auskommentiert)
+
+
+
 ## [v2.10.5]
 27.09.2026 Rev. 31691
 
