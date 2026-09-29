@@ -73,10 +73,8 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.6" => "28.09.2026  siehe Changelog ",
-  "2.10.5" => "27.09.2026  siehe Changelog ",
-  "2.10.4" => "20.09.2026  _batSocTarget: Debuglog für Step6 korrigiert ".
-                           "AI::FANN Speicherleck durch globales DESTROY-Patching behoben. ",
+  "2.10.6" => "29.09.2026  siehe Changelog ".
+                           "Reading Battery_OptimumBaseSoC_XX parallel zum bestehenden Reading Battery_ChargeOptTargetPower_XX welches abgelöst werden soll (Forum: https://forum.fhem.de/index.php?msg=1369429) ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -17259,12 +17257,16 @@ sub ___batChargeSaveResults {
           my $needmin = $otp->{$bn}{target} // 0;
           my ($smoothed, $changed) = smoothValue ( { name     => $name,
                                                      chan     => 'OTP',
-                                                     rdg      => 'Battery_ChargeOptTargetPower_'.$bn,
+                                                     rdg      => 'Battery_OptimumBaseSoC_'.$bn,
                                                      newval   => $needmin,
                                                      deadband => OTPDEADBAND,
                                                      alpha    => OTPALPHA
                                                    }
                                                  );
+                
+          storeReading ($name, 'Battery_OptimumBaseSoC_'.$bn, $smoothed.' W');
+          
+          ### nicht mehr benötigte Daten verarbeiten - Bereich kann später wieder raus !!
           storeReading ($name, 'Battery_ChargeOptTargetPower_'.$bn, $smoothed.' W');
       }
   }
@@ -42130,7 +42132,7 @@ to ensure that the system configuration is correct.
          full power without restriction (1), or not at all, or only when the <br>
          feed-in limit (see <a href="#SolarForecast-attr-plantControl">plantControl->feedinPowerLimit</a>) is exceeded (0).
          If you want to charge the battery continuously throughout the day, Reading
-         <b>Battery_ChargeOptTargetPower_XX</b> provides optimized charging power for battery control. <br>
+         <b>Battery_OptimumBaseSoC_XX</b> provides optimized charging power for battery control. <br>
          The readings can be used to control the SoC (State of Charge) and to control the charging power used for the
          battery. <br>
          Detailed information on battery SoC and charging management is described in the
@@ -42987,7 +42989,7 @@ to ensure that the system configuration is correct.
            <tr><td>                  </td><td>                                                                                                              </td></tr>
            <tr><td> <b>pinmax</b>    </td><td>the maximum possible charging power in watts (optional)                                                       </td></tr>
            <tr><td>                  </td><td>                                                                                                              </td></tr>
-           <tr><td> <b>pinreduced</b></td><td>The reduced charging power in watts (optional). The value is set in Reading Battery_ChargeOptTargetPower_XX   </td></tr>
+           <tr><td> <b>pinreduced</b></td><td>The reduced charging power in watts (optional). The value is set in Reading Battery_OptimumBaseSoC_XX         </td></tr>
            <tr><td>                  </td><td>if the calculated charging power falls below this value or the SoC <= lowSoC.                                 </td></tr>
            <tr><td>                  </td><td>This means that the value can also be applied in the case of demand charging from the public grid.            </td></tr>
            <tr><td>                  </td><td>                                                                                                              </td></tr>
@@ -45323,7 +45325,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
          Leistung (1), oder nicht bzw. nur bei Überschreitung des <br>
          Einspeiselimits (siehe <a href="#SolarForecast-attr-plantControl">plantControl->feedinPowerLimit</a>)
          geladen werden sollte (0). Möchte man die Batterie kontinuierlich über den gesamten Tag aufladen, wird im Reading
-         <b>Battery_ChargeOptTargetPower_XX</b> eine optimierte Ladeleistung zur Batteriesteuerung bereitgestellt.  <br>
+         <b>Battery_OptimumBaseSoC_XX</b> eine optimierte Ladeleistung zur Batteriesteuerung bereitgestellt.  <br>
          Die Readings können zur Steuerung des SoC (State of Charge) sowie zur Steuerung des verwendeten Ladeleistung
          der Batterie verwendet werden. <br>
          Detaillierte Informationen zum Batterie SoC- und Lade-Management sind im
@@ -46181,7 +46183,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
            <tr><td>                  </td><td>                                                                                                         </td></tr>
            <tr><td> <b>pinmax</b>    </td><td>die maximal mögliche Ladeleistung in Watt (optional)                                                     </td></tr>
            <tr><td>                  </td><td>                                                                                                         </td></tr>
-           <tr><td> <b>pinreduced</b></td><td>Die reduzierte Ladeleistung in Watt (optional). Der Wert wird im Reading Battery_ChargeOptTargetPower_XX </td></tr>
+           <tr><td> <b>pinreduced</b></td><td>Die reduzierte Ladeleistung in Watt (optional). Der Wert wird im Reading Battery_OptimumBaseSoC_XX       </td></tr>
            <tr><td>                  </td><td>gesetzt wenn die kalkulierte Ladeleistung unter diesen Wert fällt oder der SoC <= lowSoC beträgt.        </td></tr>
            <tr><td>                  </td><td>Somit kann der Wert auch im Fall der Anforderungsladung aus dem öffentlichen Netz zur Anwendung kommen.  </td></tr>
            <tr><td>                  </td><td>                                                                                                         </td></tr>

@@ -7,12 +7,12 @@ xx.xx.xxxx Rev. xxxxx
 
 
 
-## [unreleased]
+## [v2.10.6]
 xx.xx.xxxx Rev. xxxxx
 
 - **Neu:**
   * _calcDataEveryFullHour: Einbau einmalige Größenausgabe der internen Datenstrukturen (auskommentiert)
-
+  * Reading Battery_OptimumBaseSoC_XX parallel zum bestehenden Reading Battery_ChargeOptTargetPower_XX welches abgelöst werden soll (Forum: https://forum.fhem.de/index.php?msg=1369429)
 
 
 ## [v2.10.5]
