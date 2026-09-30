@@ -12718,10 +12718,6 @@ sub centralTask {
 
   ### nicht mehr benötigte Daten verarbeiten - Bereich kann später wieder raus !!
   ########################################################################################################################
-  #for my $hodc (1..9) {
-  #    delete $data{$name}{circular}{$hodc};
-  #}
-
   #my $gbw = AttrVal ($name, 'graphicBeamWidth', undef);                 # 27.04.
   #my $gco = AttrVal ($name, 'graphicControl', '');
 
@@ -12757,14 +12753,6 @@ sub centralTask {
     }
     $data{$name}{current}{airaw_hp_cleanup_done} = 1;               # läuft nur einmal pro Session
   }
-  
-  #Log3 ($name, 1, "$name - circular size: " . total_size($data{$name}{circular}));
-  #Log3 ($name, 1, "$name - pvhist  size: "  . total_size($data{$name}{pvhist}));
-  #Log3 ($name, 1, "$name - current size: "  . total_size($data{$name}{current}));
-  #Log3 ($name, 1, "$name - airaw   size: "  . total_size($data{$name}{aidectree}{airaw}));
-  #Log3 ($name, 1, "$name - weatherapi size: "  . total_size($data{$name}{weatherapi}));
-  #Log3 ($name, 1, "$name - statusapi  size: "  . total_size($data{$name}{statusapi}));
-  #Log3 ($name, 1, "$name - readings size: "    . total_size($defs{$name}{READINGS}));
 
 ##########################################################################################################################
 
