@@ -73,8 +73,9 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.6" => "30.09.2026  siehe Changelog ".
-                           "Reading Battery_OptimumBaseSoC_XX parallel zum bestehenden Reading Battery_OptimumTargetSoC_XX welches abgelöst werden soll (Forum: https://forum.fhem.de/index.php?msg=1369429) ",
+  "2.10.6" => "01.10.2026  siehe Changelog ".
+                           "Reading Battery_OptimumBaseSoC_XX parallel zum bestehenden Reading Battery_OptimumTargetSoC_XX welches abgelöst werden soll (Forum: https://forum.fhem.de/index.php?msg=1369429) ".
+                           "Nachtverarbeitung: aiDelRawData aus Task 6 nach Task 4 verschoben ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -13445,12 +13446,27 @@ sub _specialActivities {
           Log3 ($name, 4, "$name - Daily special tasks - Task 4 started");
 
           __delObsoleteAPIData ($paref);                                                        # Bereinigung obsoleter Daten im solcastapi Hash
+          aiDelRawData         ($paref);                                                        # KI Raw Daten löschen welche die maximale Haltezeit überschritten haben
 
           my $ttl    = 24 * 3600;                                                               # Logsperrhash: Lebenszeit eines Eintrags bevor er entfernt wird
           my $cutoff = $t - $ttl;
 
           for my $sh1 (keys %{ $data{$name}{log} }) {                                           # Logsperrhash bereinigen
               delete $data{$name}{log}{$sh1} if(($data{$name}{log}{$sh1}{ts} // 0) < $cutoff);
+          }
+          
+          if ($^O eq 'linux') {
+              eval {
+                  state $malloc_trim_fn = do {
+                      require FFI::Platypus;
+                      FFI::Platypus->new(lib => undef)->function(malloc_trim => ['size_t'] => 'int');
+                  };
+                  $malloc_trim_fn->(0);                                                         # statt $malloc_trim_fn->call(0)
+                  1;
+              } 
+              or do {
+                  Log3 ($name, 2, "$name - To ensure that unused memory areas are regularly released, please install FFI::Platypus (e.g., with 'apt install libffi-platypus-perl')");
+              };
           }
 
           Log3 ($name, 4, "$name - Daily special tasks - Task 4 finished");
@@ -13490,7 +13506,6 @@ sub _specialActivities {
 
           Log3 ($name, 4, "$name - Daily special tasks - Task 6 started");
 
-          aiDelRawData     ($paref);                                                            # KI Raw Daten löschen welche die maximale Haltezeit überschritten haben
           aiManageInstance ($paref);                                                            # AI PV-Forecast füllen, trainieren und sichern
 
           Log3 ($name, 4, "$name - Daily special tasks - Task 6 finished");
@@ -13654,17 +13669,31 @@ sub __delObsoleteAPIData {
   ## Solar-API Daten löschen
   #############################
   if (keys %{$data{$name}{solcastapi}}) {
-      my $refts = timestringToTimestamp ($hash, $date.' 00:00:00');                        # Referenztimestring
+      my $refts = timestringToTimestamp ($hash, $date.' 00:00:00');                         # Referenztimestring
 
-      for my $idx (sort keys %{$data{$name}{solcastapi}}) {                                # alle Datumschlüssel kleiner aktueller Tag 00:00:00 selektieren
-          if (!keys %{$data{$name}{solcastapi}{$idx}}) {                                   # leeren Schlüssel löschen
-              delete $data{$name}{solcastapi}{$idx};
-              next;
+      #for my $idx (sort keys %{$data{$name}{solcastapi}}) {                                # alle Datumschlüssel kleiner aktueller Tag 00:00:00 selektieren
+      #    if (!keys %{$data{$name}{solcastapi}{$idx}}) {                                   # leeren Schlüssel löschen
+      #        delete $data{$name}{solcastapi}{$idx};
+      #        next;
+      #    }
+
+      #    for my $scd (sort keys %{$data{$name}{solcastapi}{$idx}}) {
+      #        my $ds = timestringToTimestamp ($hash, $scd);
+      #        delete $data{$name}{solcastapi}{$idx}{$scd} if($ds && $ds < $refts);
+      #    }
+      #}
+      
+      for my $idx (keys %{$data{$name}{solcastapi}}) {                                 # alle Datumschlüssel kleiner aktueller Tag 00:00:00 selektieren
+          my $sub_hash = $data{$name}{solcastapi}{$idx};
+          next unless ref($sub_hash) eq 'HASH';
+
+          for my $scd (keys %$sub_hash) {
+              my $ds = timestringToTimestamp ($hash, $scd);
+              delete $sub_hash->{$scd} if ($ds && $ds < $refts);
           }
 
-          for my $scd (sort keys %{$data{$name}{solcastapi}{$idx}}) {
-              my $ds = timestringToTimestamp ($hash, $scd);
-              delete $data{$name}{solcastapi}{$idx}{$scd} if($ds && $ds < $refts);
+          if (!keys %$sub_hash) {                                                           # Wenn der innere Hash jetzt leer ist, direkt löschen
+              delete $data{$name}{solcastapi}{$idx};
           }
       }
   }
