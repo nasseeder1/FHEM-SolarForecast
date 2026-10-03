@@ -12874,6 +12874,9 @@ sub centralTask {
   }
 
   undef %{$centpars};
+  
+  # --- Speicherbereinigung nach dem Zyklus ---
+  mallocTrim ($name);
 
 return;
 }
