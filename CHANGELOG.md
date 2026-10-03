@@ -13,7 +13,8 @@ xx.xx.xxxx Rev. xxxxx
 - **Neu:**
   * _calcDataEveryFullHour: Einbau einmalige Größenausgabe der internen Datenstrukturen (auskommentiert)
   * Reading Battery_OptimumBaseSoC_XX parallel zum bestehenden Reading Battery_ChargeOptTargetPower_XX welches abgelöst werden soll (Forum: https://forum.fhem.de/index.php?msg=1369429)
-  * Nachtverarbeitung Task 4: neuer Befehl $malloc_trim_fn->(0) -> Rückgabe aller freigegebenen Arenen
+  * sub mallocTrim -> Rückgabe aller freigegebenen Arenen
+  * Einbindung mallocTrim in Nachtverarbeitung Task 4
 
 - **Change:**
   * __delObsoleteAPIData: Speicheroptimierung der Funktion

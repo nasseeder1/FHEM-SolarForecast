@@ -13455,19 +13455,7 @@ sub _specialActivities {
               delete $data{$name}{log}{$sh1} if(($data{$name}{log}{$sh1}{ts} // 0) < $cutoff);
           }
           
-          if ($^O eq 'linux') {
-              eval {
-                  state $malloc_trim_fn = do {
-                      require FFI::Platypus;
-                      FFI::Platypus->new(lib => undef)->function(malloc_trim => ['size_t'] => 'int');
-                  };
-                  $malloc_trim_fn->(0);                                                         # statt $malloc_trim_fn->call(0)
-                  1;
-              } 
-              or do {
-                  Log3 ($name, 2, "$name - To ensure that unused memory areas are regularly released, please install FFI::Platypus (e.g., with 'apt install libffi-platypus-perl')");
-              };
-          }
+          mallocTrim ($name);                                                                   # Rückgabe aller freigegebenen Arenen
 
           Log3 ($name, 4, "$name - Daily special tasks - Task 4 finished");
       }
@@ -21161,8 +21149,11 @@ return;
 sub _logDataStructSizes {
   my $paref = shift;
   my $name  = $paref->{name};
-
-  return unless eval { require Devel::Size; Devel::Size->import('total_size'); 1 };
+  
+  unless ( eval { require Devel::Size; Devel::Size->import('total_size'); 1 } ) {
+      Log3 ($name, 1, "$name - Devel::Size is not available. Install it on Debian/Ubuntu using 'sudo apt install libdevel-size-perl'.");
+      return;
+  }
 
   my @structs = (
       [ 'pvhist',    \$data{$name}{pvhist}              ],
@@ -39026,6 +39017,35 @@ return $ret;
 }
 
 ################################################################
+#  glibc explizit auffordern, alle freigegebenen Arenen 
+#  an das OS zurückzugeben.
+################################################################
+sub mallocTrim {
+  my ($name) = @_;
+    
+  return unless $^O eq 'linux';
+
+  state $malloc_trim_fn;                                        # Einmalige Initialisierung beim allerersten Aufruf
+  state $has_platypus;
+
+  if (!defined $has_platypus) {
+      $has_platypus = eval {
+          require FFI::Platypus;
+          $malloc_trim_fn = FFI::Platypus->new(lib => undef)->function(malloc_trim => ['size_t'] => 'int');
+          1;
+      };
+        
+      if (!$has_platypus) {
+          Log3 ($name, 2, "$name - INFO - To ensure that unused memory areas are regularly released, please install FFI::Platypus (e.g., 'apt install libffi-platypus-perl')");
+      }
+  }
+
+  $malloc_trim_fn->(0) if $has_platypus && $malloc_trim_fn;     # Nur ausführen, wenn Platypus erfolgreich geladen wurde
+
+return;
+}
+
+################################################################
 #  Funktion um userspezifische Programmaufrufe nach
 #  Aktualisierung aller Readings zu ermöglichen
 ################################################################
@@ -46886,6 +46906,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
         "DateTime::Format::Strptime": 0,
         "AI::DecisionTree": 0,
         "AI::FANN": 0,
+        "FFI::Platypus": 0,
         "Data::Dumper": 0
       },
       "suggests": {
