@@ -12877,7 +12877,7 @@ sub centralTask {
   undef %{$centpars};
   
   # --- Speicherbereinigung nach dem Zyklus ---
-  mallocTrim ($name);
+  #mallocTrim ($name);
 
 return;
 }
@@ -36112,10 +36112,9 @@ sub formatWeatherTimestrg {
   # --- Cache-Key generieren ---
   my $key = join '::', 'FMTWTSTR',                                                      # Cache Key ID
                        $date;
-
-  if (my $val = MCache_get (\%Multi_Cache, $stats, $key)) {                             # Cache-Hit?
-      return $val;
-  }
+  
+  my $hit = MCache_get (\%Multi_Cache, $stats, $key);                                   # Cache-Hit?
+  return $hit if defined $hit;
 
   my $dt    = timestringsFromOffset ($name, time, 0);
   my $cdate = $dt->{date};
@@ -36572,10 +36571,9 @@ sub azSolar2Astro {
   # --- Cache-Key generieren ---
   my $key = join '::', 'AZSOL',                                                   # Cache Key ID
                        $azsolar;
-
-  if (my $val = MCache_get (\%Multi_Cache, $stats, $key)) {                       # Cache-Hit?
-      return $val;
-  }
+  
+  my $hit = MCache_get (\%Multi_Cache, $stats, $key);                             # Cache-Hit?
+  return $hit if defined $hit;
 
   my $astro = ($azsolar + 180) % 360;                                             # Berechnung
 
@@ -37563,16 +37561,9 @@ sub isHoliday {
 
   my $t = time();
 
-  if (my $entry = MCache_get (\%Multi_Cache, $stats, $key)) {                           # Cache-Hit?
-      if ($t - $entry->{ts} < 12 * 3600) {                                              # TTL = 12 Stunden
-          return $entry->{val};
-      }
-
-      delete $Multi_Cache{$key};
-      $stats->{evicts}++;                                                               # TTL abgelaufen → Cache-Eintrag verwerfen
+  if (my $entry = MCache_get (\%Multi_Cache, $stats, $key)) {
+      return $entry->{val} if $t - $entry->{ts} < 12 * 3600;                            # TTL = 12 Stunden
   }
-
-  $stats->{misses}++;
 
   my $holiday = 0;
 
@@ -38585,9 +38576,8 @@ sub temp2bin {
   my $key = join '::', 'TEMPBIN',                                                       # Cache Key ID
                        $val;
 
-  if (my $hit = MCache_get (\%Multi_Cache, $stats, $key)) {                             # Cache-Hit?
-      return $hit;
-  }
+  my $hit = MCache_get (\%Multi_Cache, $stats, $key);                                   # Cache-Hit?
+  return $hit if defined $hit;
 
   my $bin = $val >=  35  ?  35 :
             $val >   32  ?  35 :
@@ -38633,10 +38623,9 @@ sub cloud2bin {
   # --- Cache-Key generieren ---
   my $key = join '::', 'CLOUDBIN',                                                      # Cache Key ID
                        $val;
-
-  if (my $hit = MCache_get (\%Multi_Cache, $stats, $key)) {                             # Cache-Hit?
-      return $hit;
-  }
+  
+  my $hit = MCache_get (\%Multi_Cache, $stats, $key);                                   # Cache-Hit?
+  return $hit if defined $hit;
 
   my $bin = $val == 100 ? '100' :
             $val >  97  ? '100' :
@@ -38701,9 +38690,8 @@ sub sunalt2bin {
   my $key = join '::', 'SUNALTBIN',                                                     # Cache Key ID
                        $val;
 
-  if (my $hit = MCache_get (\%Multi_Cache, $stats, $key)) {                             # Cache-Hit?
-      return $hit;
-  }
+  my $hit = MCache_get (\%Multi_Cache, $stats, $key);                                   # Cache-Hit?
+  return $hit if defined $hit;
 
   my $bin = $val == 90  ? 90  :
             $val >  87  ? 90  :
@@ -40213,7 +40201,7 @@ sub LRU_debug {
 return;
 }
 
-# --- Mini-Cache Wert lesen
+# --- Mini-Cache Wert lesen (undef = Miss; gespeicherte Werte sind nie undef)
 sub MCache_get {
   my ($cache, $stats, $key) = @_;
 
@@ -40227,17 +40215,23 @@ sub MCache_get {
 return;
 }
 
-# --- Mini-Cache Wert schreiben
+# --- Mini-Cache Wert schreiben (echtes FIFO über Key-Queue)
 sub MCache_set {
   my ($cache, $stats, $key, $value) = @_;
-  $cache->{$key} = $value;
 
-  my $max = $stats->{max};
+  my $order = $stats->{order} //= [];
+  push @$order, $key if !exists $cache->{$key};         # Falls der Schlüssel neu ist, in die Queue einreihen
 
-  if (keys %$cache > $max) {                            # auf X Einträge begrenzen
-      delete $cache->{(keys %$cache)[0]};               # FIFO, reicht völlig
-      $stats->{evicts}++;
- }
+  $cache->{$key} = $value;                              # Wert im Cache speichern/aktualisieren
+
+  while (keys(%$cache) > $stats->{max} && @$order) {    # Bereinigen: So lange Elemente aus der Queue entfernen, bis die tatsächliche Cache-Größe <= max ist
+      my $old = shift @$order;
+        
+      if (exists $cache->{$old}) {                      # Nur mitzählen und löschen, wenn der Key wirklich noch im Hash existiert
+          delete $cache->{$old};
+          $stats->{evicts}++;
+      }
+  }
 
 return;
 }

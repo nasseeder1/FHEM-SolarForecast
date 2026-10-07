@@ -20,6 +20,7 @@ xx.xx.xxxx Rev. xxxxx
   * __delObsoleteAPIData: Speicheroptimierung der Funktion
   * Nachtverarbeitung: aiDelRawData aus Task 6 nach Task 4 verschoben
   * Wrapper AIF_modelRun gehärtet und Fehlerausgabe in _aiFannPredict verbessert (Forum: https://forum.fhem.de/index.php?msg=1369865)
+  * Änderungen von MCache_get, MCache_set für Robustheit und echtes FIFO, Anpassung der Aufrufe von MCache_get
   
 
 ## [v2.10.5]
