@@ -4287,7 +4287,7 @@ sub __solCast_ApiRequest {
       timeout    => APITIMEOUT,
       name       => $name,
       debug      => $debug,
-      caller     => \&$caller,
+      caller     => $caller,
       stc        => [gettimeofday],
       allstrings => $allstrings,
       string     => $string,
@@ -4467,6 +4467,8 @@ sub __solCast_ApiResponse {
   $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                    # Verarbeitungszeit ermitteln
   $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                # API Laufzeit ermitteln
 
+  no strict 'refs';
+  
 return &$caller($param);
 }
 
@@ -4486,7 +4488,6 @@ sub ___solCastErrorExit {
   Log3 ($name, $loglevel, "$name - $msg") if(askLogtime ($name, $msg, 300));                                            # 5 Minuten Logzeitfenster
 
   $data{$name}{statusapi}{SolCast}{'?All'}{response_message} = $msg;
-  #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
   $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval ($paref->{sta}));                                   # Verarbeitungszeit ermitteln
   $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval ($paref->{stc}) - tv_interval ($paref->{sta}));     # API Laufzeit ermitteln
@@ -4499,6 +4500,8 @@ sub ___solCastErrorExit {
       lang           => $paref->{lang}
   };
 
+  no strict 'refs';
+  
 return &$caller($param);
 }
 
@@ -4723,7 +4726,7 @@ sub __forecastSolar_ApiRequest {
       type       => $type,
       debug      => $debug,
       header     => 'Accept: application/json',
-      caller     => \&$caller,
+      caller     => $caller,
       stc        => [gettimeofday],
       allstrings => $allstrings,
       string     => $string,
@@ -4867,6 +4870,8 @@ sub __forecastSolar_ApiResponse {
   $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                           # Verarbeitungszeit ermitteln
   $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));       # API Laufzeit ermitteln
 
+  no strict 'refs'; 
+  
 return &$caller($param);
 }
 
@@ -4889,7 +4894,6 @@ sub ___forecastSolarErrorExit {
   Log3 ($name, $loglevel, "$name - $msg") if(askLogtime ($name, $msg, 300));                                            # 5 Minuten Logzeitfenster
 
   $data{$name}{statusapi}{ForecastSolar}{'?All'}{response_message} = $msg;
-  #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
   $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval ($paref->{sta}));                                   # Verarbeitungszeit ermitteln
   $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval ($paref->{stc}) - tv_interval ($paref->{sta}));     # API Laufzeit ermitteln
@@ -4901,6 +4905,8 @@ sub ___forecastSolarErrorExit {
       lang           => $paref->{lang}
   };
 
+  no strict 'refs';
+  
 return &$caller($param);
 }
 
@@ -5348,7 +5354,6 @@ sub __VictronVRM_ApiRequestLogin {
   else {
       my $msg = "ERROR - Victron VRM API credentials are not set or couldn't be decrypted. Use 'set $name vrmCredentials' to set it.";
       Log3 ($name, 1, "$name - $msg");
-      #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
       $data{$name}{statusapi}{VictronKi}{'?All'}{response_message} = $msg;
       return;
   }
@@ -5377,7 +5382,7 @@ sub __VictronVRM_ApiRequestLogin {
       name     => $name,
       stc      => [gettimeofday],
       debug    => $debug,
-      caller   => \&$caller,
+      caller   => $caller,
       lang     => $paref->{lang},
       chour    => $paref->{chour},
       date     => $paref->{date},
@@ -5419,7 +5424,6 @@ sub __VictronVRM_ApiResponseLogin {
   if ($err ne "") {
       $msg = 'ERROR - Victron VRM API error response: '.$err;
       Log3 ($name, 1, "$name - $msg");
-      #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
       $data{$name}{statusapi}{VictronKi}{'?All'}{response_message} = $err;
       $data{$name}{current}{runTimeLastAPIProc}                    = round4 (tv_interval($sta));                            # Verarbeitungszeit ermitteln
@@ -5433,7 +5437,6 @@ sub __VictronVRM_ApiResponseLogin {
       if (!$success) {
           $msg = 'ERROR - invalid Victron VRM API response';
           Log3 ($name, 1, "$name - $msg");
-          #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
           $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                     # Verarbeitungszeit ermitteln
           $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                 # API Laufzeit ermitteln
@@ -5446,7 +5449,6 @@ sub __VictronVRM_ApiResponseLogin {
       if (defined $jdata->{'error_code'}) {
           $msg = 'ERROR - Victron VRM API error_code response: '.$jdata->{'error_code'};
           Log3 ($name, 3, "$name - $msg");
-          #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
           $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                    # Verarbeitungszeit ermitteln
           $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                # API Laufzeit ermitteln
@@ -5524,7 +5526,7 @@ sub __VictronVRM_ApiRequestForecast {
       debug    => $debug,
       token    => $token,
       authtype => $authtype,                                       # für Response-Handler durchreichen
-      caller   => \&$caller,
+      caller   => $caller,
       lang     => $paref->{lang},
       header   => { "Content-Type" => "application/json", "x-authorization" => $authheader },
       method   => 'GET',
@@ -5563,7 +5565,6 @@ sub __VictronVRM_ApiResponseForecast {
   if ($err ne "") {
       $msg = 'ERROR - Victron VRM API Forecast response: '.$err;
       Log3 ($name, 1, "$name - $msg");
-      #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
       $data{$name}{statusapi}{VictronKi}{'?All'}{response_message} = $err;
       $data{$name}{current}{runTimeLastAPIProc}                    = round4 (tv_interval($sta));                            # Verarbeitungszeit ermitteln
@@ -5577,7 +5578,6 @@ sub __VictronVRM_ApiResponseForecast {
       if (!$success) {
           $msg = 'ERROR - invalid Victron VRM API Forecast response';
           Log3 ($name, 1, "$name - $msg");
-          #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
           $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                         # Verarbeitungszeit ermitteln
           $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                     # API Laufzeit ermitteln
@@ -5590,7 +5590,6 @@ sub __VictronVRM_ApiResponseForecast {
       if (defined $jdata->{'error_code'}) {
           $msg = 'ERROR - Victron VRM API Forecast response: '.$jdata->{'error_code'};
           Log3 ($name, 3, "$name - $msg");
-          #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
           $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                         # Verarbeitungszeit ermitteln
           $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                     # API Laufzeit ermitteln
@@ -5623,7 +5622,6 @@ sub __VictronVRM_ApiResponseForecast {
           if (ref $syforecast ne 'ARRAY') {
               $msg = 'ERROR - invalid Victron VRM API Forecast response';
               Log3 ($name, 1, "$name - $msg");
-              #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
               $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                                    # Verarbeitungszeit ermitteln
               $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));                # API Laufzeit ermitteln
@@ -5720,7 +5718,7 @@ sub __VictronVRM_ApiRequestLogout {
       timeout    => APITIMEOUT,
       name       => $name,
       debug      => $debug,
-      caller     => \&$caller,
+      caller     => $caller,
       lang       => $paref->{lang},
       header     => { "Content-Type" => "application/json", "x-authorization" => "Bearer $token" },
       method     => 'GET',
@@ -5955,7 +5953,7 @@ sub __openMeteo_ApiRequest {
       begin          => $paref->{begin},
       callequivalent => $paref->{callequivalent},
       requestmode    => $requestmode,
-      caller         => \&$caller,
+      caller         => $caller,
       stc            => [gettimeofday],
       allstrings     => $allstrings,
       string         => $string,
@@ -6293,6 +6291,8 @@ sub __openMeteo_ApiResponse {
   $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval($sta));                             # Verarbeitungszeit ermitteln
   $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval($stc) - tv_interval($sta));         # API Laufzeit ermitteln
 
+  no strict 'refs';
+  
 return &$caller($param);
 }
 
@@ -6315,7 +6315,6 @@ sub ___openMeteoErrorExit {
   Log3 ($name, $loglevel, "$name - $msg") if(askLogtime ($name, $msg, 300));                                            # 5 Minuten Logzeitfenster
 
   $data{$name}{statusapi}{OpenMeteo}{'?All'}{response_message} = $msg;
-  #singleUpdateState ( {hash => $hash, state => $msg, evt => 1} );
 
   $data{$name}{current}{runTimeLastAPIProc}   = round4 (tv_interval ($paref->{sta}));                                   # Verarbeitungszeit ermitteln
   $data{$name}{current}{runTimeLastAPIAnswer} = round4 (tv_interval ($paref->{stc}) - tv_interval ($paref->{sta}));     # API Laufzeit ermitteln
@@ -6328,6 +6327,8 @@ sub ___openMeteoErrorExit {
       lang           => $paref->{lang}
   };
 
+  no strict 'refs';
+  
 return &$caller($param);
 }
 
@@ -27020,7 +27021,7 @@ sub outputMessages {
 
   my $hc = 0;
 
-  for my $key (sort keys %{$data{$name}{messages}}) {
+  for my $key (reverse sort keys %{$data{$name}{messages}}) {
       next if($key >= IDXLIMIT);
 
       $hc++;

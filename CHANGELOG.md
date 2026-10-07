@@ -21,6 +21,8 @@ xx.xx.xxxx Rev. xxxxx
   * Nachtverarbeitung: aiDelRawData aus Task 6 nach Task 4 verschoben
   * Wrapper AIF_modelRun gehärtet und Fehlerausgabe in _aiFannPredict verbessert (Forum: https://forum.fhem.de/index.php?msg=1369865)
   * Änderungen von MCache_get, MCache_set für Robustheit und echtes FIFO, Anpassung der Aufrufe von MCache_get
+  * Parametrisierung des Aufrufs HttpUtils_NonblockingGet sowie return Funktion geändert ($caller)
+  * Änderung der Anzeigereihenfolge im Mitteilungssystem: neueste Mitteilungen stehen ganz oben
   
 
 ## [v2.10.5]
