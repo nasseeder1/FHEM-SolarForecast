@@ -34,3 +34,6 @@
 6|SV|1
 6|DE|Ab 28.09. ca. 08:15 Uhr wird die Version 2.10.5 ausgeliefert. Es sind vor Allem weitere Optimierungen und Code Reviews enthalten. Siehe eine Zusammnefassung in diesem <html><a href='https://forum.fhem.de/index.php?msg=1369510' target='_blank'>Beitrag</a></html> 
 6|EN|Version 2.10.5 will be released starting September 28 at approximately 8:15 a.m. It primarily includes further optimizations and code reviews. See a summary in this <html><a href=‘https://forum.fhem.de/index.php?msg=1369510’ target=‘_blank’>post</a></html>
+7|SV|1
+7|DE|Ab 08.10. ca. 08:15 Uhr wird die Version 2.10.6 ausgeliefert. Details zu dieser Version lies bitte in diesem <html><a href='https://forum.fhem.de/index.php?msg=1369994' target='_blank'>Beitrag</a></html> 
+7|EN|Version 2.10.6 will be released starting October 8 at approximately 8:15 a.m. For details about this version, please see this <html><a href=‘https://forum.fhem.de/index.php?msg=1369994’ target=‘_blank’>post</a></html>
