@@ -7,6 +7,16 @@ xx.xx.xxxx Rev. xxxxx
 
 
 
+## [v2.10.7 Vorbereitung]
+xx.xx.xxxx Rev. xxxxx
+
+- **Change:**
+  * _aiFannDriftHistSlice: Zeitreihe für die Drift-Analyse direkt aus pvHistory aufgebaut, nur nutzbare Slots (Ist- und AI-Wert vorhanden) werden belegt und gezählt
+  * Driftanalyse (aiFannDetectDrift): Ersatz der Quelle airaw durch Werte aus pvHistory (_aiFannDriftHistSlice) -> Verringerung RAM Footprint
+  * CachedHistoryVal: Zeitkontext in timestringsFromOffset auf die Minute gerundet, damit pro Minute statt pro Sekunde nur ein 
+    Eintrag im TS_OFFSET_Cache entsteht (weniger Cache-Misses und Verdrängungen, weniger Speicher-Churn)
+
+
 ## [v2.10.6]
 08.10.2026 Rev. 31752
 
