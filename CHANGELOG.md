@@ -7,8 +7,8 @@ xx.xx.xxxx Rev. xxxxx
 
 
 
-## [v2.10.7 Vorbereitung]
-xx.xx.xxxx Rev. xxxxx
+## [v2.10.7]
+10.10.2026 Rev. 31760
 
 - **Change:**
   * _aiFannDriftHistSlice: Zeitreihe für die Drift-Analyse direkt aus pvHistory aufgebaut, nur nutzbare Slots (Ist- und AI-Wert vorhanden) werden belegt und gezählt
@@ -182,7 +182,7 @@ xx.xx.xxxx Rev. xxxxx
   * List pvCircular, pvHistory um BEV accum_csmXX_<mode>_wseconds bzw. BEV csmXX_<mode>_points erweitert
   * List pvHistory, aiRawData um Anzeige bevcsmPhasesXX erweitert
   * vollständige Pipeline-Integration (Training + Inferenz) für die BEV opmode-Fraktionen 'auto' und 'prio' -> ACHTUNG: Retraining bei Verwendung bev-Flag nötig!
-  * bev-Consumer: Aufzeichnung der zum Laden verwendete Anzahl Phasen – reine Rohdatenerfassung für später
+  * BEV-Consumer: Aufzeichnung der zum Laden verwendete Anzahl Phasen – reine Rohdatenerfassung für später (ToDo: in Training noch einzubauen)
   * neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten
   * Sun Position Caching integriert
   

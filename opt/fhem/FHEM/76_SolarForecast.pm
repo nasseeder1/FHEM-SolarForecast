@@ -6133,7 +6133,7 @@ sub __openMeteo_ApiResponse {
                   my $srwh = $jdata->{hourly}{shortwave_radiation}[$k];                                 # Solarstrahlung GHI
 
                   if ($srwh) {                                                                          # Globalstrahlung für KI
-                      my $ghikj = 10 * (round0 ($srwh * WH2KJ) / 10);                          # Umrechnung Wh/m2 in kJ/m2
+                      my $ghikj = 10 * (round0 ($srwh * WH2KJ) / 10);                                   # Umrechnung Wh/m2 in kJ/m2
 
                       $pvtmstr =~ /^(\d{4})-(\d{2})-(\d{2})\s(\d{2})/xs;
                       my $tidx = $1.$2.$3.(sprintf "%02d", ($4 + 1));
