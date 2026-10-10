@@ -37,3 +37,6 @@
 7|SV|1
 7|DE|Ab 09.10. ca. 08:15 Uhr wird die Version 2.10.6 ausgeliefert. Details zu dieser Version lies bitte in diesem <html><a href='https://forum.fhem.de/index.php?msg=1369994' target='_blank'>Beitrag</a></html> 
 7|EN|Version 2.10.6 will be released starting October 8 at approximately 8:15 a.m. For details about this version, please see this <html><a href=‘https://forum.fhem.de/index.php?msg=1369994’ target=‘_blank’>post</a></html>
+8|SV|1
+8|DE|Am 11.10. ca. 08:15 Uhr erscheint die Version 2.10.7 im Regelupdate. Sie enthält einige interne Optimierungen. 
+8|EN|On October 11 at approximately 8:15 a.m., version 2.10.7 will be released as part of the regular update. It includes several internal optimizations.
