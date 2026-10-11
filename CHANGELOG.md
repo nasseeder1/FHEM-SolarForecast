@@ -6,14 +6,18 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 xx.xx.xxxx Rev. xxxxx
 
 
+## [unreleased]
+xx.xx.xxxx Rev. xxxxx
+
+
+
 ## [v2.10.8]
-11.10.2026 Rev. xxxxx
+11.10.2026 Rev. 31766
 
 - **Fix:**
   * Batterie-Ladesteuerung (optPower/smartPower bei safetyMargin=0): Ist das Ladeziel nicht erreichbar (Ratio <= 100 %), 
     wird jetzt immer mit der maximalen Ladeleistung (bpinmax) geladen. Bisher wurde dieser Fall bei safetyMargin=0 (otpMargin=0) 
 	nicht erkannt und die Ladeleistung fälschlich auf den prognostizierten Mindestwert begrenzt.
-
 
 
 ## [v2.10.7]
