@@ -40,3 +40,6 @@
 8|SV|1
 8|DE|Am 11.10. ca. 08:15 Uhr erscheint die Version 2.10.7 im Regelupdate. Sie enthält einige interne Optimierungen. 
 8|EN|On October 11 at approximately 8:15 a.m., version 2.10.7 will be released as part of the regular update. It includes several internal optimizations.
+9|SV|2
+9|DE|Udate am 12.10. ca. 08:15 - <b>BUGFIX</b> Batterie-Ladesteuerung (optPower/smartPower bei safetyMargin=x:0): Ist das Ladeziel nicht erreichbar (Ratio <= 100 %), wird jetzt immer mit der maximalen Ladeleistung (bpinmax) geladen. Bisher wurde dieser Fall bei safetyMargin=x:0 nicht erkannt und die Ladeleistung fälschlich auf den prognostizierten Mindestwert begrenzt. 
+9|EN|Update on Oct. 12 at approx. 8:15 a.m. - <b>BUGFIX</b> Battery charging control (optPower/smartPower when safetyMargin=x:0): If the charging target cannot be reached (ratio <= 100%), charging now always occurs at the maximum charging power (bpinmax). Previously, this scenario was not detected when safetyMargin=x:0, and the charging power was incorrectly limited to the predicted minimum value.
