@@ -11,6 +11,7 @@ xx.xx.xxxx Rev. xxxxx
 
 - **Fix:**
   * __openMeteo_ApiResponse: Klammerung gefixt, Forum: https://forum.fhem.de/index.php?msg=1370333 
+  * Message-System: Fix fehlerhafte Sortierung mit idx >=10
   
 
 ## [v2.10.8]
