@@ -41,5 +41,8 @@
 8|DE|Am 11.10. ca. 08:15 Uhr erscheint die Version 2.10.7 im Regelupdate. Sie enthält einige interne Optimierungen. 
 8|EN|On October 11 at approximately 8:15 a.m., version 2.10.7 will be released as part of the regular update. It includes several internal optimizations.
 9|SV|2
-9|DE|Udate am 12.10. ca. 08:15 - <b>BUGFIX</b> Batterie-Ladesteuerung (optPower/smartPower bei safetyMargin=x:0): Ist das Ladeziel nicht erreichbar (Ratio <= 100 %), wird jetzt immer mit der maximalen Ladeleistung (bpinmax) geladen. Bisher wurde dieser Fall bei safetyMargin=x:0 nicht erkannt und die Ladeleistung fälschlich auf den prognostizierten Mindestwert begrenzt. 
+9|DE|Update am 12.10. ca. 08:15 - <b>BUGFIX</b> Batterie-Ladesteuerung (optPower/smartPower bei safetyMargin=x:0): Ist das Ladeziel nicht erreichbar (Ratio <= 100 %), wird jetzt immer mit der maximalen Ladeleistung (bpinmax) geladen. Bisher wurde dieser Fall bei safetyMargin=x:0 nicht erkannt und die Ladeleistung fälschlich auf den prognostizierten Mindestwert begrenzt. 
 9|EN|Update on Oct. 12 at approx. 8:15 a.m. - <b>BUGFIX</b> Battery charging control (optPower/smartPower when safetyMargin=x:0): If the charging target cannot be reached (ratio <= 100%), charging now always occurs at the maximum charging power (bpinmax). Previously, this scenario was not detected when safetyMargin=x:0, and the charging power was incorrectly limited to the predicted minimum value.
+10|SV|2
+10|DE|Update am 21.10. ca. 08:15 - <b>BUGFIX</b> fehlerhafte Klammerung im Code bereinigt der Einfluß auf die Trefferquote Der PV-KI hat. (Forum: <html><a href='https://forum.fhem.de/index.php?msg=1370333' target='_blank'>Beitrag</a></html>) 
+10|EN|Update on Oct. 21 at approx. 8:15 a.m. - <b>BUG FIX</b> Incorrect parentheses in the code have been corrected; this affects the hit rate of the PV-KI. (Forum: <html><a href=‘https://forum.fhem.de/index.php?msg=1370333’ target=‘_blank’>Post</a></html>)
