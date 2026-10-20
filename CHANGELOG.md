@@ -7,7 +7,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.10.9]
-20.10.2026 Rev. 31814
+20.10.2026 Rev. 31822
 
 - **Fix:**
   * __openMeteo_ApiResponse: Klammerung gefixt, Forum: https://forum.fhem.de/index.php?msg=1370333 
