@@ -73,7 +73,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.10"=> "23.10.2026  Perl-Warnungen 'Use of uninitialized valu' in __batChargeOptTargetPower und ".
+  "2.10.10"=> "23.10.2026  Perl-Warnungen 'Use of uninitialized value' in __batChargeOptTargetPower und ".
                            "___batRemainHodsAndSurp, die bei sehr geringer PV-Prognose (kein PV-Überschuss in einzelnen ".
                            "Stunden) auftraten, Forum: https://forum.fhem.de/index.php?msg=1370567 ",
   "2.10.9" => "20.10.2026  __openMeteo_ApiResponse: Klammerung gefixt, Forum: https://forum.fhem.de/index.php?msg=1370333 ".

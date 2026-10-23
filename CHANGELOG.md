@@ -7,7 +7,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.10.10]
-23.10.2026 Rev. xxxxx
+23.10.2026 Rev. 31830
 
 - **Fix:**
   * Perl-Warnungen "Use of uninitialized value" in __batChargeOptTargetPower und
