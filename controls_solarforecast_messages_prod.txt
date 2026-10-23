@@ -46,3 +46,6 @@
 10|SV|2
 10|DE|Update am 21.10. ca. 08:15 - <b>BUGFIX</b> fehlerhafte Klammerung im Code bereinigt der Einfluß auf die Trefferquote Der PV-KI hat. (Forum: <html><a href='https://forum.fhem.de/index.php?msg=1370333' target='_blank'>Beitrag</a></html>) 
 10|EN|Update on Oct. 21 at approx. 8:15 a.m. - <b>BUG FIX</b> Incorrect parentheses in the code have been corrected; this affects the hit rate of the PV-KI. (Forum: <html><a href=‘https://forum.fhem.de/index.php?msg=1370333’ target=‘_blank’>Post</a></html>)
+11|SV|1
+11|DE|Update am 24.10. ca. 08:15 - <b>BUGFIX</b> Perl-Warnungen 'Use of uninitialized value' in der Batteriesteuerung, die bei sehr geringer PV-Prognose (kein PV-Überschuss in einzelnen Stunden) auftraten. (Forum: <html><a href='https://forum.fhem.de/index.php?msg=1370616' target='_blank'>Beitrag</a></html>) 
+11|EN|Update on Oct. 24 at approx. 8:15 a.m. - <b>BUG FIX</b> Perl warnings “Use of uninitialized value” in the battery control system, which occurred when the PV forecast was very low (no PV surplus in individual hours). (Forum: <html><a href=‘https://forum.fhem.de/index.php?msg=1370616’ target=‘_blank’>Post</a></html>)
