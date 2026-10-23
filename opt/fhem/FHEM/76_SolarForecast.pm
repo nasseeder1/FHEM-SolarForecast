@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31766 2026-10-11 14:01:52Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31822 2026-10-20 18:33:18Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -16738,9 +16738,9 @@ sub __batChargeOptTargetPower {
   }
 
   my $fipl       = CurrentVal ($name, 'feedinPowerLimit', INFINITE);
-  my @batteries  = grep { !/^(?:fd|speff|surplswh|spday|nhr)$/xs } keys %{$hsurp->{24}};
-  my @sortedhods = sort { $hsurp->{$a}{surplswh} <=> $hsurp->{$b}{surplswh} } keys %{$hsurp};                    # Stunden aufsteigend nach PV-Überschuß sortiert ohne Zeitgewichtung h 00
-
+  my @batteries  = grep { !/^(?:fd|speff|surplswh|spday|nhr)$/xs } keys %{$hsurp->{24}};                   
+  my @sortedhods = sort { ($hsurp->{$a}{surplswh} // 0) <=> ($hsurp->{$b}{surplswh} // 0) } keys %{$hsurp};     # Stunden aufsteigend nach PV-Überschuß sortiert ohne Zeitgewichtung h 00
+  
   my ($fcendwh, $diff, $otp, $ratio);
 
   for my $hod (sort { $a <=> $b } keys %{$hsurp}) {
@@ -16751,12 +16751,12 @@ sub __batChargeOptTargetPower {
       my $nexthod = sprintf "%02d", (int $hod + 1);
       my $nextnhr = $hsurp->{$nexthod}{nhr};
 
-      my ($remainingSurp_o, $remainingHodsRef_o) = ___batRemainHodsAndSurp ( $hod,                               # verbleibender Überschuß ohne Zielzeit gesetzt
+      my ($remainingSurp_o, $remainingHodsRef_o) = ___batRemainHodsAndSurp ( $hod,                              # verbleibender Überschuß ohne Zielzeit gesetzt
                                                                              $hsurp,
                                                                              $replacement,
                                                                              \@sortedhods
                                                                           );
-      $hsurp->{$hod}{spday} = $remainingSurp_o;                                                                  # PV Überschuß Resttag
+      $hsurp->{$hod}{spday} = $remainingSurp_o;                                                                 # PV Überschuß Resttag
 
       my ($remainingSurp, $remainingHodsRef);
 
@@ -16781,7 +16781,6 @@ sub __batChargeOptTargetPower {
 
           my $runwh = do {
               if (defined $fc_next_wh)   { $fc_next_wh }
-              #elsif ($nhr eq '00')       { $csocwh }
               elsif ($nhr eq '00')       { $init_soc_wh }                                                        # V 2.6.10 Fix: aus Prozentwert, konsistent mit LR-Abschnitt
               elsif (defined $transfer)  { delete $trans->{$sbn}{$lfd}{transfer} }
               else                       { $init_soc_wh }

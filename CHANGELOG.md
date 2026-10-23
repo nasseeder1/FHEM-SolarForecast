@@ -6,6 +6,18 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 xx.xx.xxxx Rev. xxxxx
 
 
+## [v2.10.10]
+23.10.2026 Rev. xxxxx
+
+- **Fix:**
+  * Perl-Warnungen "Use of uninitialized value" in __batChargeOptTargetPower und
+    ___batRemainHodsAndSurp, die bei sehr geringer PV-Prognose (kein PV-Überschuss in einzelnen
+    Stunden) auftraten. Fehlende Überschusswerte werden jetzt als 0 Wh behandelt, die Ladelogik
+    bleibt unverändert. Zusätzlich wurde die Operatorpriorität des "// 0"-Fallbacks bei $replacement
+    und $limpower korrigiert.
+    Forum: https://forum.fhem.de/index.php?msg=1370567
+
+
 ## [v2.10.9]
 20.10.2026 Rev. 31822
 
