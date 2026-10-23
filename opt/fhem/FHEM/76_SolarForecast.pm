@@ -73,6 +73,9 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.10.10"=> "23.10.2026  Perl-Warnungen 'Use of uninitialized valu' in __batChargeOptTargetPower und ".
+                           "___batRemainHodsAndSurp, die bei sehr geringer PV-Prognose (kein PV-Überschuss in einzelnen ".
+                           "Stunden) auftraten, Forum: https://forum.fhem.de/index.php?msg=1370567 ",
   "2.10.9" => "20.10.2026  __openMeteo_ApiResponse: Klammerung gefixt, Forum: https://forum.fhem.de/index.php?msg=1370333 ".
                            "Message-System: Fix fehlerhafte Sortierung mit idx >=10 ",
   "2.10.8" => "11.10.2026  ___batAdjustPowerByMargin: Prüfung 'Ziel nicht erreichbar' erfolgt jetzt vor der Margin-Prüfung, daher ".
@@ -16878,7 +16881,7 @@ sub __batChargeOptTargetPower {
                           ? min ($fref->{ph}, $spls)                                                             # Ladeleistung auf den kleineren Wert begrenzen (es kommen Nachberechnungen)
                           : $fref->{ph};
 
-          $limpower     = $limpower // 0 > 0 ? $limpower : 0;
+          $limpower     = ($limpower // 0) > 0 ? $limpower : 0;
           $limpower     = $bpinmax if(!$hsurp->{$hod}{$sbn}{lcintime});
           $limpower     = max ($limpower, $bpinreduced);                                                         # Mindestladeleistung bpinreduced sicherstellen
 
@@ -17031,11 +17034,11 @@ sub ___batRemainHodsAndSurp {
 
   if (defined $timeTarget) { @remaining_hods = grep { int $_ >= int $hod && int $_ <= int $timeTarget } @$sortedhodsref }
   else                     { @remaining_hods = grep { int $_ >= int $hod } @$sortedhodsref }
-
-  for my $h (@remaining_hods) {                                              # Gesamtwert PV-Überschuß aller Stunden mit PV-Überschuß ermitteln
+  
+  for my $h (@remaining_hods) {                                             # Gesamtwert PV-Überschuß aller Stunden mit PV-Überschuß ermitteln
       my $val = defined $hsurp->{$h}{nhr} && $hsurp->{$h}{nhr} eq '00'
-                ? int ($replacement) // 0
-                : $hsurp->{$h}{surplswh};
+              ? int ($replacement // 0)
+              : ($hsurp->{$h}{surplswh} // 0);
 
       $remainingSurp += int $val;
   }
