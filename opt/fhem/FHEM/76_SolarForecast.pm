@@ -73,10 +73,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.11"=> "30.10.2026  Patch Subs _aiFannBevHistArray, _aiFannCycleConsumerHistArray, _aiFannHpOpmodeHistArray, getPvHistTargetArray ",
-  "2.10.10"=> "23.10.2026  Perl-Warnungen 'Use of uninitialized value' in __batChargeOptTargetPower und ".
-                           "___batRemainHodsAndSurp, die bei sehr geringer PV-Prognose (kein PV-Überschuss in einzelnen ".
-                           "Stunden) auftraten, Forum: https://forum.fhem.de/index.php?msg=1370567 ",
+  "2.10.11"=> "30.10.2026  Patch Subs _aiFannBevHistArray, _aiFannCycleConsumerHistArray, _aiFannHpOpmodeHistArray, getPvHistTargetArray, timestringsFromOffset ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -36389,9 +36386,9 @@ sub timestringsFromOffset {
 
   my $hash  = $defs{$name};
   my $cache = $hash->{'.tsCache'};
-
+  
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return $cached;
+      return { %$cached };                                                                      # Kopie zurückgeben, Cache bleibt unverändert
   }
 
   $epoch = int($epoch / 1000) if $epoch > 1_000_000_000_000;                                    # Millisekunden → Sekunden
@@ -36423,7 +36420,7 @@ sub timestringsFromOffset {
       dofyear => sprintf("%03d", $yday + 1),                                                    # Day of the year (001-366)
   };
 
-  LRU_insert ($name, $cache, $key, $dt);
+  LRU_insert ($name, $cache, $key, { %$dt });                                                   # eigene Kopie ablegen, Aufrufer bekommt das Original
 
 return $dt;
 }
