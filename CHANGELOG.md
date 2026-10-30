@@ -6,6 +6,14 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 xx.xx.xxxx Rev. xxxxx
 
 
+## [v2.10.11]
+30.10.2026 Rev. xxxxx
+
+- **Fix:**
+  * Patch Subs _aiFannBevHistArray, _aiFannCycleConsumerHistArray, _aiFannHpOpmodeHistArray, getPvHistTargetArray:
+    Bei cachen des Ergebnisses eigene Kopien ablegen, damit spätere push-Operationen des Aufrufers den Cache nicht verändern
+
+
 ## [v2.10.10]
 23.10.2026 Rev. 31830
 

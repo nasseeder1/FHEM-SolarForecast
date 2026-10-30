@@ -1,5 +1,5 @@
 ########################################################################################################################
-# $Id: 76_SolarForecast.pm 31822 2026-10-20 18:33:18Z DS_Starter $
+# $Id: 76_SolarForecast.pm 31830 2026-10-23 20:46:25Z DS_Starter $
 #########################################################################################################################
 #       76_SolarForecast.pm
 #
@@ -73,19 +73,10 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
+  "2.10.11"=> "30.10.2026  Patch Subs _aiFannBevHistArray, _aiFannCycleConsumerHistArray, _aiFannHpOpmodeHistArray, getPvHistTargetArray ",
   "2.10.10"=> "23.10.2026  Perl-Warnungen 'Use of uninitialized value' in __batChargeOptTargetPower und ".
                            "___batRemainHodsAndSurp, die bei sehr geringer PV-Prognose (kein PV-Überschuss in einzelnen ".
                            "Stunden) auftraten, Forum: https://forum.fhem.de/index.php?msg=1370567 ",
-  "2.10.9" => "20.10.2026  __openMeteo_ApiResponse: Klammerung gefixt, Forum: https://forum.fhem.de/index.php?msg=1370333 ".
-                           "Message-System: Fix fehlerhafte Sortierung mit idx >=10 ",
-  "2.10.8" => "11.10.2026  ___batAdjustPowerByMargin: Prüfung 'Ziel nicht erreichbar' erfolgt jetzt vor der Margin-Prüfung, daher ".
-                           "volle Ladeleistung auch bei safetyMargin=0 ",
-  "2.10.7" => "10.10.2026  Driftanalyse (aiFannDetectDrift): Ersatz der Quelle airaw durch Werte aus pvHistory (_aiFannDriftHistSlice) -> Verringerung RAM Footprint ".
-                           "CachedHistoryVal: Zeitkontext auf Minute gerundet -> weniger Misses/Verdrängungen im TS_OFFSET_Cache ",
-  "2.10.6" => "05.10.2026  siehe Changelog ".
-                           "Reading Battery_OptimumBaseSoC_XX parallel zum bestehenden Reading Battery_OptimumTargetSoC_XX welches abgelöst werden soll (Forum: https://forum.fhem.de/index.php?msg=1369429) ".
-                           "Nachtverarbeitung: aiDelRawData aus Task 6 nach Task 4 verschoben ".
-                           "Wrapper AIF_modelRun gehärtet und Fehlerausgabe in _aiFannPredict verbessert ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -29366,6 +29357,7 @@ sub aiFannConInfer {
 
       # Prognose + BiasKorrektur abfragen
       #####################################
+      next;                                         # Test Speicherleck
       my $denorm_val                                 = _aiFannPredict             ($name, $fanntyp, \@new_input);
       my ($prediction, $tc, $bias_zone, $drift_zone) = _aiFannApplyBiasCorrection ($name, $fanntyp, $hod, $denorm_val, $targetref, $profile);   # gewichtete Bias-Korrektur anwenden
 
@@ -31231,6 +31223,12 @@ return $rethash;
 #  Filterkriterium: dieselbe Zeile muss par1 (='con') >= 0
 #  haben, damit der Index identisch zu @flat_targets bleibt.
 #
+#  WICHTIG: Cache und Rückgabe verwenden getrennte Array-Kopien.
+#  Der Aufrufer (aiFannConInfer) erweitert die zurückgegebenen Arrays
+#  per push in place. Würde dieselbe Referenz im LRU-Cache liegen,
+#  würden die gecachten Arrays bei jedem Lauf wachsen und spätere
+#  Läufe (gleicher Cache-Key) bekämen verfälschte, zu lange Serien.
+#
 #  Return: (\@active, \@load_raw, \@n_active, \@soc_deficit_norm,
 #           \@energy_remaining, \@charge_intensity,
 #           \@prio_frac, \@auto_frac, \@other_frac)
@@ -31242,51 +31240,51 @@ sub _aiFannBevHistArray {
   my $limit   = $paref->{limit} // 200;
   my $range   = $paref->{range};
   my $fanntyp = $paref->{fanntyp};
-  
+
   my (@active, @load_raw, @n_active, @soc_deficit_norm, @energy_remaining, @charge_intensity);
   my (@prio_frac, @auto_frac, @other_frac);
-  
+
   return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
           \@prio_frac, \@auto_frac, \@other_frac)
       unless exists $data{$name}{pvhist};
-  
+
   # --- Cache-Objekt initialisieren ---
   my $hash  = $defs{$name};
   my $cache = $hash->{'.pvHistCache'} //= LRU_cache_create ('pvHistCache', 'pvHistory Cache', CACHEPVHMS);
-  
+
   # --- Zeitkontext über TS_OFFSET_CACHE (stabil & gecacht) ---
   my $dt   = timestringsFromOffset ($name, $t, 0);
   my $year = $dt->{year};
   my $mon  = $dt->{month};
   my $mday = $dt->{day};
   my $hour = $dt->{hour};
-  
+
   # --- Cache-Key generieren ---
   my $key = join '::', 'BEVHISTARR', $name, $year, $mon, $mday, $hour, $limit;          # Cache Key ID
-  
+
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return @$cached;                                                                  # (\@p1, \@p2, \@p3, \@p4, ....)
+      return map { [ @$_ ] } @$cached;                                                  # Kopien zurückgeben, Cache bleibt unverändert
   }
-  
+
   # --- Kein Cache-Hit → Originalberechnung ---
   # --- identische Tagesreihenfolge wie getPvHistTargetArray ---
   my $ph         = $data{$name}{pvhist};
   my @days_after = sort { $a <=> $b } grep { $_ >  $mday } keys %$ph;
   my @days_upto  = sort { $a <=> $b } grep { $_ <= $mday } keys %$ph;
-  
+
   for my $day (@days_after, @days_upto) {
       for my $hod (sort { $a <=> $b } keys %{ $ph->{$day} }) {
           next if $hod < 1 || $hod > 24;
           last if ($day == $mday && $hod == $hour + 1);
           my $rec = $ph->{$day}{$hod};
-          
-          next unless defined $rec->{$fanntyp};                                             # identisches Filterkriterium wie getPvHistTargetArray
+
+          next unless defined $rec->{$fanntyp};                                         # identisches Filterkriterium wie getPvHistTargetArray
           next unless $rec->{$fanntyp} >= 0;
-          
+
           my $bev_sig          = _aiFannBevConsumerAggregate ($rec);
           my $soc_deficit_norm = _aiFannNormBevSocDeficit ($bev_sig->{soc_deficit}, $range);
-          
+
           push @active,           $bev_sig->{active};
           push @load_raw,         $bev_sig->{load};
           push @n_active,         $bev_sig->{n_active_ratio};
@@ -31298,11 +31296,11 @@ sub _aiFannBevHistArray {
           push @other_frac,       $bev_sig->{other_frac};
       }
   }
-  
+
   # --- Limit anwenden (identisch zu getPvHistTargetArray) ---
   my $n   = scalar @active;
   my $min = $n < $limit ? $n : $limit;
-  
+
   @active           = @active          [-$min .. -1];
   @load_raw         = @load_raw        [-$min .. -1];
   @n_active         = @n_active        [-$min .. -1];
@@ -31312,10 +31310,11 @@ sub _aiFannBevHistArray {
   @prio_frac        = @prio_frac       [-$min .. -1];
   @auto_frac        = @auto_frac       [-$min .. -1];
   @other_frac       = @other_frac      [-$min .. -1];
-  
-  # --- Ergebnis cachen ---
-  LRU_insert ($name, $cache, $key, [ \@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
-                                     \@prio_frac, \@auto_frac, \@other_frac ]);
+
+  # --- Ergebnis cachen: eigene Kopien ablegen, damit spätere push-Operationen des Aufrufers den Cache nicht verändern ---
+  LRU_insert ($name, $cache, $key, [ map { [ @$_ ] } (\@active, \@load_raw, \@n_active, \@soc_deficit_norm,
+                                                       \@energy_remaining, \@charge_intensity,
+                                                       \@prio_frac, \@auto_frac, \@other_frac) ]);
 
 return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
         \@prio_frac, \@auto_frac, \@other_frac);
@@ -31330,6 +31329,9 @@ return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining
 #  Aggregiert csmeXX aller Consumer die weder heatpump noch bev sind.
 #  Filterkriterium: dieselbe Zeile muss par1 (='con') >= 0
 #  haben, damit der Index identisch zu @flat_targets bleibt.
+#
+#  WICHTIG: Cache und Rückgabe verwenden getrennte Array-Kopien
+#  (siehe _aiFannBevHistArray).
 #
 #  Return: \@cycle_csme_raw
 ######################################################################################
@@ -31360,7 +31362,7 @@ sub _aiFannCycleConsumerHistArray {
 
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return @$cached;                                                        # (\@cycle_csme_raw)
+      return map { [ @$_ ] } @$cached;                                        # Kopie zurückgeben (\@cycle_csme_raw)
   }
 
   # --- Kein Cache-Hit → Originalberechnung ---
@@ -31399,12 +31401,12 @@ sub _aiFannCycleConsumerHistArray {
   }
 
   # --- Limit anwenden ---
-  my $n   = scalar @cycle_csme_raw;
-  my $min = $n < $limit ? $n : $limit;
+  my $n           = scalar @cycle_csme_raw;
+  my $min         = $n < $limit ? $n : $limit;
   @cycle_csme_raw = @cycle_csme_raw[-$min .. -1];
 
-  # --- Ergebnis cachen ---
-  LRU_insert ($name, $cache, $key, [ \@cycle_csme_raw ]);
+  # --- Ergebnis cachen: eigene Kopie ablegen ---
+  LRU_insert ($name, $cache, $key, [ [ @cycle_csme_raw ] ]);
 
 return (\@cycle_csme_raw);
 }
@@ -31414,7 +31416,10 @@ return (\@cycle_csme_raw);
 #  Iteration von getPvHistTargetArray (gleiche Filterkriterien,
 #  gleiche Reihenfolge, gleicher Cutoff).
 #
-#  Return: (\@heating, \@defrost, \@hotwater, \@cooling, \@pool, \@poolheating, \@active)
+#  WICHTIG: Cache und Rückgabe verwenden getrennte Array-Kopien
+#  (siehe _aiFannBevHistArray).
+#
+#  Return: (\@heating, \@defrost, \@hotwater, \@cooling, \@pool, \@poolheating, \@eco, \@active)
 ######################################################################################
 sub _aiFannHpOpmodeHistArray {
   my $paref   = shift;
@@ -31444,7 +31449,7 @@ sub _aiFannHpOpmodeHistArray {
 
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return @$cached;
+      return map { [ @$_ ] } @$cached;                                              # Kopien zurückgeben, Cache bleibt unverändert
   }
 
   # --- Kein Cache-Hit → Originalberechnung ---
@@ -31460,7 +31465,7 @@ sub _aiFannHpOpmodeHistArray {
           last if ($day == $mday && $hod == $hour + 1);
 
           my $rec = $ph->{$day}{$hod};
-          next unless defined $rec->{$fanntyp};                                         # identisches Filterkriterium wie getPvHistTargetArray
+          next unless defined $rec->{$fanntyp};                                     # identisches Filterkriterium wie getPvHistTargetArray
           next unless $rec->{$fanntyp} >= 0;
 
           my $hp_sig = _aiFannHpOpmodeAggregate ($rec);
@@ -31488,7 +31493,9 @@ sub _aiFannHpOpmodeHistArray {
   @active      = @active     [-$min .. -1];
   @eco         = @eco        [-$min .. -1];
 
-  LRU_insert ($name, $cache, $key, [ \@heating, \@defrost, \@hotwater, \@cooling, \@pool, \@poolheating, \@eco, \@active ]);
+  # --- Ergebnis cachen: eigene Kopien ablegen, damit spätere push-Operationen des Aufrufers den Cache nicht verändern ---
+  LRU_insert ($name, $cache, $key, [ map { [ @$_ ] } (\@heating, \@defrost, \@hotwater, \@cooling,
+                                                       \@pool, \@poolheating, \@eco, \@active) ]);
 
 return (\@heating, \@defrost, \@hotwater, \@cooling, \@pool, \@poolheating, \@eco, \@active);
 }
@@ -38612,11 +38619,10 @@ sub getPvHistTargetArray {
       splice @p3keys, 0, $remove if defined $par3;
   }
 
-  # --- Ergebnis cachen ---
-  my $res = [ \@p1keys, \@p2keys, \@p3keys ];
-  LRU_insert ($name, $cache, $key, $res);
+  # --- Ergebnis cachen: eigene Kopien ablegen, Aufrufer bekommt die Originale ---
+  LRU_insert ($name, $cache, $key, [ map { [ @$_ ] } (\@p1keys, \@p2keys, \@p3keys) ]);
 
-return @$res;
+return (\@p1keys, \@p2keys, \@p3keys);
 }
 
 ################################################################
