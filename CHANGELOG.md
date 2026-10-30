@@ -10,8 +10,12 @@ xx.xx.xxxx Rev. xxxxx
 30.10.2026 Rev. xxxxx
 
 - **Fix:**
-  * Patch Subs _aiFannBevHistArray, _aiFannCycleConsumerHistArray, _aiFannHpOpmodeHistArray, getPvHistTargetArray:
-    Bei cachen des Ergebnisses eigene Kopien ablegen, damit spätere push-Operationen des Aufrufers den Cache nicht verändern
+  * Die Hilfsfunktionen _aiFannBevHistArray, _aiFannHpOpmodeHistArray und _aiFannCycleConsumerHistArray haben ihre Ergebnis-Arrays als Referenz sowohl in den
+    pvHistCache gelegt als auch an den Aufrufer zurückgegeben. Da aiFannConInfer diese Arrays im Prognosehorizont per push fortschreibt, wurden die gecachten Arrays bei
+    jedem Lauf innerhalb derselben Stunde verlängert (Speicherwachstum). Folgeläufe arbeiteten zudem mit verlängerten, nicht mehr zu @flat_targets ausgerichteten
+    BEV-/WP-Serien, was die lag1-Features verfälschen konnte. Cache und Rückgabewert verwenden jetzt getrennte Kopien (Cache-Hit und Cache-Insert).
+  * getPvHistTargetArray: im Cache-Miss-Fall werden nun ebenfalls Kopien gecacht, sodass der Aufrufer nie dieselben Arrays wie der Cache erhält (konsistent zum Cache-Hit-Pfad).
+  * timestringsFromOffset: Cache-Hit und Cache-Insert verwenden eine Kopie des Hashes, damit Änderungen des Aufrufers den Cache nicht verändern können.
 
 
 ## [v2.10.10]
