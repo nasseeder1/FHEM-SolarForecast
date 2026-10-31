@@ -12809,6 +12809,11 @@ sub centralTask {
       Log3 ($name, 4, "$name DEBUG> ################################################################");
       Log3 ($name, 4, "$name DEBUG> current hour of day: ".($chour+1));
   }
+  
+  # Speichertest Start
+  #####################
+  # mallocTrim ($name);
+  # my $rss0 = do { open my $fh, '<', '/proc/self/status' or last; (map { /^VmRSS:\s+(\d+)/ ? $1 : () } <$fh>)[0] };
 
   singleUpdateState ( {hash => $hash, state => $centpars->{state}, evt => $centpars->{evt}} );
 
@@ -12874,8 +12879,11 @@ sub centralTask {
 
   undef %{$centpars};
   
-  # --- Speicherbereinigung nach dem Zyklus ---
-  #mallocTrim ($name);
+  # Speichertest Ende
+  #####################
+  # mallocTrim ($name);                                                                                               # Rückgabe aller freigegebenen Arenen
+  # my $rss1 = do { open my $fh, '<', '/proc/self/status' or last; (map { /^VmRSS:\s+(\d+)/ ? $1 : () } <$fh>)[0] };  # vor setTimeTracking
+  # Log3 ($name, 1, "$name DEBUG> RSS start=$rss0 end=$rss1 delta=".($rss1 - $rss0)." kB");
 
 return;
 }
@@ -28931,8 +28939,6 @@ sub aiFannConInfer {
 
   my $hash = $defs{$name};
   my ($msg, $presence, $comftemp);
-
-  #debugLog ($paref, 'aiData', "AI FANN - Start checking consumption values (further output depends on the content and time of the last log entry)");
   
   $data{$name}{current}{$fanntyp.'NNGetResultState'} = 'ok';
 
@@ -29333,7 +29339,7 @@ sub aiFannConInfer {
                     );
 
       unless ($features) {
-          $msg = 'ERROR in FANN Feature Registry Builder Version: $bv';
+          $msg = "ERROR in FANN Feature Registry Builder: $profile";
           $data{$name}{current}{$fanntyp.'NNGetResultState'} = $msg;
 
           return $msg;
@@ -29354,7 +29360,6 @@ sub aiFannConInfer {
 
       # Prognose + BiasKorrektur abfragen
       #####################################
-      next;                                         # Test Speicherleck
       my $denorm_val                                 = _aiFannPredict             ($name, $fanntyp, \@new_input);
       my ($prediction, $tc, $bias_zone, $drift_zone) = _aiFannApplyBiasCorrection ($name, $fanntyp, $hod, $denorm_val, $targetref, $profile);   # gewichtete Bias-Korrektur anwenden
 
@@ -29362,7 +29367,7 @@ sub aiFannConInfer {
 
       if ($nngrst ne 'ok') {
           Log3 ($name, 2, "$name - WARNING - AI FANN '$fanntyp' forecast ignored and Legacy value is used, cause: $nngrst")
-                  if(askLogtime ($name, $msg, 300));                                                                                            # Log mit Mehrfachverhinderung
+                  if(askLogtime ($name, "conNNState_$fanntyp", 300));                                                                                            # Log mit Mehrfachverhinderung
           return;
       }
 
