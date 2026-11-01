@@ -15757,11 +15757,11 @@ sub __parseAttrEnvironment {
 
   my ($pa, $ph) = parseParams ($env);
 
-  my ($oustmpdev, $oustmprdg)             = split (':', $ph->{outsideTemp}, 2) if(defined $ph->{outsideTemp});
-  my ($winddev,     $windrdg)             = split (':', $ph->{windSpeed},   2) if(defined $ph->{windSpeed});
-  my ($presendev, $presenrdg, $presenrgx) = split (':', $ph->{presence},    3) if(defined $ph->{presence});
-  my ($gridstdev, $gridstrdg, $gridstrgx) = split (':', $ph->{gridStatus},  3) if(defined $ph->{gridStatus});
-
+  my ($oustmpdev, $oustmprdg)             = split (':', $ph->{outsideTemp} // '', 2);
+  my ($winddev,     $windrdg)             = split (':', $ph->{windSpeed}   // '', 2);
+  my ($presendev, $presenrdg, $presenrgx) = split (':', $ph->{presence}    // '', 3);
+  my ($gridstdev, $gridstrdg, $gridstrgx) = split (':', $ph->{gridStatus}  // '', 3);
+  my ($raindev,     $rainrdg)             = split (':', $ph->{rainAmount}  // '', 2);
 
   my $parsed = {
       outsideTempDev  => $oustmpdev,
@@ -15774,6 +15774,8 @@ sub __parseAttrEnvironment {
       gridstdev       => $gridstdev,
       gridstrdg       => $gridstrdg,
       gridstrgx       => $gridstrgx,
+      rainDev         => $raindev,
+      rainRdg         => $rainrdg,
   };
 
 return $parsed;

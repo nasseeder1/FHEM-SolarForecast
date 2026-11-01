@@ -7,7 +7,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.10.11]
-31.10.2026 Rev. xxxxx
+01.11.2026 Rev. xxxxx
 
 - **Fix:**
   * Die Hilfsfunktionen _aiFannBevHistArray, _aiFannHpOpmodeHistArray und _aiFannCycleConsumerHistArray haben ihre Ergebnis-Arrays als Referenz sowohl in den
@@ -17,6 +17,9 @@ xx.xx.xxxx Rev. xxxxx
   * getPvHistTargetArray: im Cache-Miss-Fall werden nun ebenfalls Kopien gecacht, sodass der Aufrufer nie dieselben Arrays wie der Cache erhält (konsistent zum Cache-Hit-Pfad).
   * timestringsFromOffset: Cache-Hit und Cache-Insert verwenden eine Kopie des Hashes, damit Änderungen des Aufrufers den Cache nicht verändern können.
 
+- **Change:**
+  * Parser __parseAttrEnvironment gehärtet
+  
 
 ## [v2.10.10]
 23.10.2026 Rev. 31830
