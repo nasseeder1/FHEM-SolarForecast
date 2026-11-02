@@ -7,7 +7,17 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.10.11]
-01.11.2026 Rev. xxxxx
+02.11.2026 Rev. xxxxx
+
+- **Neu:**
+  * **Eigener Regenmengenmesser**: Im Attribut `setupEnvironment` kann mit dem neuen Schlüssel `rainAmount=<Device>:<Reading>` ein eigener Regenmesser angegeben werden. Das Reading muss die Regenmenge der aktuellen Stunde in mm (l/m²) liefern.
+    - Der Messwert überschreibt für die aktuelle Stunde (NextHour00) den Niederschlagswert `rr1c` der Wetter-API. Er wird damit auch in `nexthours`, `circular` und `pvHistory` übernommen, und damit auch in den AI-Rohdaten.
+    - Ist das Device oder Reading nicht vorhanden, nicht numerisch oder negativ, bleibt der API-Wert erhalten.
+  * **Header-Anzeige**: `rainAmount` ist als Wert in `graphicControl` → `headerShowEnv` auswählbar. 
+      Angezeigt wird die Regenmenge der aktuellen Stunde in mm, mit dem Messwert oder ohne eigenen Messer mit dem API-Wert. 
+	  Das Symbol wechselt nach Menge zwischen `rain_light` (< 2,5 mm), `rain` (2,5 bis < 7,6 mm) und `rain_heavy` (≥ 7,6 mm). 
+	  Bei 0 mm wird das Symbol grau dargestellt.
+    - Commandref (DE/EN) für `setupEnvironment` und `headerShowEnv` ergänzt.
 
 - **Fix:**
   * Die Hilfsfunktionen _aiFannBevHistArray, _aiFannHpOpmodeHistArray und _aiFannCycleConsumerHistArray haben ihre Ergebnis-Arrays als Referenz sowohl in den
@@ -19,7 +29,7 @@ xx.xx.xxxx Rev. xxxxx
 
 - **Change:**
   * Parser __parseAttrEnvironment gehärtet
-  
+     
 
 ## [v2.10.10]
 23.10.2026 Rev. 31830

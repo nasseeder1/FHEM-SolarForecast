@@ -73,7 +73,9 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.11"=> "30.10.2026  Patch Subs _aiFannBevHistArray, _aiFannCycleConsumerHistArray, _aiFannHpOpmodeHistArray, getPvHistTargetArray, timestringsFromOffset ",
+  "2.10.11"=> "30.10.2026  Patch Subs _aiFannBevHistArray, _aiFannCycleConsumerHistArray, _aiFannHpOpmodeHistArray, getPvHistTargetArray, timestringsFromOffset ".
+              "feature: setupEnvironment - neuer Schlüssel rainAmount (eigener Regenmengenmesser überschreibt rr1c der aktuellen Stunde), headerShowEnv=rainAmount, ".
+              "__parseAttrEnvironment: Schlüssel-Parser ohne Restwerte aus Vorgängeraufrufen ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -9693,6 +9695,7 @@ sub _attrEnvironment {                   ## no critic "not used"
       presence    => { comp => '.*:.*:.*',       act => 1 },
       windSpeed   => { comp => '.*:.*',          act => 1 },
       gridStatus  => { comp => '.*:.*:.*',       act => 1 },
+      rainAmount  => { comp => '.*:.*',          act => 1 }, 
   };
 
   my ($a, $h) = parseParams ($aVal);
@@ -10664,7 +10667,7 @@ sub __attrKeyAction {
               my @hse = split ",", $akeyval;
 
               for my $env (@hse) {
-                  if (!grep /^$env$/, qw (outsideTemp presence windSpeed gridStatus)) {
+                  if (!grep /^$env$/, qw (outsideTemp presence windSpeed gridStatus rainAmount)) {
                       return qq{The value '$env' is not valid for key '$akey'};
                   }
               }
@@ -10750,9 +10753,9 @@ sub __attrKeyAction {
           state %devRdgCodeKeys;
           state %devRdgKeys;
 
-          %devCodeKeys    = map { $_ => 1 } qw(swoncond swoffcond spignorecond) unless %devCodeKeys;        # Device + Code/Regex Pflicht
-          %devRdgCodeKeys = map { $_ => 1 } qw(presence gridStatus)             unless %devRdgCodeKeys;     # Device + Reading + Code/Regex Pflicht
-          %devRdgKeys     = map { $_ => 1 } qw(outsideTemp windSpeed)           unless %devRdgKeys;         # Device + Reading, Code optional
+          %devCodeKeys    = map { $_ => 1 } qw(swoncond swoffcond spignorecond)  unless %devCodeKeys;       # Device + Code/Regex Pflicht
+          %devRdgCodeKeys = map { $_ => 1 } qw(presence gridStatus)              unless %devRdgCodeKeys;    # Device + Reading + Code/Regex Pflicht
+          %devRdgKeys     = map { $_ => 1 } qw(outsideTemp windSpeed rainAmount) unless %devRdgKeys;        # Device + Reading, Code optional
 
           if ($devCodeKeys{$akey}) {
               ($err) = checkDevRdCond ($name, $akey, $akeyval, 1, 0, 1);                            # mit Device-Check, Code check
@@ -14005,6 +14008,12 @@ sub _transferWeatherValues {
               my $outTemp    = ReadingsNum ($outTempDev, $outTempRdg, undef);
               $temp          = $outTemp if(defined $outTemp);
           }
+          
+          # --- Regenmengenmesser verarbeiten (überschreibt rr1c der API)
+          if ($peh && defined $peh->{rainDev}) {
+              my $rain = ReadingsNum ($peh->{rainDev}, $peh->{rainRdg}, undef);
+              $rr1c    = round2 ($rain) if(defined $rain && $rain >= 0);
+          }
 
           # --- vorhandenen Windmesser verarbeiten
           if ($peh && defined $peh->{windDev}) {
@@ -14032,6 +14041,7 @@ sub _transferWeatherValues {
 
           $data{$name}{current}{outsideTemp} = round1 ($temp);
           $data{$name}{current}{windspeed}   = round1 ($windspeed);
+          $data{$name}{current}{rainAmount}  = round1 ($rr1c) if(defined $rr1c);
       }
 
       my $nhtstr                                       = 'NextHour'.(sprintf "%02d", $num);
@@ -22769,6 +22779,16 @@ sub _graphicHeader {
                      : $presence
                      ? FW_makeImage ('user_available')
                      : FW_makeImage ('user_n_a@grey');
+                     
+      my $rain      = CurrentVal ($name, 'rainAmount', 0);                                              # Regenmenge letzte Stunde
+      
+      my $rainicon  = $rain == 0    ? 'weather_rain_light@grey'                                         # trocken
+                      : $rain < 2.5 ? 'weather_rain_light'                                              # leicht
+                      : $rain < 7.6 ? 'weather_rain'                                                    # mäßig
+                      :               'weather_rain_heavy';                                             # stark
+      
+      my $rainimg   = FW_makeImage ($rainicon);
+      my $raintxt   = (defined $rain ? $rain : '-').' mm';
 
       my $windspeed = CurrentVal ($name, 'windspeed', '');                                              # Wind
       $windspeed    = round1 ($windspeed) if(defined $windspeed);
@@ -23032,6 +23052,7 @@ sub _graphicHeader {
       push @parts1, [ $gridimg, 3 ]                    if(grep /^gridStatus$/,  @$sa);              # Grid verfügbar Symbol
       push @parts1, [ $windimg, 1 ], [ $windspeed, 1 ] if(grep /^windSpeed$/,   @$sa);              # Windanzeige
       push @parts1, [ $tempimg, 0 ], [ $temptxt,   3 ] if(grep /^outsideTemp$/, @$sa);              # Außentemperatur
+      push @parts1, [ $rainimg, 1 ], [ $raintxt,   3 ] if(grep /^rainAmount$/,  @$sa);              # Regenmenge
 
       push @parts1,
           [ $sriseimg, 1 ],
@@ -42731,6 +42752,7 @@ to ensure that the system configuration is correct.
             <tr><td>                            </td><td><b>gridStatus</b>  - current availability/current connection status to the public network                                                 </td></tr>
             <tr><td>                            </td><td><b>outsideTemp</b> - the current outdoor temperature                                                                                      </td></tr>
             <tr><td>                            </td><td><b>presence</b>    - presence status                                                                                                      </td></tr>
+            <tr><td>                            </td><td><b>rainAmount</b>  - the current rainfall of the last hour in mm (measured value or weather API)                                          </td></tr>
             <tr><td>                            </td><td><b>windSpeed</b>   - the current wind speed (smoothed)                                                                                    </td></tr>
             <tr><td>                            </td><td>                                                                                                                                          </td></tr>
             <tr><td> <b>hourStyle</b>           </td><td>Format of the time in the bar chart.                                                                                                      </td></tr>
@@ -43221,6 +43243,10 @@ to ensure that the system configuration is correct.
             <tr><td> <b>presence</b>              </td><td>A &lt;device&gt;:&lt;reading&gt;:&lt;regex&gt; combination that provides the presence status of the residents. The specified regular expression   </td></tr>
             <tr><td>                              </td><td>must return Boolean value 'true' for the 'presence' status, otherwise 'false'.                                                                    </td></tr>
             <tr><td>                              </td><td>Syntax: &lt;Device&gt;:&lt;Reading&gt;:&lt;Regex&gt;                                                                                              </td></tr>
+            <tr><td>                              </td><td>                                                                                                                                                  </td></tr>
+            <tr><td> <b>rainAmount</b>            </td><td>A &lt;Device&gt;:&lt;Reading&gt; combination that provides the rainfall of the current hour in mm (l/m2). The measured value overrides            </td></tr>
+            <tr><td>                              </td><td>the precipitation value (rr1c) of the weather API for the current hour. Valid values are numbers &gt;= 0.                                         </td></tr>
+            <tr><td>                              </td><td>Syntax: &lt;Device&gt;:&lt;Reading&gt;                                                                                                            </td></tr>
             <tr><td>                              </td><td>                                                                                                                                                  </td></tr>
             <tr><td> <b>windSpeed</b>             </td><td>A <Device>:<Reading> combination that provides the currently measured wind speed in m/s.                                                          </td></tr>
             <tr><td>                              </td><td>Syntax: &lt;Device&gt;:&lt;Reading&gt;                                                                                                            </td></tr>
@@ -45924,6 +45950,7 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td>                            </td><td><b>gridStatus</b>  - aktuelle Verfügbarkeit/aktueller Verbindungsstatus zum öffentlichen Netz                                   </td></tr>
             <tr><td>                            </td><td><b>outsideTemp</b> - die aktuelle Außentemperatur                                                                               </td></tr>
             <tr><td>                            </td><td><b>presence</b>    - der Anwesenheitsstatus                                                                                     </td></tr>
+            <tr><td>                            </td><td><b>rainAmount</b>  - die aktuelle Regenmenge der letzten Stunde in mm (Messwert oder Wetter-API)                                </td></tr>
             <tr><td>                            </td><td><b>windSpeed</b>   - die aktuelle Windgeschwindigkeit (geglätted)                                                               </td></tr>
             <tr><td>                            </td><td>                                                                                                                                </td></tr>
             <tr><td> <b>hourStyle</b>           </td><td>Format der Zeitangabe in der Balkengrafik.                                                                                      </td></tr>
@@ -46415,6 +46442,10 @@ die ordnungsgemäße Anlagenkonfiguration geprüft werden.
             <tr><td> <b>presence</b>              </td><td>Eine &lt;Gerät&gt;:&lt;Reading&gt;:&lt;Regex&gt; Kombination, die den Anwesenheitsstatus der Bewohner liefert. Der angegebene reguläre Ausdruck   </td></tr>
             <tr><td>                              </td><td>muß Boolean 'true' für den Status 'Anwesenheit' ergeben, sonst 'false'.                                                                           </td></tr>
             <tr><td>                              </td><td>Syntax: &lt;Gerät&gt;:&lt;Reading&gt;:&lt;Regex&gt;                                                                                               </td></tr>
+            <tr><td>                              </td><td>                                                                                                                                                  </td></tr>
+            <tr><td> <b>rainAmount</b>            </td><td>Eine &lt;Gerät&gt;:&lt;Reading&gt; Kombination, die die Regenmenge der aktuellen Stunde in mm (l/m2) liefert. Der Messwert überschreibt für       </td></tr>
+            <tr><td>                              </td><td>die aktuelle Stunde den Niederschlagswert (rr1c) der Wetter-API. Gültig sind Zahlen &gt;= 0.                                                      </td></tr>
+            <tr><td>                              </td><td>Syntax: &lt;Gerät&gt;:&lt;Reading&gt;                                                                                                             </td></tr>
             <tr><td>                              </td><td>                                                                                                                                                  </td></tr>
             <tr><td> <b>windSpeed</b>             </td><td>Eine &lt;Gerät&gt;:&lt;Reading&gt; Kombination, die die aktuell gemessene Windgeschwindigkeit in m/s liefert.                                     </td></tr>
             <tr><td>                              </td><td>Syntax: &lt;Gerät&gt;:&lt;Reading&gt;                                                                                                             </td></tr>
