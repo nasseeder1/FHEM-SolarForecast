@@ -1,4 +1,4 @@
-# Changelog SolarForecast
+# Changelog 76_SolarForecast
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
@@ -7,7 +7,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.10.11]
-02.11.2026 Rev. xxxxx
+03.11.2026 Rev. xxxxx
 
 - **Neu:**
   * **Eigener Regenmengenmesser**: Im Attribut `setupEnvironment` kann mit dem neuen Schlüssel `rainAmount=<Device>:<Reading>` ein eigener Regenmesser angegeben werden. Das Reading muss die Regenmenge der aktuellen Stunde in mm (l/m²) liefern.
@@ -18,6 +18,12 @@ xx.xx.xxxx Rev. xxxxx
 	  Das Symbol wechselt nach Menge zwischen `rain_light` (< 2,5 mm), `rain` (2,5 bis < 7,6 mm) und `rain_heavy` (≥ 7,6 mm). 
 	  Bei 0 mm wird das Symbol grau dargestellt.
     - Commandref (DE/EN) für `setupEnvironment` und `headerShowEnv` ergänzt.
+  * Patch Subs _aiFannBevConsumerAggregate, _aiFannBevHistArray, _aiFannBuildLagFeatures, aiFannConDataLoad, aiFannConInfer, 
+    _aiFannFeatureBuilder, FEATURE_BLOCKS
+  * **KI Verbrauchsprognose**: BEV Phasenanzahl (bevcsmPhasesXX, Consumer-Schlüssel phases) als Lag1-Feature bev_phases_lag1 
+      (mittlere Phasenanzahl der ladenden EVs relativ zu 3 Phasen, nur Stunden mit Ladung), neuer Feature-Block bev_phases in 
+	  allen Profilen mit BEV
+      Hinweis: der Eingangsvektor wächst bei BEV-Profilen um ein Feature -> neues Training der KI erforderlich
 
 - **Fix:**
   * Die Hilfsfunktionen _aiFannBevHistArray, _aiFannHpOpmodeHistArray und _aiFannCycleConsumerHistArray haben ihre Ergebnis-Arrays als Referenz sowohl in den
