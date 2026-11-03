@@ -27400,6 +27400,7 @@ sub aiFannConDataLoad {
   my (@bev_active_values, @bev_load_values, @bev_n_active_values, @bev_soc_deficit_norm_values);
   my (@bev_energy_remaining_values, @bev_charge_intensity_values);
   my (@bev_prio_frac_values, @bev_auto_frac_values, @bev_other_frac_values);
+  my @bev_phases_values;
   my (@hp_heating_frac_values, @hp_defrost_frac_values, @hp_hotwater_frac_values, @hp_cooling_frac_values,
       @hp_pool_frac_values, @hp_poolheating_frac_values, @hp_eco_frac_values, @hp_active_frac_values);
   my @cycle_csme_values;
@@ -27610,6 +27611,7 @@ sub aiFannConDataLoad {
       push @bev_prio_frac_values,        $bev_sig->{prio_frac};                           
       push @bev_auto_frac_values,        $bev_sig->{auto_frac};                           
       push @bev_other_frac_values,       $bev_sig->{other_frac};
+      push @bev_phases_values,           $bev_sig->{phases_ratio};
 
       push @hp_heating_frac_values,      $hp_sig->{heating_frac};
       push @hp_defrost_frac_values,      $hp_sig->{defrost_frac};
@@ -27696,7 +27698,8 @@ sub aiFannConDataLoad {
 
                                              bev_prio_frac_series              => \@bev_prio_frac_values,       
                                              bev_auto_frac_series              => \@bev_auto_frac_values,       
-                                             bev_other_frac_series             => \@bev_other_frac_values,      
+                                             bev_other_frac_series             => \@bev_other_frac_values,    
+                                             bev_phases_series                 => \@bev_phases_values,                                             
 
                                              hp_heating_frac_series            => \@hp_heating_frac_values,
                                              hp_defrost_frac_series            => \@hp_defrost_frac_values,
@@ -27891,6 +27894,7 @@ sub aiFannConDataLoad {
                          bev_prio_frac_lag1             => $lags->{bev_prio_frac_lag1},             # Anteil PV-Prio-Laden Vorstunde
                          bev_auto_frac_lag1             => $lags->{bev_auto_frac_lag1},             # Anteil Auto/Überschuss-Laden Vorstunde
                          bev_other_frac_lag1            => $lags->{bev_other_frac_lag1},            # Anteil unklassifiziertes/manuelles Laden Vorstunde
+                         bev_phases_lag1                => $lags->{bev_phases_lag1},                # Phasenniveau Vorstunde (0.33 .. 1, 0 = keine Ladung)
                        }
                      );
 
@@ -28999,7 +29003,8 @@ sub aiFannConInfer {
 
   my ($bev_active_ref,           $bev_load_raw_ref,     $bev_n_active_ref,
       $bev_soc_deficit_norm_ref, $energy_remaining_ref, $charge_intensity_ref,
-      $bev_prio_frac_ref,        $bev_auto_frac_ref,    $bev_other_frac_ref) =
+      $bev_prio_frac_ref,        $bev_auto_frac_ref,    $bev_other_frac_ref,
+      $bev_phases_ref) =
       _aiFannBevHistArray ( { name    => $name,
                               fanntyp => $fanntyp,
                               range   => $range,
@@ -29195,7 +29200,8 @@ sub aiFannConInfer {
 
                                              bev_prio_frac_series              => $bev_prio_frac_ref,         
                                              bev_auto_frac_series              => $bev_auto_frac_ref,         
-                                             bev_other_frac_series             => $bev_other_frac_ref,        
+                                             bev_other_frac_series             => $bev_other_frac_ref,
+                                             bev_phases_series                 => $bev_phases_ref,                                             
 
                                              hp_heating_frac_series            => $hp_heating_ref,
                                              hp_defrost_frac_series            => $hp_defrost_ref,
@@ -29359,6 +29365,7 @@ sub aiFannConInfer {
                             bev_prio_frac_lag1             => $lags->{bev_prio_frac_lag1},              # Anteil PV-Prio-Laden Vorstunde
                             bev_auto_frac_lag1             => $lags->{bev_auto_frac_lag1},              # Anteil Auto/Überschuss-Laden Vorstunde
                             bev_other_frac_lag1            => $lags->{bev_other_frac_lag1},             # Anteil unklassifiziertes/manuelles Laden Vorstunde
+                            bev_phases_lag1                => $lags->{bev_phases_lag1},                 # Phasenniveau Vorstunde (0.33 .. 1, 0 = keine Ladung)
                         }
                     );
 
@@ -29434,6 +29441,7 @@ sub aiFannConInfer {
       push @$bev_prio_frac_ref,        0;                                                   # Opmode-Zukunft unbekannt -> neutral
       push @$bev_auto_frac_ref,        0;                                                   
       push @$bev_other_frac_ref,       0;  
+      push @$bev_phases_ref,           0;
 
       push @cycle_csme_norm_hist,      0;                                                   # Consumer Energy, Zukunft unbekannt -> neutral
 
@@ -29800,6 +29808,7 @@ sub _aiFannBuildLagFeatures {
   my $bev_prio_frac_series             = $paref->{bev_prio_frac_series};              
   my $bev_auto_frac_series             = $paref->{bev_auto_frac_series};              
   my $bev_other_frac_series            = $paref->{bev_other_frac_series};
+  my $bev_phases_series                = $paref->{bev_phases_series};
 
   # Sicherheitsprüfung: genug Historie vorhanden?
   my $len_con  = scalar @$con_series;
@@ -29971,7 +29980,8 @@ sub _aiFannBuildLagFeatures {
   
   my $bev_prio_frac_lag1             = $bev_prio_frac_series->[$i - 1]             // 0; 
   my $bev_auto_frac_lag1             = $bev_auto_frac_series->[$i - 1]             // 0; 
-  my $bev_other_frac_lag1            = $bev_other_frac_series->[$i - 1]            // 0; 
+  my $bev_other_frac_lag1            = $bev_other_frac_series->[$i - 1]            // 0;
+  my $bev_phases_lag1                = $bev_phases_series->[$i - 1]                // 0;                  # Phasenniveau (0..1), nur Stunden mit Ladung  
 
 
   # ---------------------------------------------------------
@@ -30085,6 +30095,7 @@ sub _aiFannBuildLagFeatures {
       bev_prio_frac_lag1             => $bev_prio_frac_lag1,                             
       bev_auto_frac_lag1             => $bev_auto_frac_lag1,                             
       bev_other_frac_lag1            => $bev_other_frac_lag1,  
+      bev_phases_lag1                => $bev_phases_lag1,
   };
 }
 
@@ -31335,6 +31346,7 @@ sub _aiFannBevHistArray {
           push @prio_frac,        $bev_sig->{prio_frac};
           push @auto_frac,        $bev_sig->{auto_frac};
           push @other_frac,       $bev_sig->{other_frac};
+          push @phases_ratio,     $bev_sig->{phases_ratio};
       }
   }
 
@@ -31351,6 +31363,7 @@ sub _aiFannBevHistArray {
   @prio_frac        = @prio_frac       [-$min .. -1];
   @auto_frac        = @auto_frac       [-$min .. -1];
   @other_frac       = @other_frac      [-$min .. -1];
+  @phases_ratio     = @phases_ratio    [-$min .. -1];
 
   # --- Ergebnis cachen: eigene Kopien ablegen, damit spätere push-Operationen des Aufrufers den Cache nicht verändern ---
   LRU_insert ($name, $cache, $key, [ map { [ @$_ ] } (\@active, \@load_raw, \@n_active, \@soc_deficit_norm,
