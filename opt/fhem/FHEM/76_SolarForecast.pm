@@ -2487,6 +2487,19 @@ bev_opmode => sub {
 },
 
 # --------------------------------------------------------
+# Semantik: BEV genutzte Phasenanzahl (Ladeleistungsniveau)
+# Lag1 (Vorstunde). Nur für Stunden mit tatsächlicher Ladung
+# (csme > 0) befüllt, sonst 0. Wert = mittlere Phasenanzahl der
+# ladenden EVs relativ zu 3 Phasen (1 Phase = 0.33, 3 Phasen = 1)
+# --------------------------------------------------------
+bev_phases => sub {
+    my ($f) = @_;
+    return [
+        $f->{bev_phases_lag1},                                          # Ladeleistungsniveau Vorstunde (1/3 .. 1, 0 = kein Laden)
+    ];
+},
+
+# --------------------------------------------------------
 # Semantik: BEV + PV-gesteuertes Lademanagement
 # --------------------------------------------------------
 bev_pv_smart_charge => sub {
@@ -30360,11 +30373,12 @@ sub _aiFannFeatureBuilder {
   }
 
   # --------------------------------------------------------
-  # --- bev
+  # --- BEV
   # --------------------------------------------------------
   if ($flags->{bev}) {
       push @features, @{ $FEATURE_BLOCKS{bev_base}->($f) };
       push @features, @{ $FEATURE_BLOCKS{bev_opmode}->($f) };
+      push @features, @{ $FEATURE_BLOCKS{bev_phases}->($f) };
 
       if ($flags->{pv}) {
           push @features, @{ $FEATURE_BLOCKS{bev_pv_smart_charge}->($f) };
