@@ -14135,6 +14135,7 @@ sub __readDataWeather {
       return;
   }
 
+  # Wetter von einem DWD-Device
   my ($err, $warnmsg) = checkdwdattr ($name, $fcname, \@dweattrmust);
   $paref->{state}     = $err if($err);
 
@@ -14174,7 +14175,7 @@ sub __readDataWeather {
           $fd1++;
       }
 
-      my $rr1c = ReadingsNum ($fcname, "fc${fd1}_${fh1}_RR1c", 0);                             # Gesamtniederschlag (1-stündig) letzte 1 Stunde -> wir schuen in die Zukunft
+      my $rr1c = ReadingsNum ($fcname, "fc${fd1}_${fh1}_RR1c", 0);                             # Gesamtniederschlag (1-stündig) letzte 1 Stunde -> wir schauen in die Zukunft
 
       debugLog ($paref, 'collectData_long', "Weather $step: fc${fd}_${fh}, don: $sunup, wid: ".(defined $wid ? $wid : '<undef>').", RR1c: $rr1c, TTT: ".(defined $temp ? $temp : '<undef>').", Neff: ".(defined $neff ? $neff : '<undef>'));
 
@@ -29491,6 +29492,12 @@ return;
 #  prio_frac/auto_frac/other_frac: Opmode-Punkte über alle BEV-
 #  Consumer gepoolt (analog zu HP-Opmode-Aggregation), Bezugs-
 #  größe ist die Summe aller Modus-Punkte im Datensatz.
+#
+#  phases_ratio: mittlere genutzte Phasenanzahl (bevcsmPhasesXX,
+#  Stand Stundenende) relativ zu 3 Phasen (0.33 .. 1). Nur EVs,
+#  die in der Stunde tatsächlich geladen haben (csme > 0) fließen
+#  ein, damit ein angestecktes aber ruhendes EV kein Phasensignal
+#  liefert. Keine Ladung -> 0.
 ###############################################################
 sub _aiFannBevConsumerAggregate {
   my ($rec) = @_;                                                                       # Stundendatensatz Referenz
@@ -29502,6 +29509,7 @@ sub _aiFannBevConsumerAggregate {
 
   my ($load, $n_active, $n_reporting, $deficit_sum, $n_batcap)    = (0, 0, 0, 0, 0);
   my ($energy_remaining_sum, $charge_intensity_sum, $n_intensity) = (0, 0, 0);
+  my ($phases_sum, $n_phases)                                     = (0, 0);  
   
   my %mode_totals       = map { $_ => 0 } @modes;
   my $mode_total_points = 0;
@@ -29521,6 +29529,13 @@ sub _aiFannBevConsumerAggregate {
       if (defined $minutes) {                                                           # Ladeintensität: wie viel der Stunde wurde geladen
           $charge_intensity_sum += clampValue ($minutes / 60, 0, 1);
           $n_intensity++;
+      }
+      
+      my $phases = $rec->{"bevcsmPhases$id"};                                           # genutzte Phasen am Stundenende
+
+      if (defined $phases && isNumeric ($phases) && defined $e && $e > 0) {             # nur bei tatsächlicher Ladung in dieser Stunde
+          $phases_sum += clampValue ($phases, 1, 3);
+          $n_phases++;
       }
 
       for my $mode (@modes) {                                                           # Opmode-Punkte poolen
@@ -29551,6 +29566,7 @@ sub _aiFannBevConsumerAggregate {
       soc_deficit      => $n_reporting ? ($deficit_sum          / $n_reporting) : 0,    # Wert jetzt unabhängig vom Ladekontext -> ständige Aufzeichnung SOC auch wenn BEV nicht zuHause
       energy_remaining => $n_batcap    ? ($energy_remaining_sum / $n_batcap)    : 0,    # später zu normieren
       charge_intensity => $n_intensity ? ($charge_intensity_sum / $n_intensity) : 0,
+      phases_ratio     => $n_phases    ? ($phases_sum           / (3 * $n_phases)) : 0, # Phasenniveau 0.33 .. 1
   );
 
   for my $mode (@modes) {                                                               # BEV Mode Punkte in Ergebnis einfügen
@@ -31256,7 +31272,7 @@ return $rethash;
 #
 #  Return: (\@active, \@load_raw, \@n_active, \@soc_deficit_norm,
 #           \@energy_remaining, \@charge_intensity,
-#           \@prio_frac, \@auto_frac, \@other_frac)
+#           \@prio_frac, \@auto_frac, \@other_frac, \@phases_ratio)
 ######################################################################################
 sub _aiFannBevHistArray {
   my $paref   = shift;
@@ -31267,10 +31283,10 @@ sub _aiFannBevHistArray {
   my $fanntyp = $paref->{fanntyp};
 
   my (@active, @load_raw, @n_active, @soc_deficit_norm, @energy_remaining, @charge_intensity);
-  my (@prio_frac, @auto_frac, @other_frac);
+  my (@prio_frac, @auto_frac, @other_frac, @phases_ratio);
 
   return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
-          \@prio_frac, \@auto_frac, \@other_frac)
+          \@prio_frac, \@auto_frac, \@other_frac, \@phases_ratio)
       unless exists $data{$name}{pvhist};
 
   # --- Cache-Objekt initialisieren ---
@@ -31339,10 +31355,10 @@ sub _aiFannBevHistArray {
   # --- Ergebnis cachen: eigene Kopien ablegen, damit spätere push-Operationen des Aufrufers den Cache nicht verändern ---
   LRU_insert ($name, $cache, $key, [ map { [ @$_ ] } (\@active, \@load_raw, \@n_active, \@soc_deficit_norm,
                                                        \@energy_remaining, \@charge_intensity,
-                                                       \@prio_frac, \@auto_frac, \@other_frac) ]);
+                                                       \@prio_frac, \@auto_frac, \@other_frac, \@phases_ratio) ]);
 
 return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
-        \@prio_frac, \@auto_frac, \@other_frac);
+        \@prio_frac, \@auto_frac, \@other_frac, \@phases_ratio);
 }
 
 ######################################################################################
