@@ -14,8 +14,9 @@
 #  (Index kann bis max. 99999 laufen)
 #  Zeilenumbruch mit <br>
 #  Link einfügen: <html><a href='xxx' target='_blank'>Beitrag</a></html>
+#  Farbigen Text in Fettschrift: <span style="color:red;font-weight:bold;">Battery_OptimumTargetSoC_XX</span>
 #
 ################################################################################################################################
 1|SV|1
-1|DE|In Kürze (der Termin steht noch nicht fest) wird die Version v2.10.11 ausgeliefert. Mit dieser Version wird das Reading <span style="color:red;font-weight:bold;">Battery_OptimumTargetSoC_XX</span> entfernt. Ersatz für dafür ist das Reading Battery_OptimumBaseSoC_XX, welches schon länger parallel erstellt wird. Denkt bitte daran, euren eigenen Code auf das Reading Battery_OptimumBaseSoC_XX vor dem Update umzustellen.
-1|EN|Version v2.10.11 will be released shortly (the exact date has not yet been set). With this version, the Reading <span style="color:red;font-weight:bold;">Battery_OptimumTargetSoC_XX</span> will be removed. It will be replaced by the Reading Battery_OptimumBaseSoC_XX, which has been developed in parallel for some time now. Please remember to update your own code to use the Battery_OptimumBaseSoC_XX reading before the update.
+1|DE|In Kürze (der Termin steht noch nicht fest) wird die Version v2.10.11 ausgeliefert. Mit dieser Version wird das Reading <span style="color:red;">Battery_OptimumTargetSoC_XX</span> entfernt. Ersatz für dafür ist das Reading Battery_OptimumBaseSoC_XX, welches schon länger parallel erstellt wird. Denkt bitte daran, euren eigenen Code auf das Reading Battery_OptimumBaseSoC_XX vor dem Update umzustellen.
+1|EN|Version v2.10.11 will be released shortly (the exact date has not yet been set). With this version, the Reading <span style="color:red;">Battery_OptimumTargetSoC_XX</span> will be removed. It will be replaced by the Reading Battery_OptimumBaseSoC_XX, which has been developed in parallel for some time now. Please remember to update your own code to use the Battery_OptimumBaseSoC_XX reading before the update.
