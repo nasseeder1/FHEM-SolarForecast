@@ -7,7 +7,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.10.11]
-03.11.2026 Rev. xxxxx
+04.11.2026 Rev. xxxxx
 
 - **Neu:**
   * **Eigener Regenmengenmesser**: Im Attribut `setupEnvironment` kann mit dem neuen Schlüssel `rainAmount=<Device>:<Reading>` ein eigener Regenmesser angegeben werden. Das Reading muss die Regenmenge der aktuellen Stunde in mm (l/m²) liefern.

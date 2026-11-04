@@ -73,9 +73,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.11"=> "30.10.2026  Patch Subs _aiFannBevHistArray, _aiFannCycleConsumerHistArray, _aiFannHpOpmodeHistArray, getPvHistTargetArray, timestringsFromOffset ".
-              "feature: setupEnvironment - neuer Schlüssel rainAmount (eigener Regenmengenmesser überschreibt rr1c der aktuellen Stunde), headerShowEnv=rainAmount, ".
-              "__parseAttrEnvironment: Schlüssel-Parser ohne Restwerte aus Vorgängeraufrufen ",
+  "2.10.11"=> "04.10.2026  Hinweis: nur noch Fortschreibung der Version, Tracking der Änderungen in Changelog.md ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
