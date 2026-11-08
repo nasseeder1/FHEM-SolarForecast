@@ -6,6 +6,12 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 xx.xx.xxxx Rev. xxxxx
 
 
+## [v2.10.12]
+08.11.2026 Rev. xxxxx
+
+
+
+
 ## [v2.10.11]
 04.11.2026 Rev. xxxxx
 
