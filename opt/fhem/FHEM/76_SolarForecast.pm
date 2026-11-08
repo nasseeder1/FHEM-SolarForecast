@@ -73,7 +73,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.11"=> "04.10.2026  Hinweis: nur noch Fortschreibung der Version, Tracking der Änderungen in Changelog.md ",
+  "2.10.11"=> "08.11.2026  Hinweis: nur noch Fortschreibung der Version, Tracking der Änderungen in Changelog.md ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -40332,6 +40332,9 @@ sub LRU_debug {
 return;
 }
 
+###########################################################################
+#                   Mini-Cache Verwaltungsroutinen
+###########################################################################
 # --- Mini-Cache Wert lesen (undef = Miss; gespeicherte Werte sind nie undef)
 sub MCache_get {
   my ($cache, $stats, $key) = @_;
