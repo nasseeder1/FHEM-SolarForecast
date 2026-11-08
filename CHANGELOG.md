@@ -18,6 +18,7 @@ xx.xx.xxxx Rev. xxxxx
     'LRU_purge_stale').
 
 - **Änderung:**
+  * Reading **Battery_OptimumTargetSoC_XX** entfernt
   * Speicher: Serien, die nur aus Nullen bestehen (z. B. BEV- oder Wärmepumpen-Historie
     bei Anlagen ohne entsprechenden Verbraucher), werden im Cache nur noch als Länge
     abgelegt und beim Lesen wieder zu einem Array expandiert ('_aiPackSeries',
@@ -32,7 +33,7 @@ xx.xx.xxxx Rev. xxxxx
 - **Diagnose**
   * Neue Zähler 'CNT_BEVHIST_HIT' und 'CNT_BEVHIST_MISS' in '$hash->{HELPER}' für die
     Aufrufe von '_aiFannBevHistArray'.
-  * Neue Hilfsfunktion '_logRSS': Protokollierung des Prozessspeichers (VmRSS) zu Beginn
+  * Neue Hilfsfunktion '__logDailyTask': Protokollierung des Prozessspeichers (VmRSS) zu Beginn
     und Ende der täglichen Sonderaufgaben (Tasks 2 bis 7), Verbose 3.
 
 

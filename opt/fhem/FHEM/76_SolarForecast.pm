@@ -12732,7 +12732,7 @@ sub centralTask {
 
   ### nicht mehr benötigte Daten verarbeiten - Bereich kann später wieder raus !!
   ########################################################################################################################
-  #my $gbw = AttrVal ($name, 'graphicBeamWidth', undef);                 # 27.04.
+  #my $gbw = AttrVal ($name, 'graphicBeamWidth', undef);               
   #my $gco = AttrVal ($name, 'graphicControl', '');
 
   #if (defined $gbw) {
@@ -12742,8 +12742,10 @@ sub centralTask {
   #}
 
   if (!CurrentVal($name, 'TCF_cleanup_done', 0)) {
-      readingsDelete ($hash, 'Tomorrow_ConsumptionForecast');               # 07.06.
-      $data{$name}{current}{TCF_cleanup_done} = 1;                          # läuft nur einmal pro Session
+      
+      readingsDelete($hash, 'Battery_OptimumTargetSoC_'.$_) for qw(01 02 03);       # 08.11.
+      
+      $data{$name}{current}{TCF_cleanup_done} = 1;                                  # läuft nur einmal pro Session
   }
 
   if (!CurrentVal($name, 'pvh_00_cleanup_done', 0)) {             # 09.07.
@@ -12753,19 +12755,6 @@ sub centralTask {
           delete $data{$name}{circular}{'00'};
       }
     $data{$name}{current}{pvh_00_cleanup_done} = 1;               # läuft nur einmal pro Session
-  }
-
-  if (isHeatPumpUsed($name) && !CurrentVal($name, 'airaw_hp_cleanup_done', 0)) {             # 23.06.
-    my @hpStates = split /\|/, HPOPMODES;
-    for my $idx (keys %{$data{$name}{aidectree}{airaw}}) {
-        for my $s (@hpStates) {
-            for my $ci (1..MAXCONSUMER) {
-                my $c = sprintf "%02d", $ci;
-                delete $data{$name}{aidectree}{airaw}{$idx}{"csm${c}_${s}_minutes"};
-            }
-        }
-    }
-    $data{$name}{current}{airaw_hp_cleanup_done} = 1;               # läuft nur einmal pro Session
   }
 
 ##########################################################################################################################
@@ -15907,12 +15896,7 @@ sub _batSocTarget {
           ## pvHistory/Readings schreiben
           #################################
           writeToHistory ( { paref => $paref, key => 'batsetsoc'.$bn, val => $lowSoc, day => $day, hour => 99 } );
-          
-          ### nicht mehr benötigte Daten verarbeiten - Bereich kann später wieder raus !!
-          ########################################################################################################################          
-          storeReading   ($name, 'Battery_OptimumTargetSoC_'.$bn, $lowSoc.' %');
-          ########################################################################################################################
-          
+                    
           storeReading   ($name, 'Battery_OptimumBaseSoC_'.$bn, $lowSoc.' %');
           storeReading   ($name, 'Battery_ChargeRequest_'.$bn, 0);
 
@@ -16076,14 +16060,9 @@ sub _batSocTarget {
       ## pvHistory/Readings schreiben
       #################################
       writeToHistory ( { paref => $paref, key => 'batsetsoc'.$bn, val => $target, day => $day, hour => 99 } );
-      
-      ### nicht mehr benötigte Daten verarbeiten - Bereich kann später wieder raus !!
-      ########################################################################################################################                
-      storeReading   ($name, 'Battery_OptimumTargetSoC_'.$bn, $target.' %');
-      ########################################################################################################################
-      
-      storeReading   ($name, 'Battery_OptimumBaseSoC_'.$bn, $target.' %');
-      storeReading   ($name, 'Battery_ChargeRequest_'.$bn,    $chargereq);
+
+      storeReading ($name, 'Battery_OptimumBaseSoC_'.$bn, $target.' %');
+      storeReading ($name, 'Battery_ChargeRequest_'.$bn,    $chargereq);
   }
 
 return;
