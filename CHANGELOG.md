@@ -1,4 +1,4 @@
-# Changelog 76_SolarForecast
+# Änderunglog 76_SolarForecast
 
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
@@ -6,24 +6,48 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 xx.xx.xxxx Rev. xxxxx
 
 
-## [v2.10.12]
+## [v2.11.0]
 08.11.2026 Rev. xxxxx
 
+- **Fix:**
+  * Speicher: Die LRU-Caches der History-Arrays ('BEVHISTARR', 'CYCLECSMHISTARR',
+    'HPOPMODEHISTARR', 'PVHISTARR') behielten pro Stunde einen neuen Eintrag und
+    hielten dadurch bis zu 16 Stundenversionen vor, von denen nur die aktuelle noch
+    gelesen wird. Veraltete Stunden-Einträge derselben Serie werden jetzt beim
+    Anlegen des neuen Eintrags entfernt (neue Funktionen 'LRU_delete' und
+    'LRU_purge_stale').
 
+- **Änderung:**
+  * Speicher: Serien, die nur aus Nullen bestehen (z. B. BEV- oder Wärmepumpen-Historie
+    bei Anlagen ohne entsprechenden Verbraucher), werden im Cache nur noch als Länge
+    abgelegt und beim Lesen wieder zu einem Array expandiert ('_aiPackSeries',
+    '_aiUnpackSeries'). Der Aufrufer erhält weiterhin eine eigene Kopie.
+  * Speicher: Die Größe des 'TS_OFFSET_Cache' wurde von 4000 auf 1000 Einträge
+    reduziert. Der Cache legte pro Sekunde einen neuen Eintrag an, der praktisch nur
+    innerhalb derselben Sekunde wiederverwendet wird.
+  * Performance: Die Debug-Prüfung in 'LRU_get', 'LRU_insert' und 'LRU_evict_tail'
+    verwendet 'index()' statt eines bei jedem Zugriff neu kompilierten regulären
+    Ausdrucks.
+
+- **Diagnose**
+  * Neue Zähler 'CNT_BEVHIST_HIT' und 'CNT_BEVHIST_MISS' in '$hash->{HELPER}' für die
+    Aufrufe von '_aiFannBevHistArray'.
+  * Neue Hilfsfunktion '_logRSS': Protokollierung des Prozessspeichers (VmRSS) zu Beginn
+    und Ende der täglichen Sonderaufgaben (Tasks 2 bis 7), Verbose 3.
 
 
 ## [v2.10.11]
 04.11.2026 Rev. xxxxx
 
 - **Neu:**
-  * **Eigener Regenmengenmesser**: Im Attribut `setupEnvironment` kann mit dem neuen Schlüssel `rainAmount=<Device>:<Reading>` ein eigener Regenmesser angegeben werden. Das Reading muss die Regenmenge der aktuellen Stunde in mm (l/m²) liefern.
-    - Der Messwert überschreibt für die aktuelle Stunde (NextHour00) den Niederschlagswert `rr1c` der Wetter-API. Er wird damit auch in `nexthours`, `circular` und `pvHistory` übernommen, und damit auch in den AI-Rohdaten.
+  * **Eigener Regenmengenmesser**: Im Attribut 'setupEnvironment' kann mit dem neuen Schlüssel 'rainAmount=<Device>:<Reading>' ein eigener Regenmesser angegeben werden. Das Reading muss die Regenmenge der aktuellen Stunde in mm (l/m²) liefern.
+    - Der Messwert überschreibt für die aktuelle Stunde (NextHour00) den Niederschlagswert 'rr1c' der Wetter-API. Er wird damit auch in 'nexthours', 'circular' und 'pvHistory' übernommen, und damit auch in den AI-Rohdaten.
     - Ist das Device oder Reading nicht vorhanden, nicht numerisch oder negativ, bleibt der API-Wert erhalten.
-  * **Header-Anzeige**: `rainAmount` ist als Wert in `graphicControl` → `headerShowEnv` auswählbar. 
+  * **Header-Anzeige**: 'rainAmount' ist als Wert in 'graphicControl' → 'headerShowEnv' auswählbar. 
       Angezeigt wird die Regenmenge der aktuellen Stunde in mm, mit dem Messwert oder ohne eigenen Messer mit dem API-Wert. 
-	  Das Symbol wechselt nach Menge zwischen `rain_light` (< 2,5 mm), `rain` (2,5 bis < 7,6 mm) und `rain_heavy` (≥ 7,6 mm). 
+	  Das Symbol wechselt nach Menge zwischen 'rain_light' (< 2,5 mm), 'rain' (2,5 bis < 7,6 mm) und 'rain_heavy' (≥ 7,6 mm). 
 	  Bei 0 mm wird das Symbol grau dargestellt.
-    - Commandref (DE/EN) für `setupEnvironment` und `headerShowEnv` ergänzt.
+    - Commandref (DE/EN) für 'setupEnvironment' und 'headerShowEnv' ergänzt.
   * Patch Subs _aiFannBevConsumerAggregate, _aiFannBevHistArray, _aiFannBuildLagFeatures, aiFannConDataLoad, aiFannConInfer, 
     _aiFannFeatureBuilder, FEATURE_BLOCKS
   * **KI Verbrauchsprognose**: BEV Phasenanzahl (bevcsmPhasesXX, Consumer-Schlüssel phases) als Lag1-Feature bev_phases_lag1 
@@ -39,7 +63,7 @@ xx.xx.xxxx Rev. xxxxx
   * getPvHistTargetArray: im Cache-Miss-Fall werden nun ebenfalls Kopien gecacht, sodass der Aufrufer nie dieselben Arrays wie der Cache erhält (konsistent zum Cache-Hit-Pfad).
   * timestringsFromOffset: Cache-Hit und Cache-Insert verwenden eine Kopie des Hashes, damit Änderungen des Aufrufers den Cache nicht verändern können.
 
-- **Change:**
+- **Änderung:**
   * Parser __parseAttrEnvironment gehärtet
      
 
@@ -75,7 +99,7 @@ xx.xx.xxxx Rev. xxxxx
 ## [v2.10.7]
 10.10.2026 Rev. 31760
 
-- **Change:**
+- **Änderung:**
   * _aiFannDriftHistSlice: Zeitreihe für die Drift-Analyse direkt aus pvHistory aufgebaut, nur nutzbare Slots (Ist- und AI-Wert vorhanden) werden belegt und gezählt
   * Driftanalyse (aiFannDetectDrift): Ersatz der Quelle airaw durch Werte aus pvHistory (_aiFannDriftHistSlice) -> Verringerung RAM Footprint
   * CachedHistoryVal: Zeitkontext in timestringsFromOffset auf die Minute gerundet, damit pro Minute statt pro Sekunde nur ein 
@@ -91,7 +115,7 @@ xx.xx.xxxx Rev. xxxxx
   * sub mallocTrim -> Rückgabe aller freigegebenen Arenen
   * Einbindung mallocTrim in centralTask Nachtverarbeitung Task 4
 
-- **Change:**
+- **Änderung:**
   * __delObsoleteAPIData: Speicheroptimierung der Funktion
   * Nachtverarbeitung: aiDelRawData aus Task 6 nach Task 4 verschoben
   * Wrapper AIF_modelRun gehärtet und Fehlerausgabe in _aiFannPredict verbessert (Forum: https://forum.fhem.de/index.php?msg=1369865)
@@ -113,11 +137,11 @@ xx.xx.xxxx Rev. xxxxx
     Neue Validierungsmethode, die das FANN-Modell leak-frei prüft.
     Verwendet get_num_input() statt MSE(), da diese XS-Methode keine Exceptions wirft und keine temporären Referenzen erzeugt.
     
-  * Absturzgefahr (Segfault) bei Verwendung von gebrochenen `AI::FANN`-C-Pointern aus wiederhergestellten Storable-Cache-Dateien behoben.
+  * Absturzgefahr (Segfault) bei Verwendung von gebrochenen 'AI::FANN'-C-Pointern aus wiederhergestellten Storable-Cache-Dateien behoben.
   * Falsch-positive I/O-Fehlermeldungen beim Auslesen gültiger Cache-Dateien mit Null-Werten behoben.
   * _calcDataEveryFullHour: durch Array-Kopie bedingtes Speicherleck beseitigt
     
-- **Change:**
+- **Änderung:**
   * Anpassung bezüglich OpenMeteo API Änderung für OpenMeteoDWDEnsembleAPI
   * Der Befehl "get ... rooftopData" kehrt bei Erfolg anstatt bisher undefiniert mit der Meldung 
     "A data retrieval request for the selected radiation and/or weather API has been triggered" (zweisprachig EN/DE)
@@ -125,19 +149,19 @@ xx.xx.xxxx Rev. xxxxx
   * __aiAddRawData: writeCacheFile in den BlockingCall Wrapper writeCacheFileBlocking eingebettet -> Vermeidung Speicherleck
   * Der Befehl "get ... data" meldet in EN oder DE zurück
   
-  * **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über `Storable` deutlich erhöht.
-    - Implementierung von `STORABLE_freeze` und `STORABLE_thaw` Hooks, um ungültige C-Pointer/Memory-Leaks nach Demaskierung (Deserialisierung) zu verhindern und FHEM vor Segmentation Faults zu schützen.
-    - Überarbeitung der Methode `AIF_isModelValid` zur besseren Unterscheidung zwischen Objekt- und Klassenaufrufen.
+  * **AiFannModelWrapper**: Speichersicherheit bei der Serialisierung über 'Storable' deutlich erhöht.
+    - Implementierung von 'STORABLE_freeze' und 'STORABLE_thaw' Hooks, um ungültige C-Pointer/Memory-Leaks nach Demaskierung (Deserialisierung) zu verhindern und FHEM vor Segmentation Faults zu schützen.
+    - Überarbeitung der Methode 'AIF_isModelValid' zur besseren Unterscheidung zwischen Objekt- und Klassenaufrufen.
   
   * **fileStore / fileRetrieve**: Fehlerbehandlung und Evaluierung geglättet.
-    - Umstellung auf das `eval { ... 1; } or do { ... }` Pattern, damit skalare Falsy-Werte (`0`, `""`) nicht fälschlicherweise als I/O-Fehler interpretiert werden.
-    - Expliziter Guard-Check bei Nichtexistenz von Dateien in `fileRetrieve`.
+    - Umstellung auf das 'eval { ... 1; } or do { ... }' Pattern, damit skalare Falsy-Werte ('0', '""') nicht fälschlicherweise als I/O-Fehler interpretiert werden.
+    - Expliziter Guard-Check bei Nichtexistenz von Dateien in 'fileRetrieve'.
   
-  * **readCacheFile**: Ressourcenverwaltung für `AI::FANN`-Modelle verbessert.
-    - Vor dem Laden neuer Cache-Daten werden alte XS-Objekte nun explizit via `AIF_modelDestroy()` freigegeben.
+  * **readCacheFile**: Ressourcenverwaltung für 'AI::FANN'-Modelle verbessert.
+    - Vor dem Laden neuer Cache-Daten werden alte XS-Objekte nun explizit via 'AIF_modelDestroy()' freigegeben.
   
   * **Serialize / Deserialize**:
-    - `Deserialize` um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet.
+    - 'Deserialize' um Guard-Clauses gegen leere/unverarbeitbare Eingaben ergänzt sowie Fehler-Logging robuster gestaltet.
   
   * removeMinMaxArray, limitArray, _addCon2CircArray, __aiAddRawData, aiFannDetectDrift, medianArray, _calcCaQcomplex, _calcDataEveryFullHour, _aiFannSlopeBias, getPvHistTargetArray, LRU_reset, LRU_evict_tail, __calcNewFactor_migrated, __readConFromCircular refaktoriert
   
@@ -145,7 +169,7 @@ xx.xx.xxxx Rev. xxxxx
 ## [v2.10.4]
 20.09.2026 Rev. 31670
 
-- Fix: 
+- **Fix:**
   * AI::FANN Speicherleck durch globales DESTROY-Patching behoben.
     writeCacheFile neutralisierte AI::FANN::DESTROY permanent und prozessweit,
     so dass kein AI::FANN-Objekt (Training, Reload, Inferenz) nach dem ersten
@@ -154,20 +178,20 @@ xx.xx.xxxx Rev. xxxxx
     XS-Objekt kapselt und dessen Freigabe sauber über Perls Referenzzählung
     steuert – ohne globale Seiteneffekte.
 
-- Change:
+- **Änderung:**
   * _batSocTarget: Debuglog für Step6 korrigiert
 
 
 ## [v2.10.3]
 19.09.2026 Rev. 31664
 
-- Change:
+- **Änderung:**
   * plantControl ->consForecastBase: Das Verfahren zur Anwendung des Basiswerts ist jetzt über den optionalen Token 
     'Mode->Base' (Default) bzw. 'Mode->AddOn' steuerbar. Base hebt Prognosen unterhalb des Schwellwerts an (bisheriges Verhalten). 
 	AddOn addiert den Basiswert als festen Aufschlag auf die berechnete Prognose - unabhängig von deren Höhe. Rückwärtskompatibel.
   * Online-Hilfe für Schlüssel consForecastBase präzisiert
 
-- Fix: 
+- **Fix:**
   * Flowgrafik: 
     Korrektur der Darstellung bei Netzladung der Batterie über den Hausknoten. 
     Ein negativer Energiefluss zwischen Inverterknoten und Hausknoten wird nun korrekt als direkter Fluss Hausknoten → Batterie dargestellt. 
@@ -199,7 +223,7 @@ xx.xx.xxxx Rev. xxxxx
     Beide obiges Fixes zusammen aktivieren das Percentile Clipping für BEV-bedingte Heavy-Tail-
     Verteilungen im Trainingstarget korrekt
 	 
-- Add: 
+- **Neu:**
   * Kreuzvalidierung stepSoC * careCycle in ctrlBatSocManagementXX
     Das Produkt aus stepSoC und careCycle muss 100 ergeben (oder stepSoC=0
     zur Deaktivierung des SoC-Managements). Ungültige Kombinationen werden
@@ -234,14 +258,14 @@ xx.xx.xxxx Rev. xxxxx
 - writeCacheFile: singleUpdateState entfernt (Forum: https://forum.fhem.de/index.php?msg=1368075)
 - weitere singleUpdateState in Getter entfernt
 
-- <b>Fix:</b>
+- **Fix:**
   * isGhoValFormValid geändert: die Prüfung erfolgt nun zuverlässig bei Eingabe des graphicHeaderOwnspecValForm-Attributs 
 
 
 ## [v2.10.0]
 16.08.2026 Rev. 31573
 
-- <b>Neu:</b>
+- **Neu:**
   * Ausgabe des ausgeführten set reset Befehls zum Datenspeicher Management vor Ausgabe der Ergebnisse im Log
   * neuer Debug Modus aiData_long
   * List pvCircular, pvHistory um BEV accum_csmXX_<mode>_wseconds bzw. BEV csmXX_<mode>_points erweitert
@@ -251,13 +275,13 @@ xx.xx.xxxx Rev. xxxxx
   * neuer Get-Befehl 'stepTimes' zur detailliierten Anzeige von Phasenzeiten
   * Sun Position Caching integriert
   
-- <b>Geändert:</b>
+- **Änderung:**
   * BEV Batteriedaten werden auch bei nicht aktivierten BEV-Consumer gespeichert
   * Verringerung der Log Frequenz bei Debug aiData und aiData_long
   * ACHTUNG: Funktionsänderung storeReading ('<Readingname>', '<Wert>') -> storeReading ($name, '<Readingname>', '<Wert>')
   * weitere kleinere Patches
 
-- <b>Fix:</b>
+- **Fix:**
   * Model VictronKiAPI: fehlender success-Status in Victron VRM API Forecast Response wenn vorher die Response fehlerhaft war
 
 - <b>Intern:</b> 
@@ -339,8 +363,8 @@ xx.xx.xxxx Rev. xxxxx
 
 ### Hinweise zur Nutzung
 
-- Neue Einträge immer oben unter `[Unreleased]` ergänzen, während du entwickelst
+- Neue Einträge immer oben unter '[Unreleased]' ergänzen, während du entwickelst
 - Kurze Stichpunkte reichen – Zweck ist die eigene Erinnerung, keine formelle Doku
-- Beim Release: Abschnitt umbenennen zu `[vX.Y.Z] - TT.MM.JJJJ`, Text 1:1 in die
-  Forgejo-Release-Beschreibung kopieren, danach neuen leeren `[Unreleased]`-Block
+- Beim Release: Abschnitt umbenennen zu '[vX.Y.Z] - TT.MM.JJJJ', Text 1:1 in die
+  Forgejo-Release-Beschreibung kopieren, danach neuen leeren '[Unreleased]'-Block
   oben ergänzen

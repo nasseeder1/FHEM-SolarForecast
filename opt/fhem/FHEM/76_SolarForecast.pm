@@ -73,7 +73,7 @@ use MIME::Base64;
 
 # Versions History intern
 my %vNotesIntern = (
-  "2.10.11"=> "08.11.2026  Hinweis: nur noch Fortschreibung der Version, Tracking der Änderungen in Changelog.md ",
+  "2.11.0" => "08.11.2026  Hinweis: nur noch Fortschreibung der Version, Tracking der Änderungen in Changelog.md ",
   "0.1.0"  => "09.12.2020  initiale Version "
 );
 
@@ -31328,7 +31328,7 @@ sub _aiFannBevHistArray {
 
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return map { [ @$_ ] } @$cached;                                                  # Kopien zurückgeben, Cache bleibt unverändert
+      return map { aiUnpackSeries ($_) } @$cached;                                      # frische Kopien bzw. aus Nullserien expandierte Arrays
   }
 
   # --- Kein Cache-Hit → Originalberechnung ---
@@ -31378,9 +31378,10 @@ sub _aiFannBevHistArray {
   @phases_ratio     = @phases_ratio    [-$min .. -1];
 
   # --- Ergebnis cachen: eigene Kopien ablegen, damit spätere push-Operationen des Aufrufers den Cache nicht verändern ---
-  LRU_insert ($name, $cache, $key, [ map { [ @$_ ] } (\@active, \@load_raw, \@n_active, \@soc_deficit_norm,
-                                                       \@energy_remaining, \@charge_intensity,
-                                                       \@prio_frac, \@auto_frac, \@other_frac, \@phases_ratio) ]);
+  LRU_purge_stale ($name, $cache, $key);                            # veraltete Einträge löschen
+  LRU_insert      ($name, $cache, $key, [ map { aiPackSeries ($_) } (\@active, \@load_raw, \@n_active, \@soc_deficit_norm,
+                                                                     \@energy_remaining, \@charge_intensity,
+                                                                     \@prio_frac, \@auto_frac, \@other_frac, \@phases_ratio) ]);
 
 return (\@active, \@load_raw, \@n_active, \@soc_deficit_norm, \@energy_remaining, \@charge_intensity,
         \@prio_frac, \@auto_frac, \@other_frac, \@phases_ratio);
@@ -31428,7 +31429,7 @@ sub _aiFannCycleConsumerHistArray {
 
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return map { [ @$_ ] } @$cached;                                        # Kopie zurückgeben (\@cycle_csme_raw)
+      return map { aiUnpackSeries ($_) } @$cached;                                  # frische Kopie (\@cycle_csme_raw) bzw. aus Nullserie expandiert 
   }
 
   # --- Kein Cache-Hit → Originalberechnung ---
@@ -31440,10 +31441,10 @@ sub _aiFannCycleConsumerHistArray {
   for my $day (@days_after, @days_upto) {
       for my $hod (sort { $a <=> $b } keys %{ $ph->{$day} }) {
           next if $hod < 1 || $hod > 24;
-          last if ($day == $mday && $hod == $hour + 1);                      # nur abgeschlossene Stunden
+          last if ($day == $mday && $hod == $hour + 1);                             # nur abgeschlossene Stunden
 
           my $rec = $ph->{$day}{$hod};
-          next unless defined $rec->{$fanntyp};                              # identisches Filterkriterium wie getPvHistTargetArray
+          next unless defined $rec->{$fanntyp};                                     # identisches Filterkriterium wie getPvHistTargetArray
           next unless $rec->{$fanntyp} >= 0;
 
           my $cycle_csme = 0;
@@ -31453,13 +31454,13 @@ sub _aiFannCycleConsumerHistArray {
               my $type      = ConsumerVal ($name, $c, 'type', '');
 
               next unless $type;
-              next if $type =~ /heatpump|bev/xs;                            # durch eigene Feature-Blöcke abgedeckt
+              next if $type =~ /heatpump|bev/xs;                                    # durch eigene Feature-Blöcke abgedeckt
 
               my $exconfc = $rec->{"exconfc${c}"} // 0;
-              next if $exconfc;                                             # Energieanteil vom User ausgeschlossen (konsistent zu dest_base-Bereinigung)
+              next if $exconfc;                                                     # Energieanteil vom User ausgeschlossen (konsistent zu dest_base-Bereinigung)
 
               my $val      = $rec->{"csme${c}"} // 0;
-              $cycle_csme += max (0, $val);                                 # Schutz gegen negative Werte
+              $cycle_csme += max (0, $val);                                         # Schutz gegen negative Werte
           }
 
           push @cycle_csme_raw, $cycle_csme;
@@ -31471,8 +31472,9 @@ sub _aiFannCycleConsumerHistArray {
   my $min         = $n < $limit ? $n : $limit;
   @cycle_csme_raw = @cycle_csme_raw[-$min .. -1];
 
-  # --- Ergebnis cachen: eigene Kopie ablegen ---
-  LRU_insert ($name, $cache, $key, [ [ @cycle_csme_raw ] ]);
+  # --- Ergebnis cachen: eigene Kopie ablegen (Nullserien kompakt) ---
+  LRU_purge_stale ($name, $cache, $key);                                            # veraltete Einträge löschen
+  LRU_insert      ($name, $cache, $key, [ aiPackSeries (\@cycle_csme_raw) ]);      
 
 return (\@cycle_csme_raw);
 }
@@ -31515,7 +31517,7 @@ sub _aiFannHpOpmodeHistArray {
 
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return map { [ @$_ ] } @$cached;                                              # Kopien zurückgeben, Cache bleibt unverändert
+      return map { aiUnpackSeries ($_) } @$cached;                                  # frische Kopie bzw. aus Nullserie expandiert
   }
 
   # --- Kein Cache-Hit → Originalberechnung ---
@@ -31560,8 +31562,9 @@ sub _aiFannHpOpmodeHistArray {
   @eco         = @eco        [-$min .. -1];
 
   # --- Ergebnis cachen: eigene Kopien ablegen, damit spätere push-Operationen des Aufrufers den Cache nicht verändern ---
-  LRU_insert ($name, $cache, $key, [ map { [ @$_ ] } (\@heating, \@defrost, \@hotwater, \@cooling,
-                                                       \@pool, \@poolheating, \@eco, \@active) ]);
+  LRU_purge_stale ($name, $cache, $key);                                            # veraltete Einträge löschen
+  LRU_insert      ($name, $cache, $key, [ map { aiPackSeries ($_) } (\@heating, \@defrost, \@hotwater, \@cooling,
+                                                                     \@pool, \@poolheating, \@eco, \@active) ]);
 
 return (\@heating, \@defrost, \@hotwater, \@cooling, \@pool, \@poolheating, \@eco, \@active);
 }
@@ -38608,7 +38611,7 @@ sub getPvHistTargetArray {
 
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
-      return map { [@$_] } @$cached;                                                        # (\@p1, \@p2, \@p3)
+      return map { aiUnpackSeries ($_) } @$cached;                                          # frische Kopie (\@p1, \@p2, \@p3) bzw. aus Nullserie expandiert 
   }
 
   # --- Kein Cache-Hit → Originalberechnung ---
@@ -38686,7 +38689,8 @@ sub getPvHistTargetArray {
   }
 
   # --- Ergebnis cachen: eigene Kopien ablegen, Aufrufer bekommt die Originale ---
-  LRU_insert ($name, $cache, $key, [ map { [ @$_ ] } (\@p1keys, \@p2keys, \@p3keys) ]);
+  LRU_purge_stale ($name, $cache, $key);                                                        # veraltete Einträge löschen
+  LRU_insert      ($name, $cache, $key, [ map { aiPackSeries ($_) } (\@p1keys, \@p2keys, \@p3keys) ]);
 
 return (\@p1keys, \@p2keys, \@p3keys);
 }
@@ -40285,6 +40289,63 @@ sub LRU_reset {
 return;
 }
 
+# --- veraltete Stunden-Keys finden und löschen
+# Key: PREFIX::name::year::mon::mday::hour::<Rest> 
+# BEVHISTARR :: SolCast :: 2026 :: 11 :: 08 :: 11 :: 600
+# PREFIX        Device     Jahr    Monat Tag   Std   Rest (z. B. Limit)
+sub LRU_purge_stale {
+  my ($name, $cache, $keepkey) = @_;
+
+  my @p = split /::/, $keepkey;
+  return if @p < 7;
+
+  my $rest = join '::', @p[6..$#p];
+
+  for my $k (keys %{ $cache->{data} }) {
+      next if $k eq $keepkey;
+
+      my @q = split /::/, $k;
+      next if @q < 7 || $q[0] ne $p[0] || $q[1] ne $p[1];
+      next if join ('::', @q[6..$#q]) ne $rest;
+
+      LRU_delete ($name, $cache, $k);
+  }
+
+return;
+}
+
+# Genau einen Eintrag entfernen.
+# Knoten aus lru herausnehmen und die Nachbarn umhängen. 
+# Hat der Knoten einen Vorgänger, zeigt dessen next jetzt auf den 
+# Nachfolger des gelöschten Knotens. 
+# War er der Head, wird sein Nachfolger neuer Head. 
+# Entsprechend für den Nachfolger: Dessen prev zeigt auf den Vorgänger, 
+# und war der Knoten der Tail, wird sein Vorgänger neuer Tail.
+# Dann -> Wert aus data löschen und den Zähler ${ $cache->{size} } um eins verringern.
+sub LRU_delete {
+  my ($name, $cache, $key) = @_;
+
+  return 0 if !exists $cache->{lru}{$key};
+
+  if (!LRU_sanity_check ($cache)) {
+      LRU_reset ($name, $cache);
+      return 0;
+  }
+
+  my $node = delete $cache->{lru}{$key};
+
+  if (defined $node->{prev}) { $cache->{lru}{$node->{prev}}{next} = $node->{next}; }
+  else                       { ${ $cache->{head} } = $node->{next};                }
+
+  if (defined $node->{next}) { $cache->{lru}{$node->{next}}{prev} = $node->{prev}; }
+  else                       { ${ $cache->{tail} } = $node->{prev};                }
+
+  delete $cache->{data}{$key};
+  ${ $cache->{size} }--;
+
+return 1;
+}
+
 # --- Cache debuggen
 sub LRU_debug {
   my ($name, $cache) = @_;
@@ -40330,6 +40391,24 @@ sub LRU_debug {
   Log3 ($name, 1, "$name DEBUG> $msg");
 
 return;
+}
+
+###########################################################################
+#          Nullserien im Cache kompakt ablegen / auslesen
+###########################################################################
+sub aiPackSeries {                                                      # Cache-Ablage: Nullserie -> nur Länge, sonst echte Kopie
+  my $arr = shift;
+
+  no warnings 'numeric';
+  return scalar @$arr if @$arr && !grep { !defined $_ || $_ != 0 } @$arr;
+
+return [ @$arr ];
+}
+
+sub aiUnpackSeries {                                                    # Rückgabe: immer frische Kopie
+  my $e = shift;
+
+return ref $e ? [ @$e ] : [ (0) x $e ];
 }
 
 ###########################################################################
