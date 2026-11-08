@@ -228,7 +228,7 @@ use constant {
   BGHPATH         => 'https://raw.githubusercontent.com/nasseeder1/FHEM-SolarForecast/refs/heads/main/',    # Basispfad GitHub SolarForecast Files
 
   CACHETIRMS      => 2000,                                                          # max. Size Tilted Irradiance Cache
-  CACHETSOMS      => 4000,                                                          # max. Size TimestringsFromOffset Cache
+  CACHETSOMS      => 700,                                                           # max. Size TimestringsFromOffset Cache
   CACHEPVHMS      => 500,                                                           # max. Size pvHistory Cache
   CACHETSTSMPMS   => 2000,                                                          # max. Size timestringToTimestamp Cache
   CACHESUNPOSMS   => 500,                                                           # max. Size Sonnenposition Cache
@@ -13349,11 +13349,11 @@ sub _specialActivities {
       if (!defined $hash->{HELPER}{T1RUN}) {
           $hash->{HELPER}{T1RUN} = 1;
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 1 started");
+          __logDailyTask ($name, 'Daily special tasks - Task 1 started');
 
           __deleteEveryHourControls      ($paref);                                              # Sperrsignale der Stundenwerte-Steuerung löschen
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 1 finished");
+          __logDailyTask ($name, 'Daily special tasks - Task 1 finished');
       }
   }
   else {
@@ -13366,7 +13366,7 @@ sub _specialActivities {
       if (!defined $hash->{HELPER}{T2RUN}) {
           $hash->{HELPER}{T2RUN} = 1;
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 2 started");
+          __logDailyTask ($name, 'Daily special tasks - Task 2 started');
 
           $date = timestringsFromOffset ($name, $t, -7200)->{date};                             # Vortag (2 h Differenz reichen aus)
           $ts   = $date." 23:59:59";
@@ -13432,7 +13432,8 @@ sub _specialActivities {
           writeCacheFile ($hash, 'plantconfig', $plantcfg.$name);                               # Anlagenkonfiguration sichern
 
           Log3 ($name, 3, "$name - history day >$day< deleted");
-          Log3 ($name, 4, "$name - Daily special tasks - Task 2 finished");
+          
+          __logDailyTask ($name, 'Daily special tasks - Task 2 finished');
       }
   }
   else {
@@ -13445,7 +13446,7 @@ sub _specialActivities {
       if (!defined $hash->{HELPER}{T3RUN}) {
           $hash->{HELPER}{T3RUN} = 1;
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 3 started");
+          __logDailyTask ($name, 'Daily special tasks - Task 3 started');
 
           for my $c (keys %{$data{$name}{consumers}}) {                                         # Planungsdaten regulär löschen
               next if(ConsumerVal ($hash, $c, "plandelete", "regular") ne "regular");
@@ -13454,7 +13455,7 @@ sub _specialActivities {
 
           writeCacheFile ($hash, 'consumers', $csmcache.$name);                                 # Cache File Consumer schreiben
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 3 finished");
+          __logDailyTask ($name, 'Daily special tasks - Task 3 finished');
       }
   }
   else {
@@ -13467,7 +13468,7 @@ sub _specialActivities {
       if (!defined $hash->{HELPER}{T4RUN}) {
           $hash->{HELPER}{T4RUN} = 1;
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 4 started");
+          __logDailyTask ($name, 'Daily special tasks - Task 4 started');
 
           __delObsoleteAPIData ($paref);                                                        # Bereinigung obsoleter Daten im solcastapi Hash
           aiDelRawData         ($paref);                                                        # KI Raw Daten löschen welche die maximale Haltezeit überschritten haben
@@ -13481,7 +13482,7 @@ sub _specialActivities {
           
           mallocTrim ($name);                                                                   # Rückgabe aller freigegebenen Arenen
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 4 finished");
+          __logDailyTask ($name, 'Daily special tasks - Task 4 finished');
       }
   }
   else {
@@ -13494,7 +13495,7 @@ sub _specialActivities {
       if (!defined $hash->{HELPER}{T5RUN}) {
           $hash->{HELPER}{T5RUN} = 1;
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 5 started");
+          __logDailyTask ($name, 'Daily special tasks - Task 5 started');
 
           if (CurrentVal ($name, 'backupFilesKeep', 3)) {
               periodicWriteMemcache ($hash, 'bckp');                                          # Backup Files erstellen und alte Versionen löschen (unterbleibt bei 'backupFilesKeep' == 0)
@@ -13503,7 +13504,7 @@ sub _specialActivities {
           readingsDelete ($hash, 'Error');
           readingsDelete ($hash, 'Errorcode');
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 5 finished");
+          __logDailyTask ($name, 'Daily special tasks - Task 5 finished');
       }
   }
   else {
@@ -13516,11 +13517,11 @@ sub _specialActivities {
       if (!defined $hash->{HELPER}{T6RUN}) {
           $hash->{HELPER}{T6RUN} = 1;
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 6 started");
+          __logDailyTask ($name, 'Daily special tasks - Task 6 started');
 
           aiManageInstance ($paref);                                                            # AI PV-Forecast füllen, trainieren und sichern
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 6 finished");
+          __logDailyTask ($name, 'Daily special tasks - Task 6 finished');
       }
   }
   else {
@@ -13543,13 +13544,13 @@ sub _specialActivities {
           my $ltctrts                  = timestringToTimestamp ($hash, $tfodate.' 00:00:00');                   # ...auf Tag genau
           my $newctrstts               = $ltctrts + ($aiconpd * 86400);
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 7 started");
+          __logDailyTask ($name, 'Daily special tasks - Task 7 started');
 
           $paref->{fanntyp} = $fanntyp;
           aiFannEnterTrain ($paref) if($prepared && $t >= $newctrstts);                                         # NN Consumption Forecast Training starten
           delete $paref->{fanntyp};
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 7 finished");
+          __logDailyTask ($name, 'Daily special tasks - Task 7 finished');
       }
   }
   else {
@@ -13562,16 +13563,34 @@ sub _specialActivities {
       if (!defined $hash->{HELPER}{T8RUN}) {
           $hash->{HELPER}{T8RUN} = 1;
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 7 started");
+          __logDailyTask ($name, 'Daily special tasks - Task 8 started');
 
           __createAdditionalEvents ($paref);                                                            # zusätzliche Events erzeugen - PV Vorhersage bis Ende des kommenden Tages
 
-          Log3 ($name, 4, "$name - Daily special tasks - Task 7 finished");
+          __logDailyTask ($name, 'Daily special tasks - Task 8 finished');
       }
   }
   else {
       delete $hash->{HELPER}{T8RUN};
   }
+
+return;
+}
+
+#############################################################################
+#              Daily Task mit RSS-Protokollierung
+#############################################################################
+sub __logDailyTask {
+  my ($name, $txt) = @_;
+
+  open (my $fh, '<', "/proc/$$/status") or return;
+  my ($rss) = grep { /^VmRSS/ } <$fh>;
+  close $fh;
+
+  $rss       =~ s/\D//g if $rss;
+  my $rssval = ($rss // '?').' kB';
+  
+  Log3 ($name, 3, "$name - $txt (RSS=$rssval)");
 
 return;
 }
@@ -31328,11 +31347,14 @@ sub _aiFannBevHistArray {
 
   # --- Cache-Hit? ---
   if (my $cached = LRU_get ($name, $cache, $key)) {
+      $hash->{HELPER}{CNT_BEVHIST_HIT}++;                                               # Hit-Zähler
       return map { aiUnpackSeries ($_) } @$cached;                                      # frische Kopien bzw. aus Nullserien expandierte Arrays
   }
 
   # --- Kein Cache-Hit → Originalberechnung ---
   # --- identische Tagesreihenfolge wie getPvHistTargetArray ---
+  $hash->{HELPER}{CNT_BEVHIST_MISS}++;                                                  # Miss-Zähler
+  
   my $ph         = $data{$name}{pvhist};
   my @days_after = sort { $a <=> $b } grep { $_ >  $mday } keys %$ph;
   my @days_upto  = sort { $a <=> $b } grep { $_ <= $mday } keys %$ph;
@@ -40042,7 +40064,7 @@ sub LRU_insert {
       LRU_evict_tail ($name, $cache);
   }
 
-  if (getDebug($defs{$name}) =~ /$title/xs) {
+  if (index (getDebug ($defs{$name}), $title) >= 0) {
       Log3 ($name, 1, "$name DEBUG> $title INSERT key: $key, value: $value")
            if(askLogtime($name, "$key:$value", 300));
   }
@@ -40077,7 +40099,7 @@ sub LRU_get {
   if (!exists $cache->{data}{$key}) {                                           # Cache-Miss
       $cache->{stats}{misses}++;
 
-      if (getDebug($defs{$name}) =~ /$title/xs) {
+      if (index (getDebug ($defs{$name}), $title) >= 0) {
           Log3 ($name, 1, "$name DEBUG> $title MISS for key: $key")
                if(askLogtime($name, $key, 300));
       }
@@ -40089,7 +40111,7 @@ sub LRU_get {
 
   my $cached = $cache->{data}{$key};
 
-  if (getDebug($defs{$name}) =~ /$title/xs) {
+  if (index (getDebug ($defs{$name}), $title) >= 0) {
       Log3 ($name, 1, "$name DEBUG> $title HIT for key: $key -> $cached")
            if(askLogtime($name, "$key:$cached", 300));
   }
@@ -40165,7 +40187,7 @@ sub LRU_evict_tail {
 
   return unless $tail;
 
-  if (getDebug($defs{$name}) =~ /$title/xs) {
+  if (index (getDebug ($defs{$name}), $title) >= 0) {
       Log3 ($name, 1, "$name DEBUG> $title FULL -> evicting tail: $tail")
           if(askLogtime($name, $tail, 300));
   }
@@ -40399,8 +40421,10 @@ return;
 sub aiPackSeries {                                                      # Cache-Ablage: Nullserie -> nur Länge, sonst echte Kopie
   my $arr = shift;
 
+  my @probe = @$arr;                                                    # Prüfung auf Kopie, damit die Originale unverändert bleiben
+
   no warnings 'numeric';
-  return scalar @$arr if @$arr && !grep { !defined $_ || $_ != 0 } @$arr;
+  return scalar @probe if @probe && !grep { !defined $_ || $_ != 0 } @probe;
 
 return [ @$arr ];
 }

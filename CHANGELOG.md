@@ -22,7 +22,7 @@ xx.xx.xxxx Rev. xxxxx
     bei Anlagen ohne entsprechenden Verbraucher), werden im Cache nur noch als Länge
     abgelegt und beim Lesen wieder zu einem Array expandiert ('_aiPackSeries',
     '_aiUnpackSeries'). Der Aufrufer erhält weiterhin eine eigene Kopie.
-  * Speicher: Die Größe des 'TS_OFFSET_Cache' wurde von 4000 auf 1000 Einträge
+  * Speicher: Die Größe des 'TS_OFFSET_Cache' wurde von 4000 auf 700 Einträge
     reduziert. Der Cache legte pro Sekunde einen neuen Eintrag an, der praktisch nur
     innerhalb derselben Sekunde wiederverwendet wird.
   * Performance: Die Debug-Prüfung in 'LRU_get', 'LRU_insert' und 'LRU_evict_tail'
