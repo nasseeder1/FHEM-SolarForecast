@@ -357,7 +357,7 @@ use constant {
 
 ## Storage und Caches
 ######################
-my @widgetreadings = ();                                                            # Array der Hilfsreadings als Attributspeicher
+my %widgetreadings;                                                                 # Merker versteckter Hilfsreadings als Attributspeicher
 my %Multi_Cache;                                                                    # Multifunktions Mini Cache
 my %MCache_Stats;                                                                   # Statistik für Mini Caches
 
@@ -11632,6 +11632,7 @@ sub Delete {
   }
 
   delete $data{$name};
+  delete $widgetreadings{$name};
 
 return;
 }
@@ -13372,14 +13373,9 @@ sub _specialActivities {
           deleteReadingspec ($hash, '(Today_Hour(.*_Grid.*|.*_PV.*|.*_PPreal.*|.*_Bat.*)|powerTrigger_.*|Today_MaxPVforecast.*)');
           readingsDelete    ($hash, 'Today_PVdeviation');
           readingsDelete    ($hash, 'Today_PVreal');
-
-          if (scalar(@widgetreadings)) {                                                          # vermeide Schleife falls FHEMWEB geöfffnet
-              my @acopy       = @widgetreadings;
-              @widgetreadings = ();
-
-              for my $wdr (@acopy) {                                                              # Array der Hilfsreadings (Attributspeicher) löschen
-                  readingsDelete ($hash, $wdr);
-              }
+          
+          if (my $wr = delete $widgetreadings{$name}) {                                           # Hilfsreadings (Attributspeicher) dieses Devices löschen
+              readingsDelete ($hash, $_) for keys %$wr;
           }
 
           my ($rapi, $wapi) = getStatusApiName ($hash);
@@ -23624,9 +23620,9 @@ sub ___ownSpecGetFWwidget {
               $reading = $elm;
           }
       }
-
+      
       if ($reading && $reading =~ /^\./xs) {                                             # verstecktes Reading für spätere Löschung merken
-          push @widgetreadings, $reading;
+          $widgetreadings{$name}{$reading} = 1;                                          # Hash dedupliziert, kein unbegrenztes Wachstum
           readingsSingleUpdate ($defs{$name}, $reading, $current, 0);
       }
 

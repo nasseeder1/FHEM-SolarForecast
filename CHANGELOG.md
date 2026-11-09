@@ -7,7 +7,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.11.0]
-08.11.2026 Rev. xxxxx
+09.11.2026 Rev. xxxxx
 
 - **Fix:**
   * Speicher: Die LRU-Caches der History-Arrays ('BEVHISTARR', 'CYCLECSMHISTARR',
@@ -16,6 +16,10 @@ xx.xx.xxxx Rev. xxxxx
     gelesen wird. Veraltete Stunden-Einträge derselben Serie werden jetzt beim
     Anlegen des neuen Eintrags entfernt (neue Funktionen 'LRU_delete' und
     'LRU_purge_stale').
+  * Speicherleck: '___ownSpecGetFWwidget' fügte versteckte Readings bei jedem Aufruf erneut
+    in das globale Array '@widgetreadings' ein. Das Array wuchs dadurch unbegrenzt
+    und verursachte beim Tageswechsel (Task 2) einen RSS-Sprung. Die Merker werden jetzt als Hash je Device
+    ('%widgetreadings') geführt, Duplikate entfallen und jedes Device löscht nur seine eigenen Hilfsreadings.
 
 - **Änderung:**
   * Reading **Battery_OptimumTargetSoC_XX** entfernt
