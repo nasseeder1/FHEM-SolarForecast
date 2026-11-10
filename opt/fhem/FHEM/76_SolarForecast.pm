@@ -13563,19 +13563,24 @@ return;
 }
 
 #############################################################################
-#              Daily Task mit RSS-Protokollierung
+#          Daily Task mit RSS-Protokollierung auf Linux
 #############################################################################
 sub __logDailyTask {
   my ($name, $txt) = @_;
 
-  open (my $fh, '<', "/proc/$$/status") or return;
-  my ($rss) = grep { /^VmRSS/ } <$fh>;
-  close $fh;
+  my $msg = "$name - $txt";
 
-  $rss       =~ s/\D//g if $rss;
-  my $rssval = ($rss // '?').' kB';
-  
-  Log3 ($name, 3, "$name - $txt (RSS=$rssval)");
+  if ($^O eq 'linux' && open (my $fh, '<', "/proc/$$/status")) {
+      my ($rss) = grep { /^VmRSS/ } <$fh>;
+      close $fh;
+
+      if (defined $rss) {
+          $rss =~ s/\D//g;
+          $msg .= " (RSS=$rss kB)";
+      }
+  }
+
+  Log3 ($name, 4, $msg);
 
 return;
 }

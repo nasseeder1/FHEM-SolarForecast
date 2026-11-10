@@ -38,7 +38,7 @@ xx.xx.xxxx Rev. xxxxx
   * Neue Zähler 'CNT_BEVHIST_HIT' und 'CNT_BEVHIST_MISS' in '$hash->{HELPER}' für die
     Aufrufe von '_aiFannBevHistArray'.
   * Neue Hilfsfunktion '__logDailyTask': Protokollierung des Prozessspeichers (VmRSS) zu Beginn
-    und Ende der täglichen Sonderaufgaben (Tasks 2 bis 7), Verbose 3.
+    und Ende der täglichen Sonderaufgaben (Tasks 2 bis 7), Verbose 4. RSS nur auf Linux verfügbar, sonst nur Signaltext.
 
 
 ## [v2.10.11]
