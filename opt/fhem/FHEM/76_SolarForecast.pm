@@ -48,7 +48,6 @@ use Color;
 use utf8;
 use HttpUtils;
 
-#use Test::Memory::Usage;                                                            # https://metacpan.org/pod/Test::Memory::Usage
 #use Devel::Size qw(total_size);
 
 eval "use FHEM::Meta;1"                   or my $modMetaAbsent = 1;                  ## no critic 'eval'
