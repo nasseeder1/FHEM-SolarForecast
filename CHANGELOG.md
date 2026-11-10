@@ -7,7 +7,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.11.0]
-09.11.2026 Rev. xxxxx
+09.11.2026 Rev. 31886
 
 - **Fix:**
   * Speicher: Die LRU-Caches der History-Arrays ('BEVHISTARR', 'CYCLECSMHISTARR',
