@@ -9,6 +9,11 @@ xx.xx.xxxx Rev. xxxxx
 ## [v2.12.0]
 18.11.2026 Rev. xxxxx
 
+- **Änderung:**
+  *  ___computeTiltedIrradianceCached: Frühabbrüche (keine Strahlung / Sonne zu tief) erfolgen
+     jetzt vor dem Cache-Lookup. Dadurch wird die HitRate des TILTED_IRR_Cache nicht mehr durch
+     nächtliche Phantom-Misses verfälscht. Keine Änderung an den Berechnungsergebnissen.
+
 - **Fix:**
   AI / Verbrauchsprognose: Drift-Korrektur überarbeitet
 
