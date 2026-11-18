@@ -6,6 +6,40 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 xx.xx.xxxx Rev. xxxxx
 
 
+## [v2.12.0]
+18.11.2026 Rev. xxxxx
+
+- **Fix:**
+  AI / Verbrauchsprognose: Drift-Korrektur überarbeitet
+
+  Anlass: In Grundlaststunden konnte die Drift-Korrektur die KI-Prognose stark
+  nach unten ziehen (bis auf 0 Wh), obwohl der reale Verbrauch über der
+  Rohprognose lag. (Forum: https://forum.fhem.de/index.php?msg=1371866)
+
+  * E1: Die Drift-Berechnung verwendet jetzt die unkorrigierte KI-Prognose
+    (conaifc - conbiascorr) statt der bereits korrigierten. Damit entfällt die Rückkopplung der Korrektur auf ihre eigene Messgröße.
+  * Die additive Drift-Korrektur der Grundlaststunden basiert auf dem gemessenen Fehler 
+    (neues KPI DriftLevel = Median von Ist - Rohprognose, ab 07 Uhr, mindestens 6 Stunden) statt auf der Differenz der Regressions-
+    Achsenabschnitte (DriftBias). DriftBias bleibt als Kennzahl erhalten.
+  * Die Korrektur wirkt nur zur Hälfte, absolut auf 0,5 x MAE und relativ auf 30 % der Prognose begrenzt. 
+    Grundlaststunden werden nicht mehr auf 0 Wh gedrückt. Bei Daten-/Sensorproblemen (Safety-Block) ist DriftLevel 0.
+  * Der MAE-Term in der Rekalibrierung der Bias-Referenz (DriftRefBias) entfällt, da er die Referenz bei jeder Rekalibrierung nach 
+    oben verschoben hat.
+  * Die Glättung (EMA) von DriftBiasLive ist jetzt wirksam. 
+  * Die Untergrenze der Referenz-Steigung (DriftRefSlope) orientiert sich am ModelSlope (min(0.85, ModelSlope)). 
+    Bei Modellen mit kleiner Steigung verbleibt das Modell nicht mehr dauerhaft in Driftzone 3.
+  * Debug (aiProcess): die DRIFT-Ausgabe enthält zusätzlich DriftLevel.
+
+Dank an User lawern für die ausführliche Analyse.
+
+Hinweise zur Wirkung
+--------------------
+ - Doppelzählung: DriftLevel misst gegen die unkorrigierte Rohprognose. In den Bias-Zonen 1/2/2b wirkt zusätzlich der statische Bias. Deshalb nur 50 % des Niveaufehlers; in Zone 3 (typisch für stochastische Haushalte) entfällt der statische Bias ohnehin.
+ - Erwartetes Verhalten: Zu niedrige Grundlastprognosen werden um bis zu 30 % angehoben, zu hohe um bis zu 30 % gesenkt, nie mehr auf 0. Die Drift-Skalierung (ds_adapted, Faktor ca. 0.94 in Zone 3) bleibt unverändert.
+ - Nach dem Einspielen wirkt sich E1 erst aus, wenn die History Stunden mit conbiascorr enthält (ist bei laufender 2.10.x/2.11.0 der Fall).
+ - Zum Prüfen: debug aiProcess aktivieren und in der Zeile 'DRIFT [con]' DriftBias und DriftLevel vergleichen; bei einer Grundlaststunde sollte tot_corr in 'AI FANN con fc' (debug aiData) jetzt höchstens +-30 % der Prognose betragen.
+
+
 ## [v2.11.0]
 09.11.2026 Rev. 31886
 
