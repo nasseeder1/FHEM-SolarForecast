@@ -7,7 +7,7 @@ xx.xx.xxxx Rev. xxxxx
 
 
 ## [v2.12.0]
-18.11.2026 Rev. xxxxx
+20.11.2026 Rev. 31918
 
 - **Änderung:**
   *  ___computeTiltedIrradianceCached: Frühabbrüche (keine Strahlung / Sonne zu tief) erfolgen
