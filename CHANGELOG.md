@@ -30,7 +30,7 @@ Zeichencodierung (global encoding)
 Hinweis zum Wechsel des Encoding-Modus
 --------------------------------------
 Wird das Attribut "encoding" im global-Device nachträglich von unicode auf bytestream umgestellt, können Werte, die zuvor im Modus unicode gespeichert
-wurden (z. B. Namen der PV-Strings mit Umlauten), bis zum nächsten API-Abruf fehlerhaft angezeigt werden. Nach dem Abruf werden die Daten wieder unter dem
+wurden (z.B. Namen der PV-Strings mit Umlauten), bis zum nächsten API-Abruf fehlerhaft angezeigt werden. Nach dem Abruf werden die Daten wieder unter dem
 korrekten Schlüssel geschrieben. 
 Der Schlüssel mit den fehlerhaften Umlauten bleibt dann zunächst bestehen, wird aber nicht weiter befüllt. Er wird durch die tägliche Bereinigung (kurz nach Mitternacht) 
 automatisch gelöscht, sobald alle seine Zeitstempel in der Vergangenheit liegen; das ist je nach Vorhersagehorizont der verwendeten API nach einigen Tagen der Fall. 
