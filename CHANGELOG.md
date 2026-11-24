@@ -3,7 +3,39 @@
 Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 ## [unreleased]
-xx.xx.xxxx Rev. xxxxx
+24.11.2026 Rev. xxxxx
+
+
+
+## [v2.13.0]
+24.11.2026 Rev. xxxxx
+
+Zeichencodierung (global encoding)
+
+- **Neu:**
+  * Das Modul unterstützt jetzt beide Einstellungen des Attributs "encoding" im global-Device (unicode und bytestream). Texte, Hilfetexte, Tabellen und HTML-
+    Ausgaben werden abhängig vom eingestellten Modus korrekt dargestellt (bisher wurden im Modus unicode Umlaute und Sonderzeichen doppelt kodiert angezeigt).
+    Der Standardbetrieb (bytestream) bleibt unverändert.
+  * Im Modus unicode werden API-Antworten als Rohdaten verarbeitet (forceEncoding), und die Spaltenbreiten in Tabellen werden korrekt berechnet.
+  * Die Cache-Dateien (JSON) werden im Modus unicode korrekt gelesen und geschrieben. Zuvor im Modus unicode doppelt kodiert abgelegte Cache-Dateien
+    werden beim Einlesen automatisch repariert; ein manuelles Eingreifen auf Betriebssystemebene ist nicht erforderlich.
+
+- **Fix:**
+  * Die Anfrage an die Gemini-API wird im Modus unicode nicht mehr doppelt kodiert.
+  * Die lokal gespeicherte Datei der Meldungen (controls_solarforecast_messages_prod.txt) wurde beim Herunterladen doppelt
+    kodiert abgelegt (Umlaute und typografische Zeichen erschienen verstümmelt). Betrifft beide Modi. Die Datei wird beim nächsten Abruf korrekt neu geschrieben.
+  * Kleinere Absicherungen im Modus unicode (SHA1-Prüfsumme der Lognachricht, Fehlertexte der String-Zuordnung).
+
+Hinweis zum Wechsel des Encoding-Modus
+--------------------------------------
+Wird das Attribut "encoding" im global-Device nachträglich von unicode auf bytestream umgestellt, können Werte, die zuvor im Modus unicode gespeichert
+wurden (z. B. Namen der PV-Strings mit Umlauten), bis zum nächsten API-Abruf fehlerhaft angezeigt werden. Nach dem Abruf werden die Daten wieder unter dem
+korrekten Schlüssel geschrieben. 
+Der Schlüssel mit den fehlerhaften Umlauten bleibt dann zunächst bestehen, wird aber nicht weiter befüllt. Er wird durch die tägliche Bereinigung (kurz nach Mitternacht) 
+automatisch gelöscht, sobald alle seine Zeitstempel in der Vergangenheit liegen; das ist je nach Vorhersagehorizont der verwendeten API nach einigen Tagen der Fall. 
+Ein manuelles Löschen ist nicht erforderlich. Wer den Schlüssel sofort entfernen möchte, kann das Attribut setupInverterStrings erneut setzen; dabei werden nicht mehr konfigurierte
+Schlüssel gelöscht (nicht empfohlen).
+
 
 
 ## [v2.12.0]
