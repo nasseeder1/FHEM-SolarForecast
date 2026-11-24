@@ -23,7 +23,8 @@ Zeichencodierung (global encoding)
 - **Fix:**
   * Die Anfrage an die Gemini-API wird im Modus unicode nicht mehr doppelt kodiert.
   * Die lokal gespeicherte Datei der Meldungen (controls_solarforecast_messages_prod.txt) wurde beim Herunterladen doppelt
-    kodiert abgelegt (Umlaute und typografische Zeichen erschienen verstümmelt). Betrifft beide Modi. Die Datei wird beim nächsten Abruf korrekt neu geschrieben.
+    kodiert abgelegt (Umlaute und typografische Zeichen erschienen verstümmelt). 
+    Texte der Mitteilungen werden jetzt in beiden Modi korrekt ausgegeben, und Datei bzw. Cache aus früheren Versionen werden dabei automatisch korrigiert.
   * Kleinere Absicherungen im Modus unicode (SHA1-Prüfsumme der Lognachricht, Fehlertexte der String-Zuordnung).
 
 Hinweis zum Wechsel des Encoding-Modus

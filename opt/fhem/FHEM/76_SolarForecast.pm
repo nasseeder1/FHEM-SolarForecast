@@ -26977,8 +26977,8 @@ sub fillupMessageSystem {
           next if($mfi >= IDXLIMIT);
           $midx2++;
           $data{$name}{messages}{$midx2}{SV} = trim ($data{$name}{filemessages}{$mfi}{SV});
-          $data{$name}{messages}{$midx2}{DE} = $data{$name}{filemessages}{$mfi}{DE};
-          $data{$name}{messages}{$midx2}{EN} = $data{$name}{filemessages}{$mfi}{EN};
+          $data{$name}{messages}{$midx2}{DE} = encodeFhem (healDoubleEnc ($data{$name}{filemessages}{$mfi}{DE}));
+          $data{$name}{messages}{$midx2}{EN} = encodeFhem (healDoubleEnc ($data{$name}{filemessages}{$mfi}{EN}));
       }
 
       $data{$name}{messages}{999000}{TS}     = $data{$name}{filemessages}{999000}{TS}     // 0;
@@ -38273,6 +38273,20 @@ sub encodeFhem {
   return $str if(!defined $str || isUnicodeEnc());
 
 return encode_utf8 ($str);
+}
+
+################################################################
+#  Doppelt kodierten Text (UTF-8-Bytes als Latin-1-Zeichen) in
+#  den ursprünglichen Text zurückwandeln, sonst unverändert
+################################################################
+sub healDoubleEnc {
+  my $str = shift // return;
+
+  return $str if($str !~ /[^\x00-\x7F]/ || $str =~ /[^\x00-\xFF]/);
+
+  my $b = encode ('latin1', $str);
+
+return eval { decode ('UTF-8', $b, Encode::FB_CROAK | Encode::LEAVE_SRC) } // $str;
 }
 
 ################################################################
