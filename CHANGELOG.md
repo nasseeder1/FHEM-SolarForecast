@@ -8,7 +8,7 @@ Alle nennenswerten Änderungen an diesem Modul werden hier dokumentiert.
 
 
 ## [v2.13.0]
-24.11.2026 Rev. xxxxx
+26.11.2026 Rev. 31930
 
 Zeichencodierung (global encoding)
 
