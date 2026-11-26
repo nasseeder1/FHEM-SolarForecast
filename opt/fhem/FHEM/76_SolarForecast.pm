@@ -5163,20 +5163,17 @@ sub ___computeTiltedIrradianceCached {
   #debugLog ($paref, 'apiProcess', "DWD API Tilted - num=$num, dday=$dday, chour=$chour, hod=$hod, nhtstr=$nhtstr, rel=$rel");
 
   if (!defined $sunalt || !defined $sunaz) {
-      debugLog ($paref, 'apiProcess', "DWD API Tilted - day=$dday hod=$hod -> "
-                                     ."Value of sunaz/sunalt not stored in Nexthours or pvHistory, workaround using G_tilt=0");
+      if (!defined $sunalt || !defined $sunaz) {
+          debugLog ($paref, 'apiProcess', "DWD API Tilted - day=$dday hod=$hod -> "
+                                         ."Value of sunaz/sunalt not stored in Nexthours or pvHistory, workaround using G_tilt=0");
+      }
+      elsif ($sunalt <= 0) {
+          debugLog ($paref, 'apiProcess', "DWD API Tilted - day=$dday hod=$hod -> "
+                                         ."sunalt=$sunalt (sun below horizon for full hour), G_tilt=0");
+      }
 
       return (0, 0);
   }
-  
-  return (0, 0) if(!defined $rad || $rad <= 0);                                 # keine Strahlung -> nichts zu berechnen, kein Cache-Zugriff
-
-  my $pi       = 4 * atan2 (1,1);                                               # klassischer Perl-Trick, um π (Pi) mathematisch exakt zu berechnen – ohne es als feste Zahl einzutragen
-  my $deg      = $pi / 180.0;
-  my $sunalt_r = $sunalt * $deg;
-  my $sin_ele  = sin ($sunalt_r);
-
-  return (0, 0) if($sin_ele < 0.01);                                            # Sonne zu tief (ca. 0.57°) -> kein Cache-Zugriff
 
   my $cache_key = join '::', 'TILTIRR',                                         # Cache Key ID
                               $name,
@@ -5209,11 +5206,19 @@ sub ___computeTiltedIrradianceCached {
   # --- Neuberechnung
   my $sg  = $rad * KJ2WH;                                                       # rad=kJ/m²h -> 1kJ = 0,27778 Wh
   my $rho = 0.2;                                                                # Bodenalbedo
+  my $pi  = 4 * atan2 (1,1);                                                    # klassischer Perl-Trick, um π (Pi) mathematisch exakt zu berechnen – ohne es als feste Zahl einzutragen
+  my $deg = $pi / 180.0;
+
+  return (0, 0) if(!defined ($sg) || $sg <= 0);
 
   my $sunaz_r  = $sunaz    * $deg;
+  my $sunalt_r = $sunalt   * $deg;
   my $azimut_r = $str_azi  * $deg;
   my $tilt_r   = $str_tilt * $deg;
+  my $sin_ele  = sin ($sunalt_r);
   my $cos_ele  = cos ($sunalt_r);
+
+  return (0, 0) if($sin_ele < 0.01);                                            # entspricht ca. 0.57° Sonnenstand
 
   my $I0n = SOLARCONSTANT * (1.0 + 0.033 * cos (2.0 * $pi * $dofyear / 365.0));
   my $I0h = $I0n * $sin_ele;
