@@ -38,7 +38,6 @@ Ein manuelles Löschen ist nicht erforderlich. Wer den Schlüssel sofort entfern
 Schlüssel gelöscht (nicht empfohlen).
 
 
-
 ## [v2.12.0]
 20.11.2026 Rev. 31918
 
