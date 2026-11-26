@@ -23,3 +23,6 @@
 2|SV|1
 2|DE|Ab dem 21.11. ca. 08:15 wird die Version 2.12.0 ausgeliefert. Die Änderungen betreffen insbesondere die Drift-Korrektur der KI-Verbrauchsprognose. Das komplette Changelog enthält dieser <html><a href='https://forum.fhem.de/index.php?msg=1371933' target='_blank'>Beitrag</a></html>
 2|EN|Version 2.12.0 will be released starting November 21 at approximately 8:15 a.m. The changes primarily affect the drift correction for the AI consumption forecast. The complete changelog is available in this <html><a href=‘https://forum.fhem.de/index.php?msg=1371933’ target=‘_blank’>post</a></html>.
+3|SV|1
+3|DE|Ab dem 27.11. ca. 08:15 wird die Version 2.13.0 ausgeliefert. Es ist die Unterstützung für global encoding=unicode implementiert. Das Changelog dieser Version enthält dieser <html><a href='https://forum.fhem.de/index.php?msg=1372217' target='_blank'>Beitrag</a></html>.
+3|EN|Version 2.13.0 will be released starting November 27 at approximately 8:15 a.m. Support for global encoding=unicode has been implemented. The changelog for this version is included in this <html><a href=‘https://forum.fhem.de/index.php?msg=1372217’ target=‘_blank’>post</a></html>.
